@@ -1,0 +1,23 @@
+{% extends "pagina_maestra.html" %}
+
+{% block titulo %} Error 404 {% endblock %}
+
+{% block link %}
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% endblock %}
+
+{% block contenido %}
+<div id="principal">
+<link href="{{ url_for('static', filename='css/page404.css') }}" rel="stylesheet">
+<div class="error_container">
+    <div class="error_code">
+        <p id="error-digit-1">4</p>
+        <p id="error-digit-2">0</p>
+        <p id="error-digit-3">4</p>
+    </div>
+    <div class="error_title">Página no encontrada</div> <!-- Corregido: 'divv' a 'div' -->
+    <div class="error_description">Parece que no podemos encontrar esa página. Puede que se haya eliminado.</div>
+    <button class="action" onclick="window.location.href='/'">Ir a Inicio</button> <!-- Añadido para redireccionar al inicio -->
+</div>
+</div>
+{% endblock %}

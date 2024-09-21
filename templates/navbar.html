@@ -1,0 +1,158 @@
+
+<head>
+	<!--  *****   Link To Custom CSS Style Sheet   *****  -->
+	<link rel="stylesheet" type="text/css" href="/static/css/navbar.css">
+
+	<!--  *****   Link To Font Awsome Icons   *****  -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css"/>
+
+	<title>Dashboard Side Menu</title>
+</head>
+<body>
+	<!--  *****   Navbar Container Starts   *****  -->
+	<nav class="navbar-container">
+
+		<!--  *****   Navbar Header Starts   *****  -->
+		<header class="navbar-header">
+
+			<div class="logo">
+				<div class="logoImg">
+					<i class="fa-solid fa-bars"></i>
+				</div>
+
+				<div class="logoText">
+					<span>Grupogota</span>
+				</div>
+			</div>
+
+		</header>
+
+		<!--  *****   Navbar Header Ends   *****  -->
+
+		<!--  *****   Navbar Links Starts   *****  -->
+			<ul class="navbar-links">
+				<li>
+					<a href="#">
+						<span class="nav-icon" data-label="Dashboard">
+							<i class="fa-solid fa-house"></i>
+						</span>
+						<span class="nav-text">Dashboard</span>
+					</a>
+			    </li>
+				<li>
+					<a href="#">
+						<span class="nav-icon" data-label="Profile">
+							<i class="fa-regular fa-user"></i>
+						</span>
+						<span class="nav-text">Profile</span>
+					</a>
+				</li>
+				<li>
+					<a href="#">
+						<span class="nav-icon" data-label="Notifications">
+							<i class="fa-regular fa-bell"></i>
+						</span>
+						<span class="nav-text">Notifications</span>
+					</a>
+				</li>
+
+				<li>
+					<a href="#">
+						<span class="nav-icon" data-label="Components">
+							<i class="fa-solid fa-laptop"></i>
+						</span>
+						<span class="nav-text">Components</span>
+					</a>
+				</li>
+
+				<li>
+					<a href="#">
+						<span class="nav-icon" data-label="Analytics">
+							<i class="fa-solid fa-chart-line"></i>
+						</span>
+						<span class="nav-text">Analytics</span>
+					</a>
+				</li>
+
+				<li>
+					<a href="#">
+						<span class="nav-icon" data-label="Favorites">
+							<i class="fa-regular fa-heart"></i>
+						</span>
+						<span class="nav-text">Favorites</span>
+					</a>
+				</li>
+
+					<li>
+					<a href="#">
+						<span class="nav-icon" data-label="Saved">
+							<i class="fa-regular fa-bookmark"></i>
+						</span>
+						<span class="nav-text">Saved</span>
+					</a>
+				</li>
+
+				<li>
+					<a href="#">
+						<span class="nav-icon" data-label="Settings">
+							<i class="fa-solid fa-gear"></i>
+						</span>
+						<span class="nav-text">Settings</span>
+					</a>
+				</li>
+			</ul>
+
+		<!--  *****   Navbar Links Ends   *****  -->
+
+		<!--  *****   Navbar Footer Starts   *****  -->
+		<div class="navbar-footer">
+			<a href="/procesar_logout" class="logoutBtn">
+				<span class="nav-icon" data-label="Salir">
+					<i class="fa-solid fa-right-from-bracket"></i>
+				</span>
+				<p>Salir</p>
+			</a>
+		</div>
+		<!-- Navbar Footer Ends -->
+
+
+	</nav>
+
+
+<!--  *****   JavaScript Code Starts   *****  -->
+<script type="text/javascript">
+var menuContainer = document.querySelector('.navbar-container');
+var menuBtn = document.querySelector('.navbar-header .logo .logoImg i');
+
+// Selecciona los elementos
+var menuContainer = document.querySelector('.navbar-container');
+var menuBtn = document.querySelector('.navbar-header .logo .logoImg i');
+
+// Función para verificar el tamaño de pantalla y ajustar el menú
+function checkScreenSize() {
+    if (window.innerWidth <= 600) {
+        menuContainer.classList.remove('active');  // Contraído por defecto en pantallas pequeñas
+    } else {
+        menuContainer.classList.add('active');     // Desplegado por defecto en pantallas grandes
+    }
+}
+
+// Ejecuta la función cuando el DOM está completamente cargado
+document.addEventListener('DOMContentLoaded', function() {
+    checkScreenSize(); // Verifica el tamaño inicial cuando la página se carga completamente
+});
+
+// Detecta cuando se cambia el tamaño de la ventana y ajusta el menú
+window.addEventListener('resize', checkScreenSize);
+
+// Alterna el estado del menú cuando se hace clic en el botón
+menuBtn.addEventListener('click', function() {
+    menuContainer.classList.toggle('active');
+});
+
+
+
+
+
+</script>
+<!--  *****   JavaScript Code Ends   *****  -->
