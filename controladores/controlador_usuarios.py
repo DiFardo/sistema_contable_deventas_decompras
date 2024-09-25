@@ -1,6 +1,5 @@
 from bd_conexion import obtener_conexion
 
-
 def obtener_usuario(dni):
     conexion = obtener_conexion()
     usuario = None

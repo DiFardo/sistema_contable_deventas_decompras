@@ -3,6 +3,8 @@ import hashlib
 from flask_jwt_extended import JWTManager, create_access_token
 import controladores.controlador_usuarios as controlador_usuarios
 import clases.clase_usuario as clase_usuario
+from bd_conexion import obtener_conexion  # Asegúrate de que la conexión a la base de datos esté configurada correctamente
+from controladores.controlador_cuentas import obtener_todas_cuentas  # Importa la función para obtener las cuentas
 
 app = Flask(__name__)
 app.debug = True
@@ -88,6 +90,13 @@ def procesar_logout():
         print(f"Error al cerrar sesión: {e}")
         flash("Error al cerrar la sesión.")
         return redirect("/login_user")
+
+# Ruta para mostrar las cuentas con los datos desde la base de datos
+@app.route("/cuentas")
+def cuentas():
+    cuentas_data = obtener_todas_cuentas()  # Llama a la función para obtener los datos de las cuentas
+    return render_template("cuentas.html", cuentas=cuentas_data)  # Pasa los datos a la plantilla
+
 
 # Iniciar el servidor
 if __name__ == "__main__":

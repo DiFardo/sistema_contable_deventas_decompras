@@ -10,16 +10,6 @@ def obtener_conexion():
         database=config('POSTGRES_DB')
     )
 
-def consultar_hora():
-    conexion = obtener_conexion()
-    cursor = conexion.cursor()
-    cursor.execute("SELECT NOW();")
-    hora_actual = cursor.fetchone()[0]
-    cursor.close()
-    conexion.close()
-    return hora_actual
-hora_actual = consultar_hora()
-print("La hora actual es:", hora_actual)
 
 
 

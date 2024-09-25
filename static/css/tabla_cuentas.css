@@ -1,0 +1,210 @@
+/* Contenedor responsivo para la tabla */
+#tabla-contenedor {
+    overflow-x: auto !important; 
+    max-width: 100% !important; 
+    margin-bottom: 1rem !important;
+    padding-top: 50px !important; 
+}
+
+/* Ajustes generales de la tabla */
+#tabla-cuentas {
+    width: 100% !important;
+    border-collapse: collapse !important; 
+    border-spacing: 0 !important; 
+    --bs-table-bg: #ffffff !important; 
+    --bs-table-border-color: #000000 !important; 
+    border: 1px solid #dee2e6 !important; 
+}
+
+/* Estilo de cabecera de tabla */
+#tabla-cuentas thead th {
+    background-color: #343a40 !important; 
+    color: #ffffff !important; 
+    padding: 12px !important; 
+    text-align: left !important;
+    border: 1px solid #dee2e6 !important; 
+}
+
+/* Estilo de las filas del cuerpo */
+#tabla-cuerpo tr {
+    transition: background-color 0.3s !important;
+}
+
+/* Estilo de celdas del cuerpo */
+#tabla-cuerpo td {
+    padding: 15px !important; 
+    border: 1px solid #dee2e6 !important; 
+    color: #000000 !important; 
+    vertical-align: middle !important; 
+}
+
+/* Fila sin datos */
+#sin-datos {
+    text-align: center !important;
+    color: #000000 !important;
+    font-style: italic !important;
+    background-color: #ffffff !important;
+}
+
+/* Estilo para la sección de contenido que contiene la tabla */
+.content-section {
+    margin-left: 250px !important; 
+    padding: 20px !important; 
+    transition: margin-left 0.3s !important; 
+}
+
+/* Sección de búsqueda alineada con la tabla */
+.search-section {
+    padding-top: 100px !important; 
+    display: flex !important;
+    justify-content: flex-start !important; 
+    max-width: 100% !important; 
+}
+
+/* Estilo para el campo de búsqueda (input) */
+#search-input {
+    border: 2px solid #000000 !important; 
+    border-radius: 4px !important; 
+    padding: 5px 10px !important; 
+    outline: none !important; 
+    transition: border-color 0.3s !important; 
+}
+
+/* Estilo para el botón de búsqueda */
+#search-button {
+    border: 2px solid #225892 !important; 
+    border-radius: 4px !important; 
+    background-color: #194370 !important; 
+    color: #ffffff !important; 
+    padding: 5px 10px !important; 
+    margin-left: -5px !important; 
+    cursor: pointer !important; 
+    transition: background-color 0.3s, border-color 0.3s !important; 
+}
+
+#search-button:hover {
+    background-color: #0056b3 !important; 
+    border-color: #0056b3 !important; 
+}
+
+/* Ajustes de responsividad para la sección con la barra lateral expandible */
+@media (max-width: 992px) {
+    .content-section {
+        margin-left: 200px !important; 
+    }
+}
+
+@media (max-width: 768px) {
+    .content-section {
+        margin-left: 0 !important; 
+    }
+}
+
+/* Animaciones para el modal */
+.modal-dialog.animate__animated {
+    animation-duration: 0.4s !important; 
+}
+
+/* Animación para cuando el modal aparece desde arriba */
+.animate__fadeInDown {
+    animation-name: fadeInDown !important;
+}
+
+/* Animación para cuando el modal desaparece hacia arriba */
+.animate__fadeOutUp {
+    animation-name: fadeOutUp !important;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0 !important;
+        transform: translateY(-50px) !important; 
+    }
+    to {
+        opacity: 1 !important;
+        transform: translateY(0) !important;
+    }
+}
+
+@keyframes fadeOutUp {
+    from {
+        opacity: 1 !important;
+        transform: translateY(0) !important;
+    }
+    to {
+        opacity: 0 !important;
+        transform: translateY(-50px) !important; 
+    }
+}
+
+/* Estilos generales para el modal */
+.modal-dialog {
+    max-width: 600px; /* Ajusta el ancho máximo del modal */
+    margin: 1.75rem auto; /* Centra el modal en la pantalla */
+    border-radius: 8px; /* Bordes redondeados */
+    overflow: hidden; /* Evita que el contenido sobresalga */
+}
+
+/* Estilo del contenido del modal */
+.modal-content {
+    background-color: #f8f9fa; /* Fondo claro para el modal */
+    color: #343a40; /* Color de texto oscuro para contraste */
+    border: none; /* Elimina bordes predeterminados */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* Sombra sutil para profundidad */
+}
+
+/* Estilo del encabezado del modal */
+.modal-header {
+    background-color: #343a40; /* Fondo oscuro para el encabezado */
+    color: #ffffff; /* Texto blanco */
+    border-bottom: 1px solid #dee2e6; /* Línea divisoria */
+    padding: 15px 20px; /* Ajusta el padding */
+}
+
+/* Estilo del título del modal */
+.modal-title {
+    font-size: 1.25rem; /* Tamaño del título */
+    font-weight: bold; /* Negrita para el título */
+    margin: 0; /* Sin márgenes */
+}
+
+/* Estilo del cuerpo del modal */
+.modal-body {
+    padding: 20px; /* Padding interno del cuerpo */
+    font-size: 1rem; /* Tamaño del texto del cuerpo */
+    line-height: 1.5; /* Espaciado entre líneas */
+    color: #495057; /* Color del texto */
+}
+
+/* Estilo del pie de página del modal */
+.modal-footer {
+    background-color: #e9ecef; /* Fondo claro para el pie de página */
+    border-top: 1px solid #dee2e6; /* Línea divisoria */
+    padding: 10px 20px; /* Ajusta el padding */
+    display: flex; /* Usa flexbox para alinear los botones */
+    justify-content: flex-end; /* Alinea los botones a la derecha */
+}
+
+/* Estilo del botón de cerrar */
+.modal-footer .btn-danger {
+    background-color: #dc3545; /* Color de fondo rojo */
+    border: none; /* Sin borde */
+    color: #ffffff; /* Texto blanco */
+    padding: 8px 15px; /* Padding del botón */
+    border-radius: 5px; /* Bordes redondeados */
+    transition: background-color 0.3s; /* Transición suave */
+}
+
+.modal-footer .btn-danger:hover {
+    background-color: #c82333; /* Cambia el color en hover */
+}
+
+/* Estilo del botón de cerrar en la cabecera */
+.btn-close {
+    color: #ffffff; /* Color del icono */
+    opacity: 0.8; /* Opacidad inicial */
+}
+
+.btn-close:hover {
+    opacity: 1; /* Aumenta la opacidad en hover */
+}
