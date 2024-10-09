@@ -1,146 +1,184 @@
+<!doctype html>
+<html lang="en">
+
 <head>
-    <!--  *****   Link To Custom CSS Style Sheet   *****  -->
-    <link rel="stylesheet" type="text/css" href="/static/css/navbar.css">
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, maximum-scale=1">
+    <title>Sistema Contable</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <!----css3---->
+    <link rel="stylesheet" href="/static/css/custom.css">
 
-    <!--  *****   Link To Font Awsome Icons   *****  -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css"/>
-     
-    <title>Dashboard Side Menu</title>
+    <!-- Google fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Google Material Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Icons" rel="stylesheet">
 </head>
+
 <body>
-    <!--  *****   Navbar Container Starts   *****  -->
-    <nav class="navbar-container active"> <!-- Asegúrate de que el menú comience como desplegado -->
-      
-        <!--  *****   Navbar Header Starts   *****  -->
-        <header class="navbar-header">
-            <div class="logo">
-                <div class="logoImg">
-                    <i class="fa-solid fa-bars"></i>
-                </div>
 
-                <div class="logoText">
-                    <span></span>
-                </div>
+    <div class="wrapper sidebar-active">
+        <div class="body-overlay"></div>
+
+        <!-------------------------sidebar------------>
+        <!-- Sidebar -->
+        <nav id="sidebar">
+            <div class="sidebar-header">
+                <h3><span>Sistema contable</span></h3>
             </div>
-
-        </header>
-
-        <!--  *****   Navbar Header Ends   *****  -->
-
-        <!--  *****   Navbar Links Starts   *****  -->
-            <ul class="navbar-links">
-                <li>
-                    <a href="{{ url_for('index') }}">
-                        <span class="nav-icon" data-label="Dashboard">
-                            <i class="fa-solid fa-house"></i>
-                        </span>
-                        <span class="nav-text">Inicio</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="#">
-                        <span class="nav-icon" data-label="Profile">
-                            <i class="fa-regular fa-user"></i>
-                        </span>
-                        <span class="nav-text">Usuarios</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="#">
-                        <span class="nav-icon" data-label="Notifications">
-                            <i class="fa-regular fa-bell"></i>
-                        </span>
-                        <span class="nav-text">Notifications</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('cuentas') }}">
-                        <span class="nav-icon" data-label="Cuentas contables">
-                            <i class="fa-solid fa-laptop"></i>
-                        </span>
-                        <span class="nav-text">Cuentas contables</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="#">
-                        <span class="nav-icon" data-label="Analytics">
-                            <i class="fa-solid fa-chart-line"></i>
-                        </span>
-                        <span class="nav-text">Asientos contables</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="#">
-                        <span class="nav-icon" data-label="Favorites">
-                            <i class="fa-regular fa-heart"></i>
-                        </span>
-                        <span class="nav-text">Favorites</span>
+            <ul class="list-unstyled components">
+                <!-- Sección de Inicio -->
+                <li class="active">
+                    <a href="{{ url_for('index') }}" class="dashboard">
+                        <i class="material-icons">dashboard</i>
+                        <span>Inicio</span>
                     </a>
                 </li>
 
-                    <li>
-                    <a href="#">
-                        <span class="nav-icon" data-label="Saved">
-                            <i class="fa-regular fa-bookmark"></i>
-                        </span>
-                        <span class="nav-text">Saved</span>
+                <!-- Sección de Ventas -->
+                <li class="dropdown">
+                    <a href="#ventasSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                        <i class="material-icons">shopping_cart</i>
+                        <span>Ventas</span>
                     </a>
+                    <ul class="collapse list-unstyled" id="ventasSubmenu">
+                        <li><a href="#"><i class="material-icons">receipt</i> Facturas emitidas</a></li>
+                        <li><a href="#"><i class="material-icons">local_shipping</i> Albaranes emitidos</a></li>
+                        <li><a href="#"><i class="material-icons">assignment</i> Pedidos emitidos</a></li>
+                        <li><a href="#"><i class="material-icons">description</i> Presupuestos emitidos</a></li>
+                    </ul>
                 </li>
 
-                <li>
-                    <a href="#">
-                        <span class="nav-icon" data-label="Settings">
-                            <i class="fa-solid fa-gear"></i>
-                        </span>
-                        <span class="nav-text">Settings</span>
+                <!-- Sección de Compras -->
+                <li class="dropdown">
+                    <a href="#comprasSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                        <i class="material-icons">shopping_bag</i>
+                        <span>Compras</span>
                     </a>
+                    <ul class="collapse list-unstyled" id="comprasSubmenu">
+                        <li><a href="#"><i class="material-icons">receipt</i> Facturas recibidas</a></li>
+                        <li><a href="#"><i class="material-icons">local_shipping</i> Albaranes recibidos</a></li>
+                        <li><a href="#"><i class="material-icons">description</i> Presupuestos recibidos</a></li>
+                        <li><a href="#"><i class="material-icons">account_balance_wallet</i> Nóminas</a></li>
+                    </ul>
+                </li>
+
+                <!-- Sección de Contabilidad -->
+                <li class="dropdown">
+                    <a href="#contabilidadSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                        <i class="material-icons">account_balance</i>
+                        <span>Contabilidad</span>
+                    </a>
+                    <ul class="collapse list-unstyled" id="contabilidadSubmenu">
+                        <li><a href="{{ url_for('cuentas') }}"><i class="material-icons">folder</i> Cuentas contables</a></li>
+                        <li><a href="#"><i class="material-icons">receipt_long</i> Asientos contables</a></li>
+                    </ul>
+                </li>
+
+                <!-- Otros elementos del menú -->
+                <li class="dropdown">
+                    <a href="#"><i class="material-icons">settings</i><span>Configuración</span></a>
                 </li>
             </ul>
+        </nav>
 
-        <!--  *****   Navbar Links Ends   *****  -->
+        <!--------page-content---------------->
+        <div id="content">
+            <!--top--navbar----design---------> 
+            <div class="top-navbar">
+                <div class="xp-topbar">
+                    <div class="row">
+                        <div class="col-2 col-md-1 col-lg-1 order-2 order-md-1 align-self-center">
+                            <div class="xp-menubar">
+                                <span class="material-icons text-white">signal_cellular_alt</span>
+                            </div>
+                        </div>
 
-        <!--  *****   Navbar Footer Starts   *****  -->
-        <div class="navbar-footer">
-            <a href="/procesar_logout" class="logoutBtn">
-                <span class="nav-icon" data-label="Salir">
-                    <i class="fa-solid fa-right-from-bracket"></i>
-                </span>
-                <p>Salir</p>
-            </a>
+                        <div class="col-md-5 col-lg-3 order-3 order-md-2">
+                            <div class="xp-searchbar">
+                                <form>
+                                    <div class="input-group">
+                                        <input type="search" class="form-control" placeholder="Search">
+                                        <div class="input-group-append">
+                                            <button class="btn" type="submit" id="button-addon2">GO</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="col-10 col-md-6 col-lg-8 order-1 order-md-3">
+                            <div class="xp-profilebar text-right">
+                                <nav class="navbar p-0">
+                                    <ul class="nav navbar-nav flex-row ml-auto">
+                                        <li class="dropdown nav-item active">
+                                            <a href="#" class="nav-link" data-toggle="dropdown">
+                                                <span class="material-icons">notifications</span>
+                                                <span class="notification">4</span>
+                                            </a>
+                                            <ul class="dropdown-menu">
+                                                <li>
+                                                    <a href="#">You have 5 new messages</a>
+                                                </li>
+                                                <li>
+                                                    <a href="#">You're now friend with Mike</a>
+                                                </li>
+                                                <li>
+                                                    <a href="#">Wish Mary on her birthday!</a>
+                                                </li>
+                                                <li>
+                                                    <a href="#">5 warnings in Server Console</a>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" href="#">
+                                            </a>
+                                        </li>
+                                        <li class="nav-item dropdown">
+                                            <a class="nav-link" href="#" data-toggle="dropdown">
+                                                <img src="img/user.jpg" style="width:40px; border-radius:50%;" />
+                                                <span class="xp-user-live"></span>
+                                            </a>
+                                            <ul class="dropdown-menu small-menu">
+                                                <li>
+                                                    <a href="#"><span class="material-icons">person_outline</span>Profile</a>
+                                                </li>
+                                                <li>
+                                                    <a href="#"><span class="material-icons">settings</span>Settings</a>
+                                                </li>
+                                                <li>
+                                                    <a href="#"><span class="material-icons">logout</span>Logout</a>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <!-- Navbar Footer Ends -->
+    </div>
 
+    <!-- Optional JavaScript -->
+    <script src="/static/js/jquery-3.3.1.min.js"></script>
+    <script src="/static/js/popper.min.js"></script>
+    <script src="/static/js/bootstrap.min.js"></script>
 
-    </nav>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $(".xp-menubar").on('click', function () {
+                $('#sidebar').toggleClass('active');
+                $('#content').toggleClass('active');
+            });
+        });
+    </script>
 
+</body>
 
-<!--  *****   JavaScript Code Starts   *****  -->
-<script type="text/javascript">
-// Selecciona los elementos
-var menuContainer = document.querySelector('.navbar-container');
-var menuBtn = document.querySelector('.navbar-header .logo .logoImg i');
-
-// Función para verificar el tamaño de pantalla y ajustar el menú
-function checkScreenSize() {
-    if (window.innerWidth <= 600) {
-        menuContainer.classList.remove('active');  // Contrae el menú solo en pantallas pequeñas
-    } else {
-        menuContainer.classList.add('active'); // Mantiene el menú desplegado si la pantalla es más grande
-    }
-}
-
-// Ejecuta la función cuando el DOM está completamente cargado
-document.addEventListener('DOMContentLoaded', function() {
-    menuContainer.classList.add('active'); // Mantiene el menú desplegado al cargar la página
-    checkScreenSize(); // Verifica el tamaño inicial cuando la página se carga completamente
-});
-
-// Detecta cuando se cambia el tamaño de la ventana y ajusta el menú
-window.addEventListener('resize', checkScreenSize);
-
-// Alterna el estado del menú cuando se hace clic en el botón
-menuBtn.addEventListener('click', function() {
-    menuContainer.classList.toggle('active');
-});
-
-</script>
+</html>
