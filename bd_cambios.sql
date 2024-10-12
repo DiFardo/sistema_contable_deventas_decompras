@@ -1,9 +1,14 @@
-create table ventas_contables(
-	id serial primary key not null,
-	id_pedido int not null,
-	id_usuario int not null,
-	fecha_creacion date not null,
-	total numeric(10,2) not null
+--En la bd de contabilidad
+CREATE TABLE ventas_contables (
+    id SERIAL PRIMARY KEY,
+    id_detalle INT NOT NULL,
+    id_pedido INT NOT NULL,
+    id_usuario INT NOT NULL,
+    fecha TIMESTAMP NOT NULL,
+    id_producto INT NOT NULL,
+    nombre_producto VARCHAR(255) NOT NULL,
+    cantidad INT NOT NULL,
+    subtotal NUMERIC(10, 2) NOT NULL
 );
 
 mysql, ventas:
