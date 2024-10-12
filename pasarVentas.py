@@ -30,6 +30,7 @@ def verificar_pedidos():
                 dp.id_detalle, 
                 dp.id_pedido, 
                 p.id_usuario,
+                u.email,
                 p.fecha_creacion as fecha, 
                 dp.id_producto, 
                 pr.nombre_producto, 
@@ -47,17 +48,16 @@ def verificar_pedidos():
         time.sleep(60)
 
 def registrar_en_contable(detalle):
-    id_detalle, id_pedido, id_usuario, fecha, id_producto, nombre_producto, cantidad, subtotal = detalle
+    id_detalle, id_pedido, id_usuario, email, fecha, id_producto, nombre_producto, cantidad, subtotal = detalle
     try:
         postgres_cursor.execute("""
             INSERT INTO ventas_contables (
-                id_detalle, id_pedido, id_usuario, fecha, id_producto, nombre_producto, cantidad, subtotal
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
-        """, (id_detalle, id_pedido, id_usuario, fecha, id_producto, nombre_producto, cantidad, subtotal))
+                id_detalle, id_pedido, id_usuario, usuario, fecha, id_producto, nombre_producto, cantidad, subtotal
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
+        """, (id_detalle, id_pedido, id_usuario, email, fecha, id_producto, nombre_producto, cantidad, subtotal))
         postgres_connection.commit()
         print(f"Detalle de pedido {id_detalle} registrado en el sistema contable.")
         
-        # Marcar pedido como registrado en contable
         mysql_cursor.execute("""
             UPDATE pedidos SET registrado_en_contable = TRUE WHERE id_pedido = %s;
         """, (id_pedido,))
