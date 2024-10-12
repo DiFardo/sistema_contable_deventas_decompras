@@ -22,6 +22,7 @@ def validar_token():
         return True
     return False
 
+
 @app.route("/")
 @app.route("/login_user")
 def login():
@@ -35,11 +36,19 @@ def login():
 
 @app.route("/index")
 def index():
-    return render_template("index.html")
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'}
+    ]
+    return render_template("index.html", breadcrumbs=breadcrumbs)
+
 
 @app.errorhandler(404)
 def page404(e):
-    return render_template('page404.html'), 404
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/'},
+        {'name': 'Página No Encontrada', 'url': '#'}
+    ]
+    return render_template('page404.html', breadcrumbs=breadcrumbs), 404
 
 
 # INICIAR SESION
@@ -48,10 +57,10 @@ def procesar_login():
     try:
         dni = request.form["dni"]
         password = request.form["password"]
-        print(f"Intentando iniciar sesión con DNI: {dni}")  
+        print(f"Intentando iniciar sesión con DNI: {dni}")
         usuario = controlador_usuarios.obtener_usuario(dni)
         if not usuario:
-            print("Usuario no encontrado")  
+            print("Usuario no encontrado")
             flash("Usuario no encontrado.")
             return redirect("/login_user")
         h = hashlib.new('sha256')
@@ -64,10 +73,10 @@ def procesar_login():
             resp = make_response(redirect("/index"))  # Cambiado para redirigir a index.html
             resp.set_cookie('token', access_token)
             resp.set_cookie('dni', dni)
-            print("Inicio de sesión exitoso") 
+            print("Inicio de sesión exitoso")
             return resp
         else:
-            print("Contraseña incorrecta") 
+            print("Contraseña incorrecta")
             flash("Contraseña incorrecta.")
             return redirect("/login_user")
     except Exception as e:
@@ -91,11 +100,22 @@ def procesar_logout():
         flash("Error al cerrar la sesión.")
         return redirect("/login_user")
 
+
 # Ruta para mostrar las cuentas con los datos desde la base de datos
 @app.route("/cuentas")
 def cuentas():
     cuentas_data = obtener_todas_cuentas()  # Llama a la función para obtener los datos de las cuentas
-    return render_template("cuentas.html", cuentas=cuentas_data)  # Pasa los datos a la plantilla
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Cuentas contables', 'url': '/cuentas'}
+    ]
+    return render_template("cuentas.html", cuentas=cuentas_data, breadcrumbs=breadcrumbs)  # Pasa los datos a la plantilla
+
+
+
+
+
+
 
 
 # Iniciar el servidor

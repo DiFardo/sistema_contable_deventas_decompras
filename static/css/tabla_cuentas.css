@@ -1,210 +1,136 @@
-/* Contenedor responsivo para la tabla */
-#tabla-contenedor {
-    overflow-x: auto !important; 
-    max-width: 100% !important; 
-    margin-bottom: 1rem !important;
-    padding-top: 50px !important; 
+/* Estilos para la cabecera del modal */
+#editAccountModal .modal-header {
+    background-color: #aaaaaa; /* Azul oscuro para la cabecera */
+    color: rgb(68, 68, 68); /* Texto blanco */
+    padding: 15px; /* Espaciado dentro de la cabecera */
+    border-bottom: 2px solid #7b8896; /* Borde inferior */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-/* Ajustes generales de la tabla */
-#tabla-cuentas {
-    width: 100% !important;
-    border-collapse: collapse !important; 
-    border-spacing: 0 !important; 
-    --bs-table-bg: #ffffff !important; 
-    --bs-table-border-color: #000000 !important; 
-    border: 1px solid #dee2e6 !important; 
-}
-
-/* Estilo de cabecera de tabla */
-#tabla-cuentas thead th {
-    background-color: #343a40 !important; 
-    color: #ffffff !important; 
-    padding: 12px !important; 
-    text-align: left !important;
-    border: 1px solid #dee2e6 !important; 
-}
-
-/* Estilo de las filas del cuerpo */
-#tabla-cuerpo tr {
-    transition: background-color 0.3s !important;
-}
-
-/* Estilo de celdas del cuerpo */
-#tabla-cuerpo td {
-    padding: 15px !important; 
-    border: 1px solid #dee2e6 !important; 
-    color: #000000 !important; 
-    vertical-align: middle !important; 
-}
-
-/* Fila sin datos */
-#sin-datos {
-    text-align: center !important;
-    color: #000000 !important;
-    font-style: italic !important;
-    background-color: #ffffff !important;
-}
-
-/* Estilo para la sección de contenido que contiene la tabla */
-.content-section {
-    margin-left: 250px !important; 
-    padding: 20px !important; 
-    transition: margin-left 0.3s !important; 
-}
-
-/* Sección de búsqueda alineada con la tabla */
-.search-section {
-    padding-top: 100px !important; 
-    display: flex !important;
-    justify-content: flex-start !important; 
-    max-width: 100% !important; 
-}
-
-/* Estilo para el campo de búsqueda (input) */
-#search-input {
-    border: 2px solid #000000 !important; 
-    border-radius: 4px !important; 
-    padding: 5px 10px !important; 
-    outline: none !important; 
-    transition: border-color 0.3s !important; 
-}
-
-/* Estilo para el botón de búsqueda */
-#search-button {
-    border: 2px solid #225892 !important; 
-    border-radius: 4px !important; 
-    background-color: #194370 !important; 
-    color: #ffffff !important; 
-    padding: 5px 10px !important; 
-    margin-left: -5px !important; 
-    cursor: pointer !important; 
-    transition: background-color 0.3s, border-color 0.3s !important; 
-}
-
-#search-button:hover {
-    background-color: #0056b3 !important; 
-    border-color: #0056b3 !important; 
-}
-
-/* Ajustes de responsividad para la sección con la barra lateral expandible */
-@media (max-width: 992px) {
-    .content-section {
-        margin-left: 200px !important; 
-    }
-}
-
-@media (max-width: 768px) {
-    .content-section {
-        margin-left: 0 !important; 
-    }
-}
-
-/* Animaciones para el modal */
-.modal-dialog.animate__animated {
-    animation-duration: 0.4s !important; 
-}
-
-/* Animación para cuando el modal aparece desde arriba */
-.animate__fadeInDown {
-    animation-name: fadeInDown !important;
-}
-
-/* Animación para cuando el modal desaparece hacia arriba */
-.animate__fadeOutUp {
-    animation-name: fadeOutUp !important;
-}
-
-@keyframes fadeInDown {
-    from {
-        opacity: 0 !important;
-        transform: translateY(-50px) !important; 
-    }
-    to {
-        opacity: 1 !important;
-        transform: translateY(0) !important;
-    }
-}
-
-@keyframes fadeOutUp {
-    from {
-        opacity: 1 !important;
-        transform: translateY(0) !important;
-    }
-    to {
-        opacity: 0 !important;
-        transform: translateY(-50px) !important; 
-    }
-}
-
-/* Estilos generales para el modal */
-.modal-dialog {
-    max-width: 600px; /* Ajusta el ancho máximo del modal */
-    margin: 1.75rem auto; /* Centra el modal en la pantalla */
-    border-radius: 8px; /* Bordes redondeados */
-    overflow: hidden; /* Evita que el contenido sobresalga */
-}
-
-/* Estilo del contenido del modal */
-.modal-content {
-    background-color: #f8f9fa; /* Fondo claro para el modal */
-    color: #343a40; /* Color de texto oscuro para contraste */
-    border: none; /* Elimina bordes predeterminados */
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* Sombra sutil para profundidad */
-}
-
-/* Estilo del encabezado del modal */
-.modal-header {
-    background-color: #343a40; /* Fondo oscuro para el encabezado */
-    color: #ffffff; /* Texto blanco */
-    border-bottom: 1px solid #dee2e6; /* Línea divisoria */
-    padding: 15px 20px; /* Ajusta el padding */
-}
-
-/* Estilo del título del modal */
-.modal-title {
-    font-size: 1.25rem; /* Tamaño del título */
+/* Título del modal centrado y en negrita */
+#editAccountModal .modal-title {
+    font-size: 1.75rem; /* Tamaño de fuente del título */
     font-weight: bold; /* Negrita para el título */
-    margin: 0; /* Sin márgenes */
+    margin: 0;
+    flex-grow: 1;
+    text-align: center; /* Centrar el texto */
 }
 
-/* Estilo del cuerpo del modal */
-.modal-body {
-    padding: 20px; /* Padding interno del cuerpo */
-    font-size: 1rem; /* Tamaño del texto del cuerpo */
-    line-height: 1.5; /* Espaciado entre líneas */
-    color: #495057; /* Color del texto */
+/* Botón de cerrar en la cabecera */
+#editAccountModal .btn-close {
+    background-color: transparent; /* Fondo transparente */
+    color: white; /* Icono del botón de cerrar en blanco */
+    font-size: 1.25rem; /* Ajustar el tamaño del botón */
 }
 
-/* Estilo del pie de página del modal */
-.modal-footer {
-    background-color: #e9ecef; /* Fondo claro para el pie de página */
-    border-top: 1px solid #dee2e6; /* Línea divisoria */
-    padding: 10px 20px; /* Ajusta el padding */
-    display: flex; /* Usa flexbox para alinear los botones */
-    justify-content: flex-end; /* Alinea los botones a la derecha */
+/* Estilos para el cuerpo del modal */
+#editAccountModal .modal-body {
+    padding: 20px; /* Añadir espacio en el cuerpo del modal */
 }
 
-/* Estilo del botón de cerrar */
-.modal-footer .btn-danger {
-    background-color: #dc3545; /* Color de fondo rojo */
-    border: none; /* Sin borde */
-    color: #ffffff; /* Texto blanco */
-    padding: 8px 15px; /* Padding del botón */
-    border-radius: 5px; /* Bordes redondeados */
-    transition: background-color 0.3s; /* Transición suave */
+/* Campos de formulario */
+#editAccountModal .form-label {
+    font-size: 1.1rem; /* Aumentar el tamaño de la fuente */
+    font-weight: bold; /* Negrita para las etiquetas */
+    color: #333; /* Color de texto */
 }
 
-.modal-footer .btn-danger:hover {
-    background-color: #c82333; /* Cambia el color en hover */
+#editAccountModal .form-control, 
+#editAccountModal .form-select {
+    font-size: 1rem; /* Aumentar el tamaño de los campos */
+    padding: 10px; /* Más espacio dentro de los campos */
+    border: 1px solid #ced4da; /* Borde gris claro */
+    border-radius: 4px; /* Bordes redondeados */
 }
 
-/* Estilo del botón de cerrar en la cabecera */
-.btn-close {
-    color: #ffffff; /* Color del icono */
-    opacity: 0.8; /* Opacidad inicial */
+#editAccountModal .form-check-input {
+    width: 20px; /* Ajustar el tamaño del checkbox */
+    height: 20px;
 }
 
-.btn-close:hover {
-    opacity: 1; /* Aumenta la opacidad en hover */
+#editAccountModal .form-check-label {
+    font-size: 1rem;
+    font-weight: normal; /* Mismo tamaño y estilo para el texto */
+    color: #333;
 }
+
+
+/* Botón de guardar */
+#editAccountModal .btn-primary {
+    background-color: #3f3f3f; /* Color del botón */
+    border-color: #348288; /* Bordes del mismo color */
+    color: white; /* Texto en blanco */
+    padding: 10px; /* Espaciado */
+    font-size: 1.2rem; /* Aumentar tamaño de letra */
+    transition: background-color 0.3s ease-in-out; /* Transición suave al hover */
+}
+
+/* Cambio de color al hacer hover sobre el botón */
+#editAccountModal .btn-primary:hover {
+    background-color: #585879; /* Color más oscuro al hacer hover */
+}
+
+/* Responsividad del modal */
+@media (max-width: 576px) {
+    #editAccountModal .modal-lg {
+        max-width: 95%; /* Hacer el modal más amplio en pantallas pequeñas */
+    }
+
+    #editAccountModal .modal-title {
+        font-size: 1.25rem; /* Tamaño de fuente del título más pequeño en pantallas pequeñas */
+    }
+}
+
+/* Estilos adicionales para el formulario */
+#editAccountModal #editAccountForm .form-control, 
+#editAccountModal #editAccountForm .form-select {
+    border-radius: 4px; /* Bordes redondeados */
+    padding: 10px; /* Espacio dentro de los campos */
+}
+
+/* Alinear el botón de cerrar en la esquina */
+#editAccountModal .btn-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 1;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+#editAccountModal .btn-close:hover {
+    color: #ffcccb; /* Color rosado claro al pasar el mouse */
+}
+
+
+/* Estilos adicionales para el formulario */
+#editAccountModal #editAccountForm .form-control {
+    border-radius: 4px !important; /* Bordes redondeados en los campos de formulario */
+    border: 1px solid #ced4da !important; /* Borde gris claro */
+    padding: 10px !important; /* Espacio dentro de los campos */
+}
+
+/* Botón 'Guardar Cambios' con ancho completo */
+#editAccountModal .btn-primary.w-100 {
+    width: 100% !important;
+}
+
+
+
+.toggle-subcuentas i {
+    color: black; /* Establece el color negro para el ícono */
+  }
+  
+/* Estilo para enmarcar o separar las cuentas principales */
+.cuenta-padre {
+    border-top: 2px solid #cccccc; /* Línea azul en la parte superior */
+    border-bottom: 2px solid #cccccc; /* Línea azul en la parte inferior */
+}
+
+#editAccountModal .form-check-input:checked {
+    background-color: #525252; /* Cambia el color de fondo cuando está seleccionado */
+    border-color: #525252; /* Cambia el color del borde cuando está seleccionado */
+}
+
