@@ -114,21 +114,21 @@ def cuentas():
 
 @app.route("/ventas_contables")
 def ventas_contables():
-    ventas_data = controlador_ventas.obtener_todas_ventas()  # Llama a la función para obtener los datos de las ventas
+    ventas_data = controlador_ventas.obtener_todas_ventas()
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Ventas contables', 'url': '/ventas_contables'}
     ]
-    return render_template("ventas_contables.html", ventas=ventas_data, breadcrumbs=breadcrumbs)
+    return render_template("ventas/ventas_contables.html", ventas=ventas_data, breadcrumbs=breadcrumbs)
 
 @app.route("/boletas_ventas")
 def boletas_ventas():
-    boletas_data = controlador_ventas.obtener_boletas()  # Llama a la función para obtener los datos de las boletas
+    boletas_data = controlador_ventas.obtener_boletas()
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Boletas', 'url': '/boletas_ventas'}
     ]
-    return render_template("boletas_ventas.html", boletas=boletas_data, breadcrumbs=breadcrumbs)
+    return render_template("ventas/boletas_ventas.html", boletas=boletas_data, breadcrumbs=breadcrumbs)
 
 # Iniciar el servidor
 if __name__ == "__main__":
