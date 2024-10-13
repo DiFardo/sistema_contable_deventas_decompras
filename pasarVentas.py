@@ -31,15 +31,19 @@ def verificar_pedidos():
                 dp.id_pedido, 
                 p.id_usuario,
                 u.email,
-                p.fecha_creacion as fecha, 
+                pa.fecha_pago as fecha, 
                 dp.id_producto, 
                 pr.nombre_producto, 
                 dp.cantidad, 
-                (dp.cantidad * pr.precio) AS subtotal
+                (dp.cantidad * pr.precio) AS subtotal,
+                cp.serie_comprobante,       -- Serie del comprobante
+                cp.numero_comprobante       -- Número del comprobante
             FROM detalles_pedido dp
             JOIN pedidos p ON dp.id_pedido = p.id_pedido
             JOIN usuarios u ON p.id_usuario = u.id_usuario
             JOIN productos pr ON dp.id_producto = pr.id_producto
+            JOIN pagos pa ON pa.id_pedido = p.id_pedido
+            JOIN comprobante_pago cp ON cp.id_pedido = p.id_pedido   -- Unión con la tabla comprobante_pago
             WHERE p.estado = 'pagado' AND p.registrado_en_contable = FALSE;
         """)
         resultados = mysql_cursor.fetchall()
@@ -48,13 +52,13 @@ def verificar_pedidos():
         time.sleep(60)
 
 def registrar_en_contable(detalle):
-    id_detalle, id_pedido, id_usuario, email, fecha, id_producto, nombre_producto, cantidad, subtotal = detalle
+    id_detalle, id_pedido, id_usuario, email, fecha, id_producto, nombre_producto, cantidad, subtotal, serie_comprobante, numero_comprobante = detalle
     try:
         postgres_cursor.execute("""
             INSERT INTO ventas_contables (
-                id_detalle, id_pedido, id_usuario, usuario, fecha, id_producto, nombre_producto, cantidad, subtotal
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
-        """, (id_detalle, id_pedido, id_usuario, email, fecha, id_producto, nombre_producto, cantidad, subtotal))
+                id_detalle, id_pedido, id_usuario, usuario, fecha, id_producto, nombre_producto, cantidad, subtotal, serie_comprobante, numero_comprobante
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+        """, (id_detalle, id_pedido, id_usuario, email, fecha, id_producto, nombre_producto, cantidad, subtotal, serie_comprobante, numero_comprobante))
         postgres_connection.commit()
         print(f"Detalle de pedido {id_detalle} registrado en el sistema contable.")
         

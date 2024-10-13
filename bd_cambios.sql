@@ -9,5 +9,7 @@ CREATE TABLE ventas_contables (
     id_producto INT NOT NULL,
     nombre_producto VARCHAR(255) NOT NULL,
     cantidad INT NOT NULL,
-    subtotal NUMERIC(10, 2) NOT NULL
+    subtotal NUMERIC(10, 2) NOT NULL,
+    serie_comprobante VARCHAR(10) NOT NULL,
+    numero_comprobante VARCHAR(10) NOT NULL
 );

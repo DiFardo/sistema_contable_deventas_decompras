@@ -2,6 +2,7 @@ from flask import Flask, flash, render_template, request, redirect, make_respons
 import hashlib
 from flask_jwt_extended import JWTManager, create_access_token
 import controladores.controlador_usuarios as controlador_usuarios
+import controladores.controlador_ventas as controlador_ventas
 import clases.clase_usuario as clase_usuario
 from bd_conexion import obtener_conexion  # Asegúrate de que la conexión a la base de datos esté configurada correctamente
 from controladores.controlador_cuentas import obtener_todas_cuentas  # Importa la función para obtener las cuentas
@@ -111,12 +112,23 @@ def cuentas():
     ]
     return render_template("cuentas.html", cuentas=cuentas_data, breadcrumbs=breadcrumbs)  # Pasa los datos a la plantilla
 
+@app.route("/ventas_contables")
+def ventas_contables():
+    ventas_data = controlador_ventas.obtener_todas_ventas()  # Llama a la función para obtener los datos de las ventas
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Ventas contables', 'url': '/ventas_contables'}
+    ]
+    return render_template("ventas_contables.html", ventas=ventas_data, breadcrumbs=breadcrumbs)
 
-
-
-
-
-
+@app.route("/boletas_ventas")
+def boletas_ventas():
+    boletas_data = controlador_ventas.obtener_boletas()  # Llama a la función para obtener los datos de las boletas
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Boletas', 'url': '/boletas_ventas'}
+    ]
+    return render_template("boletas_ventas.html", boletas=boletas_data, breadcrumbs=breadcrumbs)
 
 # Iniciar el servidor
 if __name__ == "__main__":

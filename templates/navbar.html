@@ -45,10 +45,8 @@
                         <span>Ventas</span>
                     </a>
                     <ul class="collapse list-unstyled" id="ventasSubmenu">
-                        <li><a href="#"><i class="material-icons">receipt</i> Facturas emitidas</a></li>
-                        <li><a href="#"><i class="material-icons">local_shipping</i> Albaranes emitidos</a></li>
-                        <li><a href="#"><i class="material-icons">assignment</i> Pedidos emitidos</a></li>
-                        <li><a href="#"><i class="material-icons">description</i> Presupuestos emitidos</a></li>
+                        <li><a href="{{ url_for('boletas_ventas') }}"><i class="material-icons">receipt</i> Boletas emitidas</a></li>
+                        <li><a href="{{ url_for('ventas_contables') }}"><i class="material-icons">assignment</i> Pedidos emitidos</a></li>
                     </ul>
                 </li>
 
