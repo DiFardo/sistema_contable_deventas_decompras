@@ -103,3 +103,47 @@ document.addEventListener("DOMContentLoaded", function() {
 
   showPage(currentPage);
 });
+
+
+document.addEventListener("DOMContentLoaded", function() {
+    const searchInput = document.getElementById('search-input');
+    const tableRows = document.querySelectorAll('#tabla-cuerpo tr');
+    const rowsPerPageInput = document.getElementById('records-per-page');
+    
+    let rowsPerPage = parseInt(rowsPerPageInput.value);
+    let currentPage = 1;
+  
+    searchInput.addEventListener('input', function() {
+        const searchTerm = searchInput.value.toLowerCase();
+  
+        if (searchTerm === "") {
+            // Si el campo de búsqueda está vacío, restaurar paginación inicial
+            rowsPerPage = parseInt(rowsPerPageInput.value);
+            showPage(currentPage); // Mostrar la primera página o la actual
+        } else {
+            // Filtrar las filas según el término de búsqueda
+            tableRows.forEach(function(row) {
+                const codigo = row.querySelectorAll('td')[1].textContent.toLowerCase();
+                const descripcion = row.querySelectorAll('td')[2].textContent.toLowerCase();
+                
+                if (codigo.includes(searchTerm) || descripcion.includes(searchTerm)) {
+                    row.style.display = ''; // Mostramos la fila
+                } else {
+                    row.style.display = 'none'; // Ocultamos la fila
+                }
+            });
+        }
+    });
+  
+    // Función para mostrar la página actual en la paginación
+    function showPage(page) {
+        const rows = document.querySelectorAll('#tabla-cuentas tbody tr.cuenta-padre');
+        const start = (page - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+  
+        rows.forEach((row, index) => {
+            row.style.display = index >= start && index < end ? '' : 'none';
+        });
+    }
+  });
+  

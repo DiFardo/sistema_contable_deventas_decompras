@@ -1,63 +1,55 @@
-/* Estilos para la cabecera del modal */
-#editAccountModal .modal-header {
-    background-color: #aaaaaa; /* Azul oscuro para la cabecera */
-    color: rgb(68, 68, 68); /* Texto blanco */
-    padding: 15px; /* Espaciado dentro de la cabecera */
-    border-bottom: 2px solid #7b8896; /* Borde inferior */
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-/* Título del modal centrado y en negrita */
+/* Título del modal */
 #editAccountModal .modal-title {
     font-size: 1.75rem; /* Tamaño de fuente del título */
     font-weight: bold; /* Negrita para el título */
     margin: 0;
-    flex-grow: 1;
-    text-align: center; /* Centrar el texto */
+    text-align: center;
+    color: #333; /* Color del texto */
+    background-color: #f8f9fa; /* Fondo sutil para sobresalir */
+    padding: 15px 75px; /* Espaciado para que cubra toda la cabecera menos el botón de cerrar */
+    border-radius: 10px 10px 0 0; /* Bordes redondeados en la parte superior */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); /* Sombra para dar el efecto de sobresalir */
+    position: relative; /* Necesario para que el botón de cerrar no interfiera */
+}
+
+/* Estilo del modal */
+#editAccountModal .modal-dialog {
+    max-width: 500px; /* Modal más pequeño */
+    margin: 1.75rem auto; /* Centra el modal en la página */
+    border-radius: 10px; /* Bordes redondeados */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); /* Sombra envolvente para el modal */
+    overflow: hidden;
+}
+
+/* Estilo del contenido del modal */
+#editAccountModal .modal-content {
+    border-radius: 10px; /* Bordes redondeados */
+    overflow: hidden; /* Asegura que todo el contenido se mantenga dentro del modal */
 }
 
 /* Botón de cerrar en la cabecera */
 #editAccountModal .btn-close {
-    background-color: transparent; /* Fondo transparente */
-    color: white; /* Icono del botón de cerrar en blanco */
-    font-size: 1.25rem; /* Ajustar el tamaño del botón */
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 1;
+    font-size: 1.5rem;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    color: #525252;
 }
 
-/* Estilos para el cuerpo del modal */
-#editAccountModal .modal-body {
-    padding: 20px; /* Añadir espacio en el cuerpo del modal */
+/* Sombra más pronunciada en el modal para resaltar */
+#editAccountModal .modal-dialog {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25); /* Sombra más pronunciada */
+    border-radius: 10px; /* Bordes redondeados */
+    background-color: #fff;
+    padding: 0;
+    overflow: hidden;
 }
 
-/* Campos de formulario */
-#editAccountModal .form-label {
-    font-size: 1.1rem; /* Aumentar el tamaño de la fuente */
-    font-weight: bold; /* Negrita para las etiquetas */
-    color: #333; /* Color de texto */
-}
-
-#editAccountModal .form-control, 
-#editAccountModal .form-select {
-    font-size: 1rem; /* Aumentar el tamaño de los campos */
-    padding: 10px; /* Más espacio dentro de los campos */
-    border: 1px solid #ced4da; /* Borde gris claro */
-    border-radius: 4px; /* Bordes redondeados */
-}
-
-#editAccountModal .form-check-input {
-    width: 20px; /* Ajustar el tamaño del checkbox */
-    height: 20px;
-}
-
-#editAccountModal .form-check-label {
-    font-size: 1rem;
-    font-weight: normal; /* Mismo tamaño y estilo para el texto */
-    color: #333;
-}
-
-
-/* Botón de guardar */
+/* Botón 'Guardar Cambios' con un ancho completo */
 #editAccountModal .btn-primary {
     background-color: #3f3f3f; /* Color del botón */
     border-color: #348288; /* Bordes del mismo color */
@@ -65,6 +57,8 @@
     padding: 10px; /* Espaciado */
     font-size: 1.2rem; /* Aumentar tamaño de letra */
     transition: background-color 0.3s ease-in-out; /* Transición suave al hover */
+    border-radius: 4px;
+    width: 100%; /* Asegura que el botón ocupe todo el ancho */
 }
 
 /* Cambio de color al hacer hover sobre el botón */
@@ -82,6 +76,8 @@
         font-size: 1.25rem; /* Tamaño de fuente del título más pequeño en pantallas pequeñas */
     }
 }
+
+
 
 /* Estilos adicionales para el formulario */
 #editAccountModal #editAccountForm .form-control, 

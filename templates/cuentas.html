@@ -92,8 +92,10 @@
 
               </a>
               <a href="#deleteAccountModal" class="delete" data-bs-toggle="modal">
-                <i class="material-icons" data-bs-toggle="tooltip" title="Eliminar">&#xE872;</i>
+                <i class="material-icons" data-bs-toggle="tooltip" title="Dar de baja">thumb_down</i>
               </a>
+              
+              
               <a href="#" class="view" data-bs-toggle="modal" data-bs-target="#editAccountModal"
                 data-codigo="{{ cuenta[1] }}" data-descripcion="{{ cuenta[2] }}" data-estado="{{ cuenta[4] | lower }}"
                 data-categoria="{{ cuenta[5] }}">
@@ -217,6 +219,7 @@
 
   <!-- Scripts al final de la página para mejorar la carga -->
   <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
+  
   <script src="{{ url_for('static', filename='js/pagination.js') }}"></script>
   <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/tabla_cuentas.js') }}"></script>

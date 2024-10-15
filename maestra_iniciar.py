@@ -6,6 +6,7 @@ import controladores.controlador_ventas as controlador_ventas
 import clases.clase_usuario as clase_usuario
 from bd_conexion import obtener_conexion  # Asegúrate de que la conexión a la base de datos esté configurada correctamente
 from controladores.controlador_cuentas import obtener_todas_cuentas  # Importa la función para obtener las cuentas
+from flask import g
 
 app = Flask(__name__)
 app.debug = True
@@ -37,19 +38,29 @@ def login():
 
 @app.route("/index")
 def index():
+    token = request.cookies.get('token')
+    dni = request.cookies.get('dni')
+    usuario = controlador_usuarios.obtener_usuario(dni)  # Obtener el usuario con DNI desde la base de datos
+
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'}
     ]
-    return render_template("index.html", breadcrumbs=breadcrumbs)
+    return render_template("index.html", breadcrumbs=breadcrumbs, usuario=usuario)  # Pasar el usuario a la plantilla
+
 
 
 @app.errorhandler(404)
 def page404(e):
+    token = request.cookies.get('token')
+    dni = request.cookies.get('dni')
+    usuario = controlador_usuarios.obtener_usuario(dni)  # Obtener el usuario con DNI desde la base de datos
+
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/'},
         {'name': 'Página No Encontrada', 'url': '#'}
     ]
-    return render_template('page404.html', breadcrumbs=breadcrumbs), 404
+    return render_template('page404.html', breadcrumbs=breadcrumbs, usuario=usuario), 404  # Pasar el usuario a la plantilla
+
 
 
 # INICIAR SESION
@@ -102,15 +113,20 @@ def procesar_logout():
         return redirect("/login_user")
 
 
-# Ruta para mostrar las cuentas con los datos desde la base de datos
 @app.route("/cuentas")
 def cuentas():
     cuentas_data = obtener_todas_cuentas()  # Llama a la función para obtener los datos de las cuentas
+    token = request.cookies.get('token')
+    dni = request.cookies.get('dni')
+    usuario = controlador_usuarios.obtener_usuario(dni)  # Obtener el usuario con DNI desde la base de datos
+
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Cuentas contables', 'url': '/cuentas'}
     ]
-    return render_template("cuentas.html", cuentas=cuentas_data, breadcrumbs=breadcrumbs)  # Pasa los datos a la plantilla
+    return render_template("cuentas.html", cuentas=cuentas_data, breadcrumbs=breadcrumbs, usuario=usuario)  # Pasar el usuario a la plantilla
+
+from flask import g
 
 @app.route("/ventas_contables")
 def ventas_contables():
@@ -129,6 +145,23 @@ def boletas_ventas():
         {'name': 'Boletas', 'url': '/boletas_ventas'}
     ]
     return render_template("ventas/boletas_ventas.html", boletas=boletas_data, breadcrumbs=breadcrumbs)
+    
+#@app.before_request
+#def cargar_usuario():
+#   token = request.cookies.get('token')
+ #   dni = request.cookies.get('dni')
+ #   if dni:
+  #      g.usuario = controlador_usuarios.obtener_usuario(dni)  # Almacena el usuario en g
+   # else:
+    #    g.usuario = None  # Si no hay dni, asegura que g.usuario sea None
+
+
+#@app.context_processor
+#def contexto_global():
+ #   return {'usuario': getattr(g, 'usuario', None)}  # Devuelve el usuario o None si no está definido
+
+
+
 
 # Iniciar el servidor
 if __name__ == "__main__":
