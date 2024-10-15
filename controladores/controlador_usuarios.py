@@ -5,7 +5,14 @@ def obtener_usuario(dni):
     usuario = None
     with conexion.cursor() as cursor:
         cursor.execute(
-            "SELECT id, dni, pass, token FROM usuarios WHERE dni = %s", (dni,))
+            """
+            SELECT u.id, u.dni, u.pass, u.token, 
+                   CONCAT(p.nombre, ' ', p.apellido) AS nombre_completo, 
+                   p.rol 
+            FROM usuarios u
+            JOIN personas p ON u.id_persona = p.id
+            WHERE u.dni = %s
+            """, (dni,))
         usuario = cursor.fetchone()
     conexion.close()
     return usuario
@@ -23,7 +30,14 @@ def obtener_usuarioporid(id):
     usuario = None
     with conexion.cursor() as cursor:
         cursor.execute(
-            "SELECT id, dni, pass, token FROM usuarios WHERE id = %s", (id,))
+            """
+            SELECT u.id, u.dni, u.pass, u.token, 
+                   CONCAT(p.nombre, ' ', p.apellido) AS nombre_completo, 
+                   p.rol 
+            FROM usuarios u
+            JOIN personas p ON u.id_persona = p.id
+            WHERE u.id = %s
+            """, (id,))
         usuario = cursor.fetchone()
     conexion.close()
     return usuario

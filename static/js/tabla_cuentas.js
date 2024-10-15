@@ -118,29 +118,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 
-
-
-
-document.addEventListener("DOMContentLoaded", function() {
-  const searchInput = document.getElementById('search-input');
-  const tableRows = document.querySelectorAll('#tabla-cuerpo tr');
-
-  searchInput.addEventListener('input', function() {
-      const searchTerm = searchInput.value.toLowerCase();
-
-      tableRows.forEach(function(row) {
-          const codigo = row.querySelectorAll('td')[1].textContent.toLowerCase();
-          const descripcion = row.querySelectorAll('td')[2].textContent.toLowerCase();
-          
-          // Verificamos si el término de búsqueda coincide con el código o la descripción
-          if (codigo.includes(searchTerm) || descripcion.includes(searchTerm)) {
-              row.style.display = ''; // Mostramos la fila
-          } else {
-              row.style.display = 'none'; // Ocultamos la fila
-          }
-      });
-  });
-});
+  
 
 
   

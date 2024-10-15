@@ -129,7 +129,7 @@ a:focus {
 	width: 260px;
 	overflow: auto;
 	transition: all 0.3s;
-	background-color: #ffffff;
+	background-color: #dbdbdb;
 	box-shadow: 0 0 30px 0 rgba(200 200 200 / 20%);
 }
 
@@ -183,10 +183,11 @@ a:focus {
 }
 
 #sidebar .sidebar-header {
-	padding: 20px;
-	background-color: #fff;
-	border-bottom: 1px solid #eee;
+    padding: 20px;
+    background-color: #dbdbdb;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Ajusta la sombra según lo que prefieras */
 }
+
 
 .sidebar-header h3 {
 	color: #333;
@@ -205,12 +206,6 @@ a:focus {
 #sidebar ul li {
 	padding: 2px 0px;
 }
-
-
-
-
-
-
 
 #sidebar ul li a:hover {
 	color: #4c7cf3;
@@ -241,7 +236,7 @@ a:focus {
 	position: relative;
 	font-weight: 400;
 	display: block;
-	color: #777777;
+	color: #333333;
 	text-transform: capitalize;
 }
 
@@ -774,4 +769,128 @@ footer {
 	}
 }
 
+
+/* Estilos personalizados para las cartas */
+/* Estilos personalizados para las cartas */
+.card {
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0px 2px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
+	margin-top: 20px;
+	
+}
+
+.card:hover {
+    box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.card .card-header {
+    border-radius: 12px 12px 0 0;
+    position: relative;
+    padding-top: 25px;
+    padding-left: 75px; /* Para ajustar el ícono */
+}
+
+.icon {
+    position: absolute;
+    top: -25px; /* Para hacer que sobresalga del borde superior de la tarjeta */
+    left: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 55px;
+    height: 55px;
+    border-radius: 12px;
+    color: white;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3); /* Sombra para el ícono flotante */
+    z-index: 1;
+}
+
+.bg-gradient-dark {
+	background: linear-gradient(87deg, #17a2b8, #138496);
+}
+
+.bg-gradient-primary {
+	background: linear-gradient(87deg, #17a2b8, #138496);
+}
+
+.bg-gradient-success {
+    background: linear-gradient(87deg, #17a2b8, #138496);
+}
+
+.bg-gradient-info {
+    background: linear-gradient(87deg, #17a2b8, #138496);
+}
+
+.card-cuentas-contables .shadow-primary {
+    background: url('../img/illustrations/cuentas.webp') no-repeat center center;
+    background-size: 100%; /* Aumenta el tamaño de la imagen un poco */
+    background-position: top center; /* Ajusta la posición para que se vea más la parte superior de la imagen */
+}
+
+
+/* Asientos Contables */
+.card-asientos-contables .shadow-success {
+    background: url('../img/illustrations/asientos.webp') no-repeat center center;
+    background-size: 100%; /* Asegura que cubra toda el área */
+    background-position: top center; /* Centra la imagen en la parte superior */
+}
+
+/* Reportes Contables */
+.card-reportes-contables .shadow-dark {
+    background: url('../img/illustrations/reportes.webp') no-repeat center center;
+    background-size: 100%; /* Asegura que la imagen cubra toda la tarjeta */
+    background-position: top center; /* Centra la imagen en la parte superior */
+}
+
+.text-sm {
+    font-size: 0.875rem;
+}
+
+.font-weight-bolder {
+    font-weight: bolder;
+}
+
+.dark {
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+.shadow-dark {
+    box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilo para los gráficos */
+.chart-canvas {
+    max-height: 200px;
+}
+
+
+.xp-profilebar nav {
+    display: flex;
+    justify-content: flex-end;  /* Asegura que todo el contenido se alinee a la derecha */
+    align-items: center;        /* Alinea verticalmente al centro */
+}
+
+.navbar-nav {
+    display: flex;
+    flex-direction: row;        /* Alinea los elementos horizontalmente */
+    margin-left: auto;          /* Empuja los elementos hacia la derecha */
+}
+
+.user-dropdown a.nav-link {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;  /* Alinea el contenido dentro del enlace hacia la derecha */
+}
+
+.status-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background-color: #2bcd72;  /* Verde personalizado */
+    border-radius: 50%;
+    margin-left: 10px;          /* Espacio entre el texto y el punto verde */
+}
 

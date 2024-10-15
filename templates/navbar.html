@@ -65,7 +65,6 @@
                         <li><a href="#"><i class="material-icons">account_balance_wallet</i> Nóminas</a></li>
                     </ul>
                 </li>
-
                 <!-- Sección de Contabilidad -->
                 <li class="dropdown">
                     <a href="#contabilidadSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
@@ -73,10 +72,14 @@
                         <span>Contabilidad</span>
                     </a>
                     <ul class="collapse list-unstyled" id="contabilidadSubmenu">
-                        <li><a href="{{ url_for('cuentas') }}"><i class="material-icons">folder</i> Cuentas contables</a></li>
+                        <li><a href="{{ url_for('cuentas') }}"><i class="material-icons">folder</i> Cuentas
+                                contables</a></li>
                         <li><a href="#"><i class="material-icons">receipt_long</i> Asientos contables</a></li>
+                        <li><a href="#"><i class="material-icons">book</i> Libro Diario</a></li>
+                        <li><a href="#"><i class="material-icons">book_online</i> Libro Mayor</a></li>
                     </ul>
                 </li>
+
 
                 <!-- Otros elementos del menú -->
                 <li class="dropdown">
@@ -87,7 +90,7 @@
 
         <!--------page-content---------------->
         <div id="content">
-            <!--top--navbar----design---------> 
+            <!--top--navbar----design--------->
             <div class="top-navbar">
                 <div class="xp-topbar">
                     <div class="row">
@@ -109,7 +112,6 @@
                                 </form>
                             </div>
                         </div>
-
                         <div class="col-10 col-md-6 col-lg-8 order-1 order-md-3">
                             <div class="xp-profilebar text-right">
                                 <nav class="navbar p-0">
@@ -134,31 +136,37 @@
                                                 </li>
                                             </ul>
                                         </li>
-                                        <li class="nav-item">
-                                            <a class="nav-link" href="#">
+
+                                        {% if usuario %}
+                                        <li class="nav-item dropdown user-dropdown"
+                                            onclick="this.classList.toggle('show');">
+                                            <a href="#" class="nav-link" data-toggle="dropdown" aria-expanded="false">
+                                                {{ usuario[4] }} - {{ usuario[5] }} <!-- Nombre completo y rol -->
+                                                <span class="status-indicator"></span> <!-- Punto verde -->
                                             </a>
-                                        </li>
-                                        <li class="nav-item dropdown">
-                                            <a class="nav-link" href="#" data-toggle="dropdown">
-                                                <img src="img/user.jpg" style="width:40px; border-radius:50%;" />
-                                                <span class="xp-user-live"></span>
-                                            </a>
-                                            <ul class="dropdown-menu small-menu">
+                                            <ul class="dropdown-menu">
                                                 <li>
-                                                    <a href="#"><span class="material-icons">person_outline</span>Profile</a>
+                                                    <a href="#"><span
+                                                            class="material-icons">person_outline</span>Perfil</a>
                                                 </li>
                                                 <li>
-                                                    <a href="#"><span class="material-icons">settings</span>Settings</a>
-                                                </li>
-                                                <li>
-                                                    <a href="#"><span class="material-icons">logout</span>Logout</a>
+                                                    <a href="{{ url_for('procesar_logout') }}"><span
+                                                            class="material-icons">logout</span>Cerrar sesión</a>
                                                 </li>
                                             </ul>
                                         </li>
+                                        {% else %}
+                                        <li class="nav-item">
+                                            <span class="nav-link" style="color: white;">
+                                                Invitado
+                                            </span>
+                                        </li>
+                                        {% endif %}
                                     </ul>
                                 </nav>
                             </div>
                         </div>
+
                     </div>
                 </div>
             </div>
