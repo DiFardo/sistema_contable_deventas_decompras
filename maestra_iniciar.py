@@ -46,37 +46,17 @@ def index():
     ]
     return render_template("index.html", breadcrumbs=breadcrumbs, usuario=usuario)
 
-
-@app.route("/cuentas")
-def cuentas():
-    cuentas_data = obtener_todas_cuentas()
-    token = request.cookies.get('token')
-    dni = request.cookies.get('dni')
-    usuario = controlador_usuarios.obtener_usuario(dni)
-
-    breadcrumbs = [
-        {'name': 'Inicio', 'url': '/index'},
-        {'name': 'Cuentas contables', 'url': '/cuentas'}
-    ]
-    return render_template("cuentas.html", cuentas=cuentas_data, breadcrumbs=breadcrumbs, usuario=usuario)
-
-
-
-
 @app.route("/libro_caja")
 def libro_caja():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
     usuario = controlador_usuarios.obtener_usuario(dni)
-
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Libro Caja y Bancos', 'url': '/libro_caja'}
     ]
     movimientos = []
-
     return render_template("libro_caja.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
-
 
 @app.route("/libro_diario")
 def libro_diario():
