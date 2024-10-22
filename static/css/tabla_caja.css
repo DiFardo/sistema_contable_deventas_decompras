@@ -1,0 +1,29 @@
+/* Estilos para separar filas y columnas en la tabla */
+.table-bordered {
+    border-spacing: 0 15px; /* Espacio entre las filas */
+    border-collapse: separate; /* Mantiene el espacio entre filas y columnas */
+}
+
+.table-bordered th, .table-bordered td {
+    border: 1px solid #000000; /* Borde alrededor de cada celda */
+    padding: 10px; /* Espacio interno dentro de cada celda */
+    background-color: #f9f9f9; /* Color de fondo claro para las celdas */
+}
+
+.table-bordered tbody tr {
+    margin-bottom: 15px; /* Separación entre filas */
+    background-color: #000000; /* Color de fondo de las filas del cuerpo */
+}
+
+.table-bordered tbody tr:hover {
+    background-color: #a3a3a3; /* Color al pasar el mouse sobre la fila */
+}
+
+.table-title {
+    margin-bottom: 20px; /* Separación entre el título y la tabla */
+}
+
+tfoot td {
+    background-color: #070707; /* Color de fondo de la fila de totales */
+    font-weight: bold; /* Negrita para la fila de totales */
+}

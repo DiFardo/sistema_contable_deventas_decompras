@@ -5,9 +5,11 @@
 {% block link %}
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="{{ url_for('static', filename='css/page404.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
 {% endblock %}
 
 {% block contenido %}
+<div id="content">
 <div id="principal">
 <div class="error_container">
     <div class="error_code">
@@ -18,6 +20,7 @@
     <div class="error_title">Página no encontrada</div> <!-- Corregido: 'divv' a 'div' -->
     <div class="error_description">Parece que no podemos encontrar esa página. Puede que se haya eliminado.</div>
     <button class="action" onclick="window.location.href='/'">Ir a Inicio</button> <!-- Añadido para redireccionar al inicio -->
+</div>
 </div>
 </div>
 {% endblock %}

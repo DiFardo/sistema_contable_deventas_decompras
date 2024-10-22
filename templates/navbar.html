@@ -2,95 +2,87 @@
 <html lang="en">
 
 <head>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="viewport" content="width=device-width, minimum-scale=1, maximum-scale=1">
     <title>Sistema Contable</title>
+
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="/static/css/bootstrap.min.css">
-    <!----css3---->
     <link rel="stylesheet" href="/static/css/custom.css">
-
     <!-- Google fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <!-- Google Material Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Icons" rel="stylesheet">
+    <style>
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
 
 <body>
-
     <div class="wrapper sidebar-active">
         <div class="body-overlay"></div>
 
-        <!-------------------------sidebar------------>
         <!-- Sidebar -->
         <nav id="sidebar">
             <div class="sidebar-header">
-                <h3><span>Sistema contable</span></h3>
+                <h3 id="sidebar-title"><span>Sistema Contable</span></h3> <!-- Título dinámico -->
             </div>
-            <ul class="list-unstyled components">
-                <!-- Sección de Inicio -->
-                <li class="active">
+            <ul id="navbar-options" class="list-unstyled components">
+                <!-- Opciones del menú principal -->
+                <li class="nav-item">
                     <a href="{{ url_for('index') }}" class="dashboard">
                         <i class="material-icons">dashboard</i>
                         <span>Inicio</span>
                     </a>
                 </li>
-
-                <!-- Sección de Ventas -->
-                <li class="dropdown">
-                    <a href="#ventasSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
-                        <i class="material-icons">shopping_cart</i>
-                        <span>Ventas</span>
+                <li class="nav-item configuracion">
+                    <a href="#">
+                        <i class="material-icons">settings</i>
+                        <span>Configuración</span>
                     </a>
-                    <ul class="collapse list-unstyled" id="ventasSubmenu">
-                        <li><a href="#"><i class="material-icons">receipt</i> Facturas emitidas</a></li>
-                        <li><a href="#"><i class="material-icons">local_shipping</i> Albaranes emitidos</a></li>
-                        <li><a href="#"><i class="material-icons">assignment</i> Pedidos emitidos</a></li>
-                        <li><a href="#"><i class="material-icons">description</i> Presupuestos emitidos</a></li>
-                    </ul>
                 </li>
 
-                <!-- Sección de Compras -->
-                <li class="dropdown">
-                    <a href="#comprasSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
-                        <i class="material-icons">shopping_bag</i>
-                        <span>Compras</span>
+                <!-- Cuentas Contables -->
+                <li class="nav-item cuentas hidden">
+                    <a href="{{ url_for('cuentas') }}">
+                        <i class="material-icons">folder</i>
+                        <span>Cuentas Contables</span>
                     </a>
-                    <ul class="collapse list-unstyled" id="comprasSubmenu">
-                        <li><a href="#"><i class="material-icons">receipt</i> Facturas recibidas</a></li>
-                        <li><a href="#"><i class="material-icons">local_shipping</i> Albaranes recibidos</a></li>
-                        <li><a href="#"><i class="material-icons">description</i> Presupuestos recibidos</a></li>
-                        <li><a href="#"><i class="material-icons">account_balance_wallet</i> Nóminas</a></li>
-                    </ul>
-                </li>
-                <!-- Sección de Contabilidad -->
-                <li class="dropdown">
-                    <a href="#contabilidadSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
-                        <i class="material-icons">account_balance</i>
-                        <span>Contabilidad</span>
-                    </a>
-                    <ul class="collapse list-unstyled" id="contabilidadSubmenu">
-                        <li><a href="{{ url_for('cuentas') }}"><i class="material-icons">folder</i> Cuentas
-                                contables</a></li>
-                        <li><a href="#"><i class="material-icons">receipt_long</i> Asientos contables</a></li>
-                        <li><a href="#"><i class="material-icons">book</i> Libro Diario</a></li>
-                        <li><a href="#"><i class="material-icons">book_online</i> Libro Mayor</a></li>
-                    </ul>
                 </li>
 
-
-                <!-- Otros elementos del menú -->
-                <li class="dropdown">
-                    <a href="#"><i class="material-icons">settings</i><span>Configuración</span></a>
+                <!-- Menú desplegable de Libros Contables -->
+                <li class="nav-item libros hidden">
+                    <a href="#librosContablesSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                        <i class="material-icons">library_books</i>
+                        <span>Libros Contables</span>
+                    </a>
+                    <ul class="collapse list-unstyled" id="librosContablesSubmenu">
+                        <li>
+                            <a href="{{ url_for('libro_diario') }}">
+                                <i class="material-icons">book</i>
+                                <span>Libro Diario</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url_for('libro_mayor') }}">
+                                <i class="material-icons">book_online</i>
+                                <span>Libro Mayor</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url_for('libro_caja') }}">
+                                <i class="material-icons">account_balance_wallet</i>
+                                <span>Caja y Bancos</span>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
             </ul>
         </nav>
 
-        <!--------page-content---------------->
+        <!-- page-content -->
         <div id="content">
-            <!--top--navbar----design--------->
             <div class="top-navbar">
                 <div class="xp-topbar">
                     <div class="row">
@@ -102,16 +94,17 @@
 
                         <div class="col-md-5 col-lg-3 order-3 order-md-2">
                             <div class="xp-searchbar">
-                                <form>
+                                <form id="searchForm">
                                     <div class="input-group">
-                                        <input type="search" class="form-control" placeholder="Search">
+                                        <input type="search" class="form-control" placeholder="Buscar" id="searchInput">
                                         <div class="input-group-append">
-                                            <button class="btn" type="submit" id="button-addon2">GO</button>
+                                            <button class="btn" type="button" onclick="searchText()">Buscar</button>
                                         </div>
                                     </div>
                                 </form>
                             </div>
                         </div>
+
                         <div class="col-10 col-md-6 col-lg-8 order-1 order-md-3">
                             <div class="xp-profilebar text-right">
                                 <nav class="navbar p-0">
@@ -138,28 +131,23 @@
                                         </li>
 
                                         {% if usuario %}
-                                        <li class="nav-item dropdown user-dropdown"
-                                            onclick="this.classList.toggle('show');">
+                                        <li class="nav-item dropdown user-dropdown" onclick="this.classList.toggle('show');">
                                             <a href="#" class="nav-link" data-toggle="dropdown" aria-expanded="false">
                                                 {{ usuario[4] }} - {{ usuario[5] }} <!-- Nombre completo y rol -->
-                                                <span class="status-indicator"></span> <!-- Punto verde -->
+                                                <span class="status-indicator"></span>
                                             </a>
                                             <ul class="dropdown-menu">
                                                 <li>
-                                                    <a href="#"><span
-                                                            class="material-icons">person_outline</span>Perfil</a>
+                                                    <a href="#"><span class="material-icons">person_outline</span>Perfil</a>
                                                 </li>
                                                 <li>
-                                                    <a href="{{ url_for('procesar_logout') }}"><span
-                                                            class="material-icons">logout</span>Cerrar sesión</a>
+                                                    <a href="{{ url_for('procesar_logout') }}"><span class="material-icons">logout</span>Cerrar sesión</a>
                                                 </li>
                                             </ul>
                                         </li>
                                         {% else %}
                                         <li class="nav-item">
-                                            <span class="nav-link" style="color: white;">
-                                                Invitado
-                                            </span>
+                                            <span class="nav-link" style="color: white;">Invitado</span>
                                         </li>
                                         {% endif %}
                                     </ul>
@@ -179,14 +167,41 @@
     <script src="/static/js/bootstrap.min.js"></script>
 
     <script type="text/javascript">
-        $(document).ready(function () {
-            $(".xp-menubar").on('click', function () {
-                $('#sidebar').toggleClass('active');
-                $('#content').toggleClass('active');
-            });
+        function toggleVisibility(module) {
+            // Cambiar el título según el módulo
+            const sidebarTitle = document.getElementById('sidebar-title');
+            if (module === "contable") {
+                sidebarTitle.innerHTML = '<span>Módulo Contable</span>';
+            } else {
+                sidebarTitle.innerHTML = '<span>Sistema Contable</span>';
+            }
+
+            // Ocultar o mostrar elementos según el módulo
+            if (module === "contable") {
+                document.querySelectorAll('.cuentas').forEach(el => el.classList.remove('hidden'));
+                document.querySelectorAll('.libros').forEach(el => el.classList.remove('hidden'));
+                document.querySelectorAll('.configuracion').forEach(el => el.classList.add('hidden'));
+            } else {
+                document.querySelectorAll('.cuentas').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.libros').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.configuracion').forEach(el => el.classList.remove('hidden'));
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const currentPath = window.location.pathname;
+            const contablePaths = ['cuentas', 'libro_diario', 'libro_mayor', 'libro_caja'];
+
+            const isContableModule = contablePaths.some(path => currentPath.includes(path));
+
+            // Cambiar visibilidad según el módulo
+            if (isContableModule) {
+                toggleVisibility("contable");
+            } else {
+                toggleVisibility("inicio");
+            }
         });
     </script>
 
 </body>
-
 </html>

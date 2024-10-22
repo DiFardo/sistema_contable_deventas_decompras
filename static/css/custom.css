@@ -477,7 +477,6 @@ input[type="search"] {
 
 .table-wrapper {
 	background-color: #fff;
-	/* padding: 20px 25px; */
 	margin: 6px 0px 40px 0px;
 	width: 100%;
 	overflow: auto;
@@ -485,6 +484,7 @@ input[type="search"] {
 	box-shadow: 0 1px 1px rgb(0 0 0 / 5%);
 }
 
+/* Título de la tabla */
 .table-title {
 	background: #353b48;
 	color: #fff;
@@ -512,8 +512,6 @@ input[type="search"] {
 	border: none;
 	min-width: 50px;
 	border-radius: 2px;
-	border: none;
-	outline: none !important;
 	margin-left: 10px;
 }
 
@@ -528,24 +526,38 @@ input[type="search"] {
 	margin-top: 2px;
 }
 
-table.table tr th,
-table.table tr td {
-	border-color: #e9e9e9;
+/* Diseño de la tabla */
+table.table {
+	border-collapse: collapse; /* Cambia a 'separate' si prefieres bordes separados */
+	border-spacing: 5px; /* Espaciado entre las celdas si 'border-collapse: separate' */
+	width: 100%; /* Asegura que la tabla ocupe todo el ancho */
+}
+
+table.table th, 
+table.table td {
+	border: 1px solid #dcdcdc; /* Define el borde de cada celda */
 	padding: 8px 15px;
 	font-size: 14px;
 	font-weight: 400;
 	vertical-align: middle;
 }
 
-table.table tr th:first-child {
+table.table th {
+	background-color: #f4f4f4; /* Color de fondo de los encabezados */
+	border-bottom: 2px solid #e9e9e9; /* Borde inferior de los encabezados */
+}
+
+table.table td {
+	border-color: #e9e9e9; /* Color del borde entre las celdas */
+}
+
+table.table th:first-child {
 	width: 60px;
 }
 
-table.table tr th:last-child {
+table.table th:last-child {
 	width: 100px;
 }
-
-
 
 table.table th i {
 	font-size: 17px;
@@ -564,12 +576,12 @@ table.table td a {
 	color: #566787;
 	display: inline-block;
 	text-decoration: none;
-	outline: none !important;
 }
 
 table.table td a:hover {
 	color: #2196F3;
 }
+
 
 /* Sobrescribir las variables de Bootstrap para quitar el efecto de cebra */
 .table-striped tbody tr:nth-of-type(odd) {
@@ -768,60 +780,99 @@ footer {
 		background-color: rgba(0, 0, 0, 0.5);
 	}
 }
-
-
-/* Estilos personalizados para las cartas */
-/* Estilos personalizados para las cartas */
-.card {
-    background-color: #fff;
-    border-radius: 12px;
-    box-shadow: 0px 2px 15px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-    position: relative;
-	margin-top: 20px;
-	
+.card-modulo {
+	background-color: #ffffff; /* Fondo blanco para las cartas */
+	box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Sombra suave */
+	border-radius: 10px; /* Bordes redondeados */
+	cursor: pointer; /* Hace que toda la tarjeta sea clicable */
+	transition: transform 0.2s ease-in-out;
 }
 
-.card:hover {
-    box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.15);
+.card-modulo:hover {
+	transform: scale(1.03); /* Efecto de hover */
 }
 
-.card .card-header {
-    border-radius: 12px 12px 0 0;
-    position: relative;
-    padding-top: 25px;
-    padding-left: 75px; /* Para ajustar el ícono */
+.card-header-modulo {
+	background-color: #1e5270; /* Color verde para contable */
+	color: white;
+	border-radius: 10px 10px 0 0;
+	padding: 20px;
+	text-align: center;
 }
 
-.icon {
-    position: absolute;
-    top: -25px; /* Para hacer que sobresalga del borde superior de la tarjeta */
-    left: 15px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 55px;
-    height: 55px;
-    border-radius: 12px;
-    color: white;
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3); /* Sombra para el ícono flotante */
-    z-index: 1;
+.card-header-modulo-ventas {
+	background-color: #02795f; /* Color azul para ventas */
+	color: white;
+	border-radius: 10px 10px 0 0;
+	padding: 20px;
+	text-align: center;
 }
+
+.card-body-modulo {
+	padding: 20px;
+	text-align: center;
+}
+
+.card-footer-modulo {
+	background-color: #f1f1f1;
+	padding: 15px;
+	text-align: center;
+	border-radius: 0 0 10px 10px;
+}
+
+.chart-area {
+	height: 200px;
+}
+
+.icon-lg {
+	font-size: 50px;
+}
+
+/* Estilos para el título del módulo */
+.module-header {
+    background-color: #f8f9fa; /* Fondo sutil */
+    border-radius: 8px; /* Bordes redondeados */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Sombra ligera */
+    padding: 15px 20px; /* Espaciado */
+    text-align: center; /* Centramos el título */
+    margin-bottom: 20px; /* Separación inferior */
+}
+
+.module-title {
+    font-size: 28px; /* Tamaño del texto más grande */
+    font-weight: 700; /* Texto en negrita */
+    color: #343a40; /* Color del texto oscuro */
+    text-transform: uppercase; /* Texto en mayúsculas */
+    letter-spacing: 1px; /* Espaciado entre letras */
+    margin: 0; /* Sin margen */
+}
+
+
+
+
+.text-module {
+	font-size: 18px;
+	font-weight: bold;
+}
+
+.card-title-centered {
+text-align: center; /* Centramos el texto horizontalmente */
+font-weight: bold;
+font-size: 18px;
+display: flex;  /* Usamos flexbox para centrar el contenido */
+justify-content: center;  /* Alineamos horizontalmente */
+align-items: center;  /* Alineamos verticalmente */
+height: 100%; /* Aseguramos que ocupe todo el espacio del contenedor */
+}
+
+
+.card-footer-modulo p {
+	margin: 0;
+}
+
 
 .bg-gradient-dark {
 	background: linear-gradient(87deg, #17a2b8, #138496);
-}
-
-.bg-gradient-primary {
-	background: linear-gradient(87deg, #17a2b8, #138496);
-}
-
-.bg-gradient-success {
-    background: linear-gradient(87deg, #17a2b8, #138496);
-}
-
-.bg-gradient-info {
-    background: linear-gradient(87deg, #17a2b8, #138496);
 }
 
 .card-cuentas-contables .shadow-primary {
