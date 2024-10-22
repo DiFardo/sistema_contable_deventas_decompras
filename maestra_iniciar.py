@@ -107,6 +107,44 @@ def libro_mayor():
 
     return render_template("libro_mayor.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
 
+# INICIAR SESION
+@app.route("/procesar_login", methods=["POST"])
+def procesar_login():
+    try:
+        dni = request.form["dni"]
+        password = request.form["password"]
+        print(f"Intentando iniciar sesión con DNI: {dni}")
+        usuario = controlador_usuarios.obtener_usuario(dni)
+        if not usuario:
+            print("Usuario no encontrado")
+            flash("Usuario no encontrado.")
+            return redirect("/login_user")
+
+        h = hashlib.new("sha256")
+        h.update(bytes(password, encoding="utf-8"))
+        encpass = h.hexdigest()
+        print(f"Contraseña encriptada ingresada: {encpass}, Contraseña esperada: {usuario[2]}")
+
+        if encpass == usuario[2]:  # Compara con el campo pass
+            access_token = create_access_token(identity=dni)
+            controlador_usuarios.actualizartoken_usuario(dni, access_token)  # Actualiza el token en la base de datos
+            resp = make_response(redirect("/index"))  # Cambiado para redirigir a index.html
+            resp.set_cookie('token', access_token)
+            resp.set_cookie('dni', dni)
+            print("Inicio de sesión exitoso")
+            return resp
+
+        else:
+            print("Contraseña incorrecta")
+            flash("Contraseña incorrecta.")
+            return redirect("/login_user")
+
+    except Exception as e:
+        print(f"Error en el inicio de sesión: {e}")
+        flash("Ocurrió un error. Por favor, inténtelo de nuevo.")
+        return redirect("/login_user")
+
+
 @app.route("/procesar_logout")
 def procesar_logout():
     try:
@@ -135,8 +173,6 @@ def cuentas():
         {'name': 'Cuentas contables', 'url': '/cuentas'}
     ]
     return render_template("cuentas.html", cuentas=cuentas_data, breadcrumbs=breadcrumbs, usuario=usuario)  # Pasar el usuario a la plantilla
-
-from flask import g
 
 @app.route("/ventas_contables")
 def ventas_contables():
@@ -174,6 +210,7 @@ def boletas_ventas():
 
 
 # Iniciar el servidor
+
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8000, debug=True)
 
