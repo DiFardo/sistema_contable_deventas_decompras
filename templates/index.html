@@ -34,7 +34,8 @@
                         <h4>Sistema Contable</h4> <!-- Título del sistema contable -->
                     </div>
                     <div class="card-body card-body-modulo">
-                        <p class="text-module">Bienvenido al Sistema Contable, gestiona las operaciones contables aquí</p>
+                        <p class="text-module">Bienvenido al Sistema Contable, gestiona las operaciones contables aquí
+                        </p>
                     </div>
                     <div class="card-footer card-footer-modulo">
                         <p>Sistema contable para la gestión de finanzas y reportes</p>
@@ -54,22 +55,23 @@
 
         <div class="row mt-4">
             <!-- Tarjeta de Ventas -->
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="card card-modulo">
-                    <div class="card-header card-header-modulo-ventas">
-                        <h6 class="card-title-centered">Módulo de Ventas</h6>
-                    </div>
-                    <div class="card-body card-body-modulo">
-                        <div class="chart-area">
-                            <canvas id="chart-bars-ventas" class="chart-canvas"></canvas>
+            <div class="col-lg-4 mb-4">
+                <a href="{{ url_for('productos') }}" class="text-decoration-none">
+                    <div class="card card-modulo">
+                        <div class="card-header card-header-modulo-ventas">
+                            <h6 class="card-title-centered">Módulo de Productos</h6>
+                        </div>
+                        <div class="card-body card-body-modulo">
+                            <div class="chart-area">
+                                <canvas id="chart-bars-ventas" class="chart-canvas"></canvas>
+                            </div>
+                        </div>
+                        <div class="card-footer card-footer-modulo">
+                            <p>Gestión de productos en el sistema de ventas</p>
                         </div>
                     </div>
-                    <div class="card-footer card-footer-modulo">
-                        <p>Ventas recientes</p>
-                    </div>
-                </div>
+                </a>                
             </div>
-
             <!-- Tarjeta de Compras -->
             <div class="col-lg-4 col-md-6 mb-4">
                 <div class="card card-modulo">

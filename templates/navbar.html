@@ -57,7 +57,8 @@
 
                 <!-- Menú desplegable de Libros Contables -->
                 <li class="nav-item libros hidden">
-                    <a href="#librosContablesSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                    <a href="#librosContablesSubmenu" data-toggle="collapse" aria-expanded="false"
+                        class="dropdown-toggle">
                         <i class="material-icons">library_books</i>
                         <span>Libros Contables</span>
                     </a>
@@ -82,6 +83,29 @@
                         </li>
                     </ul>
                 </li>
+
+                <!-- Opciones del Módulo de Ventas -->
+                <li class="nav-item ventas hidden">
+                    <a href="{{ url_for('productos') }}">
+                        <i class="material-icons">shopping_cart</i>
+                        <span>Productos</span>
+                    </a>
+                </li>
+                <li class="nav-item clientes hidden">
+                    <a href="">
+                        <i class="material-icons">people</i>
+                        <span>Clientes</span>
+                    </a>
+                </li>
+                <li class="nav-item reportes hidden">
+                    <a href="">
+                        <i class="material-icons">bar_chart</i>
+                        <span>Reportes de Ventas</span>
+                    </a>
+                </li>
+            </ul>
+
+            </li>
             </ul>
         </nav>
 
@@ -135,17 +159,20 @@
                                         </li>
 
                                         {% if usuario %}
-                                        <li class="nav-item dropdown user-dropdown" onclick="this.classList.toggle('show');">
+                                        <li class="nav-item dropdown user-dropdown"
+                                            onclick="this.classList.toggle('show');">
                                             <a href="#" class="nav-link" data-toggle="dropdown" aria-expanded="false">
                                                 {{ usuario[4] }} - {{ usuario[5] }} <!-- Nombre completo y rol -->
                                                 <span class="status-indicator"></span>
                                             </a>
                                             <ul class="dropdown-menu">
                                                 <li>
-                                                    <a href="#"><span class="material-icons">person_outline</span>Perfil</a>
+                                                    <a href="#"><span
+                                                            class="material-icons">person_outline</span>Perfil</a>
                                                 </li>
                                                 <li>
-                                                    <a href="{{ url_for('procesar_logout') }}"><span class="material-icons">logout</span>Cerrar sesión</a>
+                                                    <a href="{{ url_for('procesar_logout') }}"><span
+                                                            class="material-icons">logout</span>Cerrar sesión</a>
                                                 </li>
                                             </ul>
                                         </li>
@@ -172,40 +199,48 @@
 
     <script type="text/javascript">
         function toggleVisibility(module) {
-            // Cambiar el título según el módulo
             const sidebarTitle = document.getElementById('sidebar-title');
+
             if (module === "contable") {
                 sidebarTitle.innerHTML = '<span>Módulo Contable</span>';
-            } else {
-                sidebarTitle.innerHTML = '<span>Sistema Contable</span>';
-            }
-
-            // Ocultar o mostrar elementos según el módulo
-            if (module === "contable") {
                 document.querySelectorAll('.cuentas').forEach(el => el.classList.remove('hidden'));
                 document.querySelectorAll('.libros').forEach(el => el.classList.remove('hidden'));
-                document.querySelectorAll('.configuracion').forEach(el => el.classList.add('hidden'));
-            } else {
+                document.querySelectorAll('.ventas').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.clientes').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.reportes').forEach(el => el.classList.add('hidden'));
+            } else if (module === "ventas") {
+                sidebarTitle.innerHTML = '<span>Módulo de Ventas</span>';
+                document.querySelectorAll('.ventas').forEach(el => el.classList.remove('hidden'));
+                document.querySelectorAll('.clientes').forEach(el => el.classList.remove('hidden'));
+                document.querySelectorAll('.reportes').forEach(el => el.classList.remove('hidden'));
                 document.querySelectorAll('.cuentas').forEach(el => el.classList.add('hidden'));
                 document.querySelectorAll('.libros').forEach(el => el.classList.add('hidden'));
-                document.querySelectorAll('.configuracion').forEach(el => el.classList.remove('hidden'));
+            } else {
+                sidebarTitle.innerHTML = '<span>Sistema Contable</span>';
+                document.querySelectorAll('.cuentas').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.libros').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.ventas').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.clientes').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.reportes').forEach(el => el.classList.add('hidden'));
             }
         }
 
         document.addEventListener("DOMContentLoaded", function () {
             const currentPath = window.location.pathname;
+            const ventasPaths = ['ventas', 'clientes', 'reportes_ventas'];
             const contablePaths = ['cuentas', 'libro_diario', 'libro_mayor', 'libro_caja'];
 
-            const isContableModule = contablePaths.some(path => currentPath.includes(path));
-
-            // Cambiar visibilidad según el módulo
-            if (isContableModule) {
+            if (ventasPaths.some(path => currentPath.includes(path))) {
+                toggleVisibility("ventas");
+            } else if (contablePaths.some(path => currentPath.includes(path))) {
                 toggleVisibility("contable");
             } else {
                 toggleVisibility("inicio");
             }
         });
+
     </script>
 
 </body>
+
 </html>

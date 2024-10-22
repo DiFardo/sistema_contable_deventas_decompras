@@ -87,6 +87,19 @@ def libro_mayor():
 
     return render_template("libro_mayor.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
 
+@app.route("/ventas/productos")
+def productos():
+    token = request.cookies.get('token')
+    dni = request.cookies.get('dni')
+    usuario = controlador_usuarios.obtener_usuario(dni)
+
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Productos', 'url': '/ventas/productos'}
+    ]
+    return render_template("Ventas/productos.html", breadcrumbs=breadcrumbs, usuario=usuario)
+
+
 # INICIAR SESION
 @app.route("/procesar_login", methods=["POST"])
 def procesar_login():
