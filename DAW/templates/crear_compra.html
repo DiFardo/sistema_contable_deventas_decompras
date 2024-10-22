@@ -1,0 +1,99 @@
+{% extends 'layout.html' %}
+{% block titulo %}Crear Nueva Compra{% endblock %}
+
+{% block custom_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/crear_compra.css') }}">
+{% endblock %}
+
+{% block contenido %}
+<div class="container mt-5">
+    <h1 class="text-center">Crear Nueva Compra</h1>
+    <form action="{{ url_for('crear_compra') }}" method="post">
+        <div class="form-group">
+            <label for="id_proveedor">Proveedor</label>
+            <select class="form-control" id="id_proveedor" name="id_proveedor" required>
+                <option value="">Seleccione un proveedor</option>
+                {% for proveedor in proveedores %}
+                <option value="{{ proveedor.id_proveedor }}">{{ proveedor.nombre_proveedor }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="fecha_compra">Fecha de Compra</label>
+            <input type="date" class="form-control" id="fecha_compra" name="fecha_compra" required>
+        </div>
+        <div class="form-group">
+            <label for="estado">Estado</label>
+            <input type="text" class="form-control" id="estado" name="estado" required>
+        </div>
+        <hr>
+        <h4>Detalles de la Compra</h4>
+        <div id="detalles-compra">
+            <div class="detalle-compra row mb-3">
+                <div class="col-md-5">
+                    <label>Producto</label>
+                    <select class="form-control" name="id_insumo[]" required>
+                        <option value="">Seleccione un insumo</option>
+                        {% for insumo in insumos %}
+                        <option value="{{ insumo.id_insumo }}">{{ insumo.nombre_insumo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label>Cantidad</label>
+                    <input type="number" class="form-control" name="cantidad[]" min="1" required>
+                </div>
+                <div class="col-md-3">
+                    <label>Subtotal</label>
+                    <input type="number" class="form-control" name="subtotal[]" step="0.01" min="0" required>
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="button" class="btn btn-danger btn-sm eliminar-detalle">X</button>
+                </div>
+            </div>
+        </div>
+        <button type="button" class="btn btn-secondary mb-3" id="agregar-detalle">Agregar Detalle</button>
+        <div class="text-right">
+            <button type="submit" class="btn btn-success">Guardar Compra</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block custom_js %}
+<script src="{{ url_for('static', filename='js/crear_compra.js') }}"></script>
+<script>
+    $(document).ready(function() {
+        $('#agregar-detalle').click(function() {
+            var detalleHtml = `
+            <div class="detalle-compra row mb-3">
+                <div class="col-md-5">
+                    <label>Producto</label>
+                    <select class="form-control" name="id_insumo[]" required>
+                        <option value="">Seleccione un insumo</option>
+                        {% for insumo in insumos %}
+                        <option value="{{ insumo.id_insumo }}">{{ insumo.nombre_insumo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label>Cantidad</label>
+                    <input type="number" class="form-control" name="cantidad[]" min="1" required>
+                </div>
+                <div class="col-md-3">
+                    <label>Subtotal</label>
+                    <input type="number" class="form-control" name="subtotal[]" step="0.01" min="0" required>
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="button" class="btn btn-danger btn-sm eliminar-detalle">X</button>
+                </div>
+            </div>`;
+            $('#detalles-compra').append(detalleHtml);
+        });
+
+        $(document).on('click', '.eliminar-detalle', function() {
+            $(this).closest('.detalle-compra').remove();
+        });
+    });
+</script>
+{% endblock %}

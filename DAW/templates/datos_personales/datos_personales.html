@@ -1,0 +1,247 @@
+{% extends 'layout.html' %}
+{% block titulo %}Perfil de Usuario{% endblock %}
+{% block custom_css %}
+<link rel="stylesheet" href="../static/css/index.css">
+<style>
+    body {
+        font-family: 'Arial', sans-serif;
+        background-color: #f4f4f9;
+    }
+
+    .container {
+        padding: 20px;
+    }
+
+    .card {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+        margin-bottom: 20px;
+    }
+
+    .card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .card-body {
+        padding: 25px;
+    }
+
+    .card-title {
+        font-size: 24px;
+        color: #2c3e50;
+        margin-bottom: 15px;
+    }
+
+    .card-text {
+        font-size: 16px;
+        color: #34495e;
+        line-height: 1.6;
+    }
+
+    .btn-primary {
+        background: linear-gradient(45deg, #3498db, #2980b9);
+        border: none;
+        color: #ffffff;
+        padding: 10px 20px;
+        border-radius: 25px;
+        transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(45deg, #2980b9, #1c6692);
+        transform: scale(1.05);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-edit {
+        margin-top: 10px;
+        width: 100%;
+    }
+
+    .form-control {
+        border-radius: 5px;
+        border: 1px solid #bdc3c7;
+    }
+
+    .form-label {
+        font-weight: bold;
+        color: #2c3e50;
+    }
+
+    .modal-content {
+        border-radius: 20px;
+        background: linear-gradient(135deg, #ece9e6 0%, #ffffff 100%);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        border: none;
+        overflow: hidden;
+    }
+
+    .modal-header {
+        border-bottom: none;
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        color: #ffffff;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-title {
+        color: #ffffff;
+        font-weight: bold;
+    }
+
+    .btn-close {
+        color: #ffffff;
+        background: transparent;
+        border: none;
+        font-size: 1.2rem;
+    }
+
+    .btn-close:hover {
+        color: #f1c40f;
+    }
+
+    .modal-body {
+        padding: 30px;
+    }
+
+    .modal-footer {
+        border-top: none;
+        padding: 20px;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    @keyframes slideInUp {
+        from {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .card {
+        animation: slideInUp 0.5s ease-out;
+    }
+</style>
+{% endblock %}
+
+{% block contenido %}
+<div class="container">
+    <div class="row pt-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}" class="text-decoration-none"
+                        style="font-weight: 300;"><i class="fa fa-home"></i>&nbsp;&nbsp;Inicio</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Perfil del Usuario</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+<div class="container">
+    <h2 class="mb-4">Perfil del Usuario</h2>
+    <div class="row">
+        <div class="col-sm-6 mb-3 mb-sm-0">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h5 class="card-title">{{ contactos[1] }} {{ contactos[4] }}</h5>
+                    <p class="card-text">
+                        <strong>Email:</strong> {{ contactos[2] }}<br>
+                        <strong>Teléfono:</strong> {{ contactos[3] }}<br>
+                        <strong>Nombre de Usuario:</strong> {{ contactos[5] }}<br>
+                        <strong>Fecha de Nacimiento:</strong> {{ contactos[7] }}<br>
+                    </p>
+                    <button class="btn btn-primary btn-edit" data-bs-toggle="modal" data-bs-target="#editModal">Editar
+                        Datos</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Tarjetas</h5>
+                    {% for ta in tar %}
+                    <div class="d-flex justify-content-between align-items-center">
+                        <p class="card-text mb-0">
+                            <strong>Número de tarjeta:</strong> {{ ta[1] }}<br>
+                            <strong>Nombre titular:</strong> {{ ta[2] }}<br>
+                            <strong>Fecha de vencimiento:</strong> {{ ta[3] }}<br>
+                            <strong>Código de seguridad:</strong> {{ ta[4] }}<br>
+                        </p>
+                        <form action="/dar_de_baja_tarjeta/{{ ta[0] }}" method="post" style="margin-left: 20px;">
+                            <button type="submit" onclick="confirmarAccion(this)" class="btn btn-danger btn-sm" style="border-radius: 50%; padding: 5px 10px; background-color: #ff4d4d; color: white;">
+                                &times;
+                            </button>
+                        </form>
+                    </div>
+                    <hr>
+                    {% endfor %}
+                    <a href="/id_a_agregar_tarjeta" class="btn btn-primary">Agregar tarjeta</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">Actualizar Datos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"><i class="fa-solid fa-xmark" style="color: white;"></i></button>
+                </div>
+                <div class="modal-body">
+                    <form id="updateForm" action="/editarContactos_user/{{ contactos[0] }}" method="post">
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label">Nombre</label>
+                            <input type="text" name="nombre" class="form-control" id="nombre" value="{{ contactos[1] }}"
+                                required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="apellido" class="form-label">Apellido</label>
+                            <input type="text" name="apellido" class="form-control" id="apellido"
+                                value="{{ contactos[4] }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control" id="email" value="{{ contactos[2] }}"
+                                required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="telefono" class="form-label">Teléfono</label>
+                            <input type="text" name="telefono" class="form-control" id="telefono"
+                                value="{{ contactos[3] }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fechaNacimiento" class="form-label">Fecha de Nacimiento</label>
+                            <input type="date" name="fechaNacimiento" class="form-control" id="fechaNacimiento"
+                                value="{{ contactos[7] }}" required>
+                        </div>
+                        <button type="submit" onclick="confirmarAccion(this)" class="btn btn-primary">Guardar Cambios</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    $('#editModal').on('show.bs.modal', function (e) {
+    var modal = $(this);
+    modal.css('display', 'none');
+    setTimeout(function() {
+        modal.fadeIn('slow');
+    }, 100);
+});
+</script>
+{% endblock %}

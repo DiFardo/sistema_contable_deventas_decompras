@@ -1,0 +1,44 @@
+{% extends "administrador/admin_home.html" %}
+{% block titulo %} Agregar usuario {% endblock %}
+{% block contenido %}
+
+<div class="card card-body">
+    <h3 class="is-size-3 mb-4">Agregar usuario</h3>
+
+    <form action="{{ url_for('guardar_usuario') }}" method="POST">
+        <div class="form-group">
+            <label for="dni">DNI:</label>
+            <input required type="text" class="input form-control" onchange="buscarUsuarioPorDNI()"
+                placeholder="Ingrese el DNI" name="dni" id="dni" />
+        </div>
+
+        <!-- Campos ocultos para mostrar los datos obtenidos -->
+        <div class="form-group">
+            <label for="nombres">Nombres:</label>
+            <input class="input form-control" name="nombres" id="nombres" />
+        </div>
+
+        <div class="form-group d-grid gap-2">
+            <button type="submit" class="btn btn-success">Guardar</button>
+            <a href="{{ url_for('usuarios') }}" class="btn btn-primary">Volver</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    function buscarUsuarioPorDNI() {
+        var dni = document.getElementById('dni').value;
+        fetch('/buscarDni?dni=' + dni)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error('Error:', data.error);
+                    alert('Hubo un error al obtener los datos: ' + data.error);
+                } else {
+                    document.getElementById('nombres').value = `${data.nombres || ''} ${data.apellidoPaterno || ''} ${data.apellidoMaterno || ''}`;
+                }
+            })
+    }
+</script>
+
+{% endblock %}

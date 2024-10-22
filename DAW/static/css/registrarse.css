@@ -1,0 +1,82 @@
+#registro-formulario {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    max-width: 600px;
+    margin: 20px auto;
+    box-sizing: border-box; 
+}
+
+#registro-formulario h3 {
+    margin-bottom: 20px;
+    font-size: 26px;
+    text-align: center;
+    color: #2c3e50;
+}
+
+#registro-formulario .btn {
+    border-radius: 20px;
+    padding: 10px 25px;
+    font-size: 16px;
+    font-weight: bold;
+    width: 100%;
+    margin-bottom: 10px;
+    transition: background-color 0.3s, box-shadow 0.3s; 
+}
+
+#registro-formulario .btn-primary {
+    background-color: #3498db;
+    border: none;
+    color: #ffffff;
+}
+
+#registro-formulario .btn-success {
+    background-color: #28a745;
+    border: none;
+}
+
+#registro-formulario .btn:hover {
+    opacity: 0.85;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+#registro-formulario input[type="text"],
+#registro-formulario input[type="email"],
+#registro-formulario input[type="password"],
+#registro-formulario input[type="tel"] {
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 12px;
+    width: 100%;
+    margin-bottom: 15px;
+    transition: border-color 0.2s;
+}
+
+#registro-formulario input[type="text"]:focus,
+#registro-formulario input[type="email"]:focus,
+#registro-formulario input[type="password"]:focus,
+#registro-formulario input[type="tel"]:focus {
+    border-color: #80bdff; 
+    box-shadow: 0 0 0 2px rgba(128, 189, 255, 0.5); 
+}
+
+#registro-formulario .form-check-label {
+    user-select: none;
+    margin-bottom: 15px; 
+}
+
+#registro-formulario .form-check-input {
+    margin-right: 5px;
+}
+
+#registro-formulario a {
+    color: #3498db;
+    text-decoration: none; 
+}
+
+#registro-formulario a:hover {
+    text-decoration: underline; 
+}

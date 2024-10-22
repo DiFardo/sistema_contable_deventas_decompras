@@ -1,0 +1,194 @@
+{% extends "administrador/admin_home.html" %}
+{% block titulo %}
+Agregar usuario
+{% endblock %}
+{% block contenido %}
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+    body {
+        font-family: 'Roboto', sans-serif;
+        background-color: #f9fafc;
+        margin: 0;
+        padding: 0;
+    }
+
+    .form-container {
+        max-width: 700px;
+        margin: 50px auto;
+        padding: 40px;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease-in-out, box-shadow 0.3s;
+    }
+
+    .form-container:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    .form-container h3 {
+        margin-bottom: 30px;
+        color: #333;
+        text-align: center;
+        font-size: 28px;
+        font-weight: 700;
+    }
+
+    .form-container .form-label {
+        color: #333;
+        font-weight: 500;
+        margin-bottom: 10px;
+    }
+
+    .form-container .form-control {
+        border: none;
+        border-bottom: 2px solid #ddd;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        padding: 10px 5px;
+        margin-bottom: 20px;
+        transition: border-color 0.3s;
+    }
+
+    .form-container .form-control:focus {
+        border-bottom: 2px solid #007bff;
+        box-shadow: none;
+        outline: none;
+    }
+
+    .form-container .form-select {
+        border: none;
+        border-bottom: 2px solid #ddd;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        padding: 10px 5px;
+        margin-bottom: 20px;
+        transition: border-color 0.3s;
+    }
+
+    .form-container .form-select:focus {
+        border-bottom: 2px solid #007bff;
+        box-shadow: none;
+        outline: none;
+    }
+
+    .form-container .btn {
+        border: none;
+        padding: 12px 20px;
+        border-radius: 50px;
+        transition: all 0.3s;
+        cursor: pointer;
+        width: 48%;
+        font-size: 16px;
+        text-align: center;
+    }
+
+    .form-container .btn-success {
+        background: linear-gradient(135deg, #28a745, #218838);
+        color: #fff;
+    }
+
+    .form-container .btn-success:hover {
+        background: linear-gradient(135deg, #218838, #28a745);
+    }
+
+    .form-container .btn-primary {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: #fff;
+    }
+
+    .form-container .btn-primary:hover {
+        background: linear-gradient(135deg, #0056b3, #007bff);
+    }
+
+    .form-container .button-group {
+        display: flex;
+        justify-content: space-between;
+        gap: 2%;
+    }
+</style>
+
+<div class="form-container">
+  <h3>Agregar Usuario</h3>
+
+  <form action="{{url_for('guardar_usuario')}}" method="POST">
+    <div class="mb-3">
+      <label for="dni" class="form-label">DNI:</label>
+      <input required type="text" class="form-control" onchange="buscarUsuarioPorDNI()" placeholder="Ingrese el DNI" name="dni" id="dni" />
+    </div>
+
+    <div class="mb-3">
+      <label for="nombres" class="form-label">Nombres del usuario:</label>
+      <input required type="text" class="form-control" placeholder="Nombres del usuario" name="nombres" id="nombres" />
+    </div>
+
+    <div class="mb-3">
+      <label for="apellidos" class="form-label">Apellidos de usuario:</label>
+      <input required type="text" class="form-control" placeholder="Apellidos del usuario" name="apellidos" id="apellidos" />
+    </div>
+
+    <div class="mb-3">
+      <label for="email" class="form-label">Email:</label>
+      <input required type="text" class="form-control" placeholder="Email" name="email" id="email" />
+    </div>
+
+    <div class="mb-3">
+      <label for="telefono" class="form-label">Teléfono:</label>
+      <input required type="text" class="form-control" placeholder="Teléfono" name="telefono" id="telefono" />
+    </div>
+
+    <div class="mb-3">
+      <label for="usuario" class="form-label">Nombre de usuario:</label>
+      <input required type="text" class="form-control" placeholder="Nombre de usuario" name="usuario" id="usuario" />
+    </div>
+
+    <div class="mb-3">
+      <label for="contraseña" class="form-label">Contraseña:</label>
+      <input required type="text" class="form-control" placeholder="Contraseña" name="contraseña" id="contraseña" />
+    </div>
+
+    <div class="mb-3">
+      <label for="fechaNacimiento" class="form-label">Fecha de nacimiento:</label>
+      <input required type="date" class="form-control" placeholder="Fecha de nacimiento" name="fechaNacimiento" id="fechaNacimiento" />
+    </div>
+
+    <div class="mb-3">
+      <label for="id_TipoUsuario" class="form-label">Tipo de Usuario:</label>
+      <select required class="form-select form-control" name="id_TipoUsuario" id="id_TipoUsuario">
+        <option value="">Selecciona un tipo de usuario</option>
+        {% for tipo_usuario in tipos_usuario %}
+        <option value="{{ tipo_usuario[0] }}">{{ tipo_usuario[1] }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="button-group">
+      <button type="submit" onclick="confirmarAccion(this)" class="btn btn-success">Guardar</button>
+      <a href="{{url_for('usuarios')}}" onclick="confirmarAccion(this)" class="btn btn-primary">Volver</a>
+    </div>
+  </form>
+</div>
+
+<script>
+  function buscarUsuarioPorDNI() {
+    var dni = document.getElementById('dni').value;
+    fetch('/buscarDni?dni=' + dni)
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          console.error('Error:', data.error);
+          alert('Hubo un error al obtener los datos: ' + data.error);
+        } else {
+          document.getElementById('nombres').value = `${data.nombres || ''}`;
+          document.getElementById('apellidos').value = `${data.apellidoPaterno || ''} ${data.apellidoMaterno || ''}`;
+        }
+      });
+  }
+</script>
+
+{% endblock %}
