@@ -4,7 +4,7 @@ from flask_jwt_extended import JWTManager, create_access_token
 import controladores.controlador_usuarios as controlador_usuarios
 from bd_conexion import obtener_conexion
 from controladores.controlador_cuentas import obtener_todas_cuentas
-
+#ola
 app = Flask(__name__)
 app.debug = True
 app.config['SECRET_KEY'] = 'super-secret'
