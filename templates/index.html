@@ -1,5 +1,5 @@
 {% extends "pagina_maestra.html" %}
-{% block titulo %} Admin Panel {% endblock %}
+{% block titulo %}Admin Panel{% endblock %}
 {% block link %}
 <!-- Fonts and icons -->
 <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,900|Roboto+Slab:400,700" rel="stylesheet">
@@ -18,140 +18,94 @@
 {% block contenido %}
 <style>
     body {
-    background-color: #eeeeee; /* Fondo oscuro para resaltar las cartas */
-    color: #ffffff;
-}
+        background-color: #f7f7f7;
+        color: #333;
+    }
 </style>
+
 <div id="content">
     <div class="main-content">
-        <div class="row">
-            <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
-                <div class="card">
-                    <div class="card-header p-3 pt-2">
-                        <div class="icon icon-lg icon-shape bg-gradient-dark shadow-dark text-center border-radius-xl mt-n4 position-absolute">
-                            <i class="material-icons opacity-10">weekend</i>
-                        </div>
-                        <div class="text-end pt-1">
-                            <p class="text-sm mb-0">Total de ventas</p>
-                            <h4 class="mb-0">$53k</h4>
-                        </div>
-                    </div>
-                    <hr class="dark horizontal my-0">
-                    <div class="card-footer p-3">
-                        <p class="mb-0"><span class="text-success text-sm font-weight-bolder">+55% </span></p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
-                <div class="card">
-                    <div class="card-header p-3 pt-2">
-                        <div class="icon icon-lg icon-shape bg-gradient-primary shadow-primary text-center border-radius-xl mt-n4 position-absolute">
-                            <i class="material-icons opacity-10">person</i>
-                        </div>
-                        <div class="text-end pt-1">
-                            <p class="text-sm mb-0">Total de compras</p>
-                            <h4 class="mb-0">2,300</h4>
-                        </div>
-                    </div>
-                    <hr class="dark horizontal my-0">
-                    <div class="card-footer p-3">
-                        <p class="mb-0"><span class="text-success text-sm font-weight-bolder">+3% </span></p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
-                <div class="card">
-                    <div class="card-header p-3 pt-2">
-                        <div class="icon icon-lg icon-shape bg-gradient-success shadow-success text-center border-radius-xl mt-n4 position-absolute">
-                            <i class="material-icons opacity-10">person</i>
-                        </div>
-                        <div class="text-end pt-1">
-                            <p class="text-sm mb-0 ">Reporte de ventas</p>
-                            <h4 class="mb-0">3,462</h4>
-                        </div>
-                    </div>
-                    <hr class="dark horizontal my-0">
-                    <div class="card-footer p-3">
-                        <p class="mb-0"><span class="text-danger text-sm font-weight-bolder">-2% </span></p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
-                <div class="card">
-                    <div class="card-header p-3 pt-2">
-                        <div class="icon icon-lg icon-shape bg-gradient-info shadow-info text-center border-radius-xl mt-n4 position-absolute">
-                            <i class="material-icons opacity-10">weekend</i>
-                        </div>
-                        <div class="text-end pt-1">
-                            <p class="text-sm mb-0 ">Reporte de compras</p>
-                            <h4 class="mb-0">$103,430</h4>
-                        </div>
-                    </div>
-                    <hr class="dark horizontal my-0">
-                    <div class="card-footer p-3">
-                        <p class="mb-0"><span class="text-success text-sm font-weight-bolder">+5% </span></p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-<!-- Tarjetas con gráficos -->
-<div class="row mt-4">
-    <div class="col-lg-4 col-md-6 mt-4 mb-4">
-        <a href="{{ url_for('cuentas') }}" class="text-decoration-none"> <!-- Ruta a cuentas.html -->
-            <div class="card z-index-2 card-cuentas-contables">
-                <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
-                    <div class="shadow-primary border-radius-lg py-3 pe-1">
-                        <div class="chart-area">
-                            <canvas id="chart-bars" class="chart-canvas" height="170"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <h6 class="mb-0">Cuentas contables</h6>
-                    <p class="text-sm">Gestión de cuentas y subcuentas</p>
-                    <hr class="dark horizontal">
-                </div>
-            </div>
-        </a>
-    </div>
-    
-    
-    <div class="col-lg-4 col-md-6 mt-4 mb-4">
-        <div class="card z-index-2 card-asientos-contables">
-            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
-                <div class="shadow-success border-radius-lg py-3 pe-1">
-                    <div class="chart-area">
-                        <canvas id="chart-line" class="chart-canvas" height="170"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="card-body">
-                <h6 class="mb-0">Asientos contables</h6>
-                <p class="text-sm">Gestión de asientos contables</p>
-                <hr class="dark horizontal">
-                <div class="d-flex"></div>
-            </div>
-        </div>
-    </div>
 
-    <div class="col-lg-4 mt-4 mb-3">
-        <div class="card z-index-2 card-reportes-contables">
-            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
-                <div class="shadow-dark border-radius-lg py-3 pe-1">
-                    <div class="chart-area">
-                        <canvas id="chart-line-tasks" class="chart-canvas" height="170"></canvas>
+        <!-- Carta del Sistema Contable -->
+        <div class="row">
+            <div class="col-12 mb-4">
+                <div class="card">
+                    <div class="card-header card-header-modulo">
+                        <h4>Sistema Contable</h4> <!-- Título del sistema contable -->
+                    </div>
+                    <div class="card-body card-body-modulo">
+                        <p class="text-module">Bienvenido al Sistema Contable, gestiona las operaciones contables aquí</p>
+                    </div>
+                    <div class="card-footer card-footer-modulo">
+                        <p>Sistema contable para la gestión de finanzas y reportes</p>
                     </div>
                 </div>
             </div>
-            <div class="card-body">
-                <h6 class="mb-0">Reportes contables</h6>
-                <p class="text-sm">Última campaña de rendimiento</p>
-                <hr class="dark horizontal">
+        </div>
+
+        <!-- Módulo de Ventas y Compras -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="module-header">
+                    <h3 class="module-title">Módulos del sistema</h3>
+                </div>
             </div>
         </div>
-    </div>
-</div>
+
+        <div class="row mt-4">
+            <!-- Tarjeta de Ventas -->
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card card-modulo">
+                    <div class="card-header card-header-modulo-ventas">
+                        <h6 class="card-title-centered">Módulo de Ventas</h6>
+                    </div>
+                    <div class="card-body card-body-modulo">
+                        <div class="chart-area">
+                            <canvas id="chart-bars-ventas" class="chart-canvas"></canvas>
+                        </div>
+                    </div>
+                    <div class="card-footer card-footer-modulo">
+                        <p>Ventas recientes</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarjeta de Compras -->
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card card-modulo">
+                    <div class="card-header card-header-modulo-ventas">
+                        <h6 class="card-title-centered">Módulo de Compras</h6>
+                    </div>
+                    <div class="card-body card-body-modulo">
+                        <div class="chart-area">
+                            <canvas id="chart-bars-compras" class="chart-canvas"></canvas>
+                        </div>
+                    </div>
+                    <div class="card-footer card-footer-modulo">
+                        <p>Compras recientes</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarjeta del Módulo Contable -->
+            <div class="col-lg-4 mb-4">
+                <a href="{{ url_for('cuentas') }}" class="text-decoration-none"> <!-- Enlace al módulo de cuentas -->
+                    <div class="card card-modulo">
+                        <div class="card-header card-header-modulo-ventas">
+                            <h6 class="card-title-centered">Módulo Contable</h6>
+                        </div>
+                        <div class="card-body card-body-modulo">
+                            <div class="chart-area">
+                                <canvas id="chart-bars-reportes-ventas-compras" class="chart-canvas"></canvas>
+                            </div>
+                        </div>
+                        <div class="card-footer card-footer-modulo">
+                            <p>Accede a cuentas, asientos y reportes contables.</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
 
     </div>
 </div>
@@ -160,7 +114,5 @@
 <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
-
-
 
 {% endblock %}

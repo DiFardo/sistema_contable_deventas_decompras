@@ -3,46 +3,51 @@
 :root {
     margin: 0;
     padding: 0;
-    --white: #000000;
-    --black: #fffefe;
-    --blue: #474747;
-    --gray: #000000;
+    --white: #000000  !important; 
+    --black: #fffefe  !important;
+    --blue: #474747  !important;
+    --gray: #000000  !important;
 }
 
 #principal {
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    height: 100vh  !important;
+    display: flex  !important;
+    align-items: center  !important;
+    justify-content: center  !important;
     margin: 0 auto;
-    font-family: "Montserrat", sans-serif;
+    font-family: "Montserrat", sans-serif  !important;
     color: var(--white);
-    background-color: var(--black);
+    background-color: var(--black)  !important;
 }
 
 .error_container {
-    max-width: 800px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    margin: 0 10px;
-}
-
-.error_code {
-    width: 100%;
-    margin: 0 auto;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
+    max-width: 800px  !important;
+    display: flex  !important;
+    flex-direction: column  !important;
+    justify-content: center  !important;
+    align-items: center  !important;
+    gap: 30px  !important; /* Aumentamos el gap */
+    padding-top: 40px  !important; /* Aumentamos el padding-top */
+    margin: 0 10px  !important;
 }
 
 #error-digit-1, #error-digit-2, #error-digit-3 {
-    font-size: 10rem !important; /* Aumenta el valor para ajustar el tamaño deseado */
+    font-size: 8rem !important; /* Reducimos ligeramente el tamaño */
     font-weight: 800;
 }
+
+
+
+.error_code {
+    width: 100%  !important;
+    margin: 0 auto  !important;
+    display: flex  !important;
+    justify-content: center  !important;
+    align-items: center  !important;
+    gap: 10px;
+}
+
+
 
 #error-digit-1 {
     animation: fall 1s linear;
