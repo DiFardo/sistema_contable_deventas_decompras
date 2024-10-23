@@ -3,7 +3,6 @@ import hashlib
 from flask_jwt_extended import JWTManager, create_access_token
 import controladores.controlador_usuarios as controlador_usuarios
 import controladores.controlador_ventas as controlador_ventas
-import DAW.controladores.controlador_producto as daw_controlador_producto
 import clases.clase_usuario as clase_usuario
 from bd_conexion import obtener_conexion  # Asegúrate de que la conexión a la base de datos esté configurada correctamente
 from controladores.controlador_cuentas import obtener_todas_cuentas  # Importa la función para obtener las cuentas
@@ -93,20 +92,11 @@ def productos():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
     usuario = controlador_usuarios.obtener_usuario(dni)
-    productos = daw_controlador_producto.obtener_todos_los_productos()
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Productos', 'url': '/ventas/productos'}
     ]
-    return render_template("ventas/productos.html", breadcrumbs=breadcrumbs, usuario=usuario, productos=productos)
-
-@app.route('/producto_detalle/<int:id>')
-def producto_detalle(id):
-    producto = daw_controlador_producto.obtener_producto_por_id(id)
-    if not producto:
-        flash('Producto no encontrado')
-        return redirect('ventas/productos')
-    return render_template('ventas/producto_detalle.html', producto=producto)
+    return render_template("ventas/productos.html", breadcrumbs=breadcrumbs, usuario=usuario)
 
 # INICIAR SESION
 @app.route("/procesar_login", methods=["POST"])
