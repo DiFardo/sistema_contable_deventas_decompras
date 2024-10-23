@@ -104,6 +104,12 @@
                         <span>Reportes de Ventas</span>
                     </a>
                 </li>
+                <li class="nav-item reportes hidden">
+                    <a href="javascript:void(0);" onclick="cargarVentas()">
+                        <i class="material-icons">bar_chart</i>
+                        <span>Hombre</span>
+                    </a>
+                </li>
             </ul>
 
             </li>
@@ -239,6 +245,11 @@
                 toggleVisibility("inicio");
             }
         });
+        
+        function cargarVentas() {
+        // Cambia la URL del iframe al sistema de ventas
+        document.getElementById('iframe_ventas').src = 'http://localhost:5000/hombre';
+    }
 
     </script>
 
