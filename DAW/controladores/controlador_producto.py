@@ -1,25 +1,25 @@
-from database.bd_goldenstore import obtener_conexion
-from pymysql.cursors import DictCursor
+from DAW.database.bd_goldenstore import obtener_conexion
+#from pymysql.cursors import DictCursor
 from decimal import Decimal
 
-def obtener_productos_mas_vendidos():
-    conexion = obtener_conexion()
-    productos_novedades = []
-    with conexion.cursor(DictCursor) as cursor:
-        query = """
-        SELECT p.id_producto, p.nombre_producto, p.descripcion, p.precio, p.imagen, SUM(dp.cantidad) AS total_vendidos
-        FROM productos p
-        JOIN detalles_pedido dp ON p.id_producto = dp.id_producto
-        JOIN pedidos pe ON dp.id_pedido = pe.id_pedido
-        WHERE p.stock > 0
-        GROUP BY p.id_producto
-        ORDER BY total_vendidos DESC
-        LIMIT 4;
-        """
-        cursor.execute(query)
-        productos_novedades = cursor.fetchall()
-    conexion.close()
-    return productos_novedades
+#def obtener_productos_mas_vendidos():
+#    conexion = obtener_conexion()
+#    productos_novedades = []
+#    with conexion.cursor(DictCursor) as cursor:
+#        query = """
+#        SELECT p.id_producto, p.nombre_producto, p.descripcion, p.precio, p.imagen, SUM(dp.cantidad) AS total_vendidos
+#        FROM productos p
+#        JOIN detalles_pedido dp ON p.id_producto = dp.id_producto
+#        JOIN pedidos pe ON dp.id_pedido = pe.id_pedido
+#        WHERE p.stock > 0
+#        GROUP BY p.id_producto
+#        ORDER BY total_vendidos DESC
+#        LIMIT 4;
+#        """
+#        cursor.execute(query)
+#        productos_novedades = cursor.fetchall()
+#    conexion.close()
+#    return productos_novedades
 
 def insertar_producto(nombre, descripcion, precio, stock, id_categoria, ruta_imagen_db, talla, genero):
     conexion = obtener_conexion()
