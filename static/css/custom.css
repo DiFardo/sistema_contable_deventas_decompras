@@ -258,6 +258,12 @@ a:focus {
 	background-attachment: #f9fafc;
 }
 
+iframe {
+    display: block; /* Quita el espacio alrededor del iframe */
+    width: 100%;
+    height: 100%;
+    border: none;
+}
 
 .top-navbar {
 	width: 100%;
