@@ -1,0 +1,117 @@
+{% extends 'layout.html' %}
+{% block titulo %}Carrito{% endblock %}
+{% block custom_css %}
+<link rel="stylesheet" href="../static/css/index.css">
+{% endblock %}
+{% block contenido %}
+
+<style>
+    /* Estilos generales para la tabla */
+    .table {
+        width: 100%;
+        margin-bottom: 1rem;
+        color: #212529;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    /* Estilos para la cabecera de la tabla */
+    .table thead th {
+        background-color: #343a40;
+        color: #fff;
+        border-bottom: 2px solid #dee2e6;
+        text-align: center;
+        padding: 12px;
+    }
+
+    /* Estilos para las filas y celdas de la tabla */
+    .table tbody tr {
+        background-color: #fff;
+        transition: background-color 0.3s;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    .table tbody td {
+        padding: 10px;
+        border: 1px solid #dee2e6;
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    /* Estilos para los botones */
+    .table .btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+
+    .table .btn-primary {
+        background-color: #007bff;
+        border: none;
+        color: #fff;
+        transition: background-color 0.3s;
+    }
+
+    .table .btn-primary:hover {
+        background-color: #0056b3;
+    }
+</style>
+
+<div class="container mt-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+        <div id="flashMessage" class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <script>
+            setTimeout(function() {
+                $('#flashMessage').alert('close');
+            }, 5000); // Cierra el mensaje después de 5 segundos
+        </script>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <h1 class="text-center">Pedido Pendientes</h1>
+    <br>
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Fecha del Pedido</th>
+                    <th>Monto Total</th>
+                    <th>Acción</th>
+                    <th>Eliminar</th> <!-- Nueva columna para eliminar -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for pedido in pedidos %}
+                <tr>
+                    <td>{{ pedido[1] }}</td>
+                    <td>{{ pedido[2] }}</td>
+                    <td>
+                        <a href="/ir_a_pagos/{{ pedido[0] }}" class="btn btn-primary">
+                            <i class="fa-solid fa-credit-card"></i>&nbsp;&nbsp; Ir a Pagar
+                        </a>
+                    </td>
+                    <td>
+                        <form action="/cancelar_pedido/{{ pedido[0] }}" method="POST" onsubmit="return confirm('¿Estás seguro de que deseas cancelar este pedido?');">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fa-solid fa-trash"></i>&nbsp;&nbsp; Eliminar
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

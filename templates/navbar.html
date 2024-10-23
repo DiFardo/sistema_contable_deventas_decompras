@@ -41,6 +41,10 @@
                         <i class="material-icons">settings</i>
                         <span>Configuración</span>
                     </a>
+                    <ul class="collapse list-unstyled" id="ventasSubmenu">
+                        <li><a href="{{ url_for('boletas_ventas') }}"><i class="material-icons">receipt</i> Boletas emitidas</a></li>
+                        <li><a href="{{ url_for('ventas_contables') }}"><i class="material-icons">assignment</i> Pedidos emitidos</a></li>
+                    </ul>
                 </li>
 
                 <!-- Cuentas Contables -->

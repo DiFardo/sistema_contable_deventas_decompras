@@ -1,0 +1,172 @@
+{% extends "administrador/admin_home.html" %}
+{% block titulo %}
+Agregar Dirección
+{% endblock %}
+{% block contenido %}
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+    body {
+        font-family: 'Roboto', sans-serif;
+        background-color: #f9fafc;
+        margin: 0;
+        padding: 0;
+    }
+
+    .form-container {
+        max-width: 700px;
+        margin: 50px auto;
+        padding: 40px;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease-in-out, box-shadow 0.3s;
+    }
+
+    .form-container:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    .form-container h3 {
+        margin-bottom: 30px;
+        color: #333;
+        text-align: center;
+        font-size: 28px;
+        font-weight: 700;
+    }
+
+    .form-container .form-label {
+        color: #333;
+        font-weight: 500;
+        margin-bottom: 10px;
+    }
+
+    .form-container .form-control {
+        border: none;
+        border-bottom: 2px solid #ddd;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        padding: 10px 5px;
+        margin-bottom: 20px;
+        transition: border-color 0.3s;
+    }
+
+    .form-container .form-control:focus {
+        border-bottom: 2px solid #007bff;
+        box-shadow: none;
+        outline: none;
+    }
+
+    .form-container .form-select {
+        border: none;
+        border-bottom: 2px solid #ddd;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        padding: 10px 5px;
+        margin-bottom: 20px;
+        transition: border-color 0.3s;
+    }
+
+    .form-container .form-select:focus {
+        border-bottom: 2px solid #007bff;
+        box-shadow: none;
+        outline: none;
+    }
+
+    .form-container .btn {
+        border: none;
+        padding: 12px 20px;
+        border-radius: 50px;
+        transition: all 0.3s;
+        cursor: pointer;
+        width: 48%;
+        font-size: 16px;
+        text-align: center;
+    }
+
+    .form-container .btn-success {
+        background: linear-gradient(135deg, #28a745, #218838);
+        color: #fff;
+    }
+
+    .form-container .btn-success:hover {
+        background: linear-gradient(135deg, #218838, #28a745);
+    }
+
+    .form-container .btn-primary {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: #fff;
+    }
+
+    .form-container .btn-primary:hover {
+        background: linear-gradient(135deg, #0056b3, #007bff);
+    }
+
+    .form-container .button-group {
+        display: flex;
+        justify-content: space-between;
+        gap: 2%;
+    }
+</style>
+
+{% if mensaje %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+  {{mensaje}}
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+
+<div class="form-container">
+    <h3>Insertar Dirección</h3>
+    <form action="{{url_for('admin_crud_insert_direccion')}}" method="POST">
+        <div class="mb-3">
+            <label for="nombres" class="form-label">PAÍS</label>
+            <input required type="text" class="form-control" placeholder="País" name="nombres" id="nombres">
+        </div>
+
+        <div class="mb-3">
+            <label for="apellidos" class="form-label">DEPARTAMENTO</label>
+            <input required type="text" class="form-control" placeholder="Departamento" name="apellidos" id="apellidos">
+        </div>
+
+        <div class="mb-3">
+            <label for="email" class="form-label">CIUDAD</label>
+            <input required type="text" class="form-control" placeholder="Ciudad" name="email" id="email">
+        </div>
+
+        <div class="mb-3">
+            <label for="telefono" class="form-label">CÓDIGO POSTAL</label>
+            <input required type="text" class="form-control" placeholder="Código Postal" name="telefono" id="telefono">
+        </div>
+
+        <div class="mb-3">
+            <label for="direccion_1" class="form-label">DIRECCIÓN 1</label>
+            <input required type="text" class="form-control" placeholder="Dirección 1" name="direccion_1" id="direccion_1">
+        </div>
+
+        <div class="mb-3">
+            <label for="direccion_2" class="form-label">DIRECCIÓN 2</label>
+            <input required type="text" class="form-control" placeholder="Dirección 2" name="direccion_2" id="direccion_2">
+        </div>
+
+        <div class="mb-3">
+            <label for="usuario" class="form-label">Nombre de usuario</label>
+            <select name="usuario" class="form-select" id="usuario">
+                {% for ob in obo %}
+                <option value="{{ ob[0] }}"> {{ ob[1] }} </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="button-group">
+            <button type="submit" onclick="confirmarAccion(this)" class="btn btn-success">Guardar</button>
+            <a href="{{url_for('admin_crud')}}" class="btn btn-primary">Volver</a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

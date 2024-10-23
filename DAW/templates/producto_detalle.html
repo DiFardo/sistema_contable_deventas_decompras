@@ -1,0 +1,185 @@
+{% extends 'index.html' %}
+{% block titulo %}Detalle del Producto{% endblock %}
+{% block custom_css %}
+<link rel="stylesheet" href="../static/css/index.css">
+<style>
+    .product-detail {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 50px;
+        background: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .product-image {
+        width: 100%;
+        max-width: 500px;
+        border-radius: 10px;
+        transition: transform 0.3s;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .product-image:hover {
+        transform: scale(1.05);
+    }
+
+    .product-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-top: 10px;
+        color: #333;
+    }
+
+    .product-description {
+        font-size: 1.2rem;
+        margin-top: 10px;
+        color: #555;
+    }
+
+    .product-info p {
+        margin: 5px 0;
+        font-size: 1.1rem;
+    }
+
+    .product-info strong {
+        color: #333;
+    }
+
+    .add-to-cart-form {
+        margin-top: 20px;
+        display: flex;
+        align-items: center;
+    }
+
+    .quantity-wrapper {
+        display: flex;
+        align-items: center;
+        margin-right: 20px;
+    }
+
+    .quantity-button {
+        background-color: #ddd;
+        border: none;
+        padding: 10px;
+        cursor: pointer;
+        font-size: 1rem;
+        border-radius: 5px;
+        margin: 0 5px;
+    }
+
+    .quantity-input {
+        width: 50px;
+        text-align: center;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 5px;
+        font-size: 1rem;
+    }
+
+    .btn-container {
+        display: flex;
+        align-items: center;
+        margin-top: 20px;
+    }
+
+    .btn-success, .btn-primary {
+        padding: 10px 20px;
+        border-radius: 5px;
+        border: none;
+        font-size: 1rem;
+        transition: background-color 0.3s, transform 0.3s;
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        margin-right: 10px;
+    }
+
+    .btn-success:hover {
+        background-color: #218838;
+        transform: scale(1.05);
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+        transform: scale(1.05);
+    }
+</style>
+{% endblock %}
+{% block contenido %}
+    <div class="container">
+        <div class="row pt-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}" class="text-decoration-none"
+                            style="font-weight: 300;"><i class="fa fa-home"></i>&nbsp;&nbsp;Inicio</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ producto[1] }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+<div class="container mt-5 product-detail">
+    <div class="row">
+        <div class="col-md-6">
+            <img class="product-image" src="{{ url_for('static', filename='assets/'+producto[6]) }}" alt="Imagen del producto">
+        </div>
+        <div class="col-md-6">
+            <h2 class="product-title">{{ producto[1] }}</h2>
+            <p class="product-description">{{ producto[2] }}</p>
+            <div class="product-info">
+                <p><strong>Talla:</strong> {{ producto[8] }}</p>
+                <p><strong>Precio:</strong> S/{{ producto[3] }}</p>
+                <p><strong>Stock:</strong> {{ producto[4] }}</p>
+            </div>
+            <form id="add-to-cart-form" class="add-to-cart-form">
+                <input type="hidden" name="product_id" value="{{ producto[0] }}">
+                <label for="cantidad">Cantidad:</label>
+                <div class="quantity-wrapper">
+                    <button type="button" class="quantity-button" onclick="changeQuantity(-1)">-</button>
+                    <input type="number" id="cantidad" name="cantidad" value="1" min="1" class="quantity-input">
+                    <button type="button" class="quantity-button" onclick="changeQuantity(1)">+</button>
+                </div>
+                <div class="btn-container">
+                    <button type="submit" class="btn btn-success">Agregar al carrito</button>
+                    <a href="{{ url_for('hombre') }}" class="btn btn-primary">Volver</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function changeQuantity(amount) {
+        const quantityInput = document.getElementById('cantidad');
+        let currentValue = parseInt(quantityInput.value);
+        if (!isNaN(currentValue)) {
+            currentValue += amount;
+            if (currentValue < 1) {
+                currentValue = 1;
+            }
+            quantityInput.value = currentValue;
+        }
+    }
+
+    document.getElementById('add-to-cart-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const formData = new FormData(this);
+        fetch('/add_to_cart', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+        })
+        .catch(error => console.error('Error:', error));
+    });
+</script>
+{% endblock %}

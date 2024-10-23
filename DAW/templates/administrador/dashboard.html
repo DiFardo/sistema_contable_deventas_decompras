@@ -1,0 +1,116 @@
+{% extends "administrador/admin_home.html" %}
+{% block titulo %}
+Admin Dashboard
+{% endblock %}
+{% block contenido_Producto %}
+
+<style>
+    /* Estilos para las tarjetas */
+    .card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+    }
+    .card-body {
+        text-align: center;
+        padding: 2rem;
+    }
+    .card-title {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #000000;
+    }
+    .card-text {
+        font-size: 3rem;
+        font-weight: bold;
+        color: #ffffff;
+        border-color: #000000;
+    }
+
+    /* Estilos para los colores de fondo */
+    .bg-primary {
+        background-color: #4e73df;
+    }
+    .bg-success {
+        background-color: #1cc88a;
+    }
+    .bg-warning {
+        background-color: #f6c23e;
+    }
+    .bg-info {
+        background-color: #36b9cc;
+    }
+    .bg-danger {
+        background-color: #e74a3b;
+    }
+</style>
+
+<h1 class="mb-4">Bienvenido al Dashboard de Administrador</h1>
+
+<div class="row row-cols-1 row-cols-md-2 g-4">
+    <!-- Tarjeta de Total de Usuarios -->
+    <div class="col">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h5 class="card-title">Total de Usuarios</h5>
+                <p class="card-text">{{ con_user['con'] }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta de Total de Productos -->
+    <div class="col">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5 class="card-title">Total de Productos</h5>
+                <p class="card-text">{{ con_productos['con'] }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta de Total de Productos sin stock -->
+    <div class="col">
+        <div class="card bg-dark" style="color: azure;">
+            <div class="card-body">
+                <h5 class="card-title" style="color: azure;">Productos sin stock</h5>
+                <p class="card-text" style="color: azure;">{{ con_productos_sin_stock['con'] }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta de Total de Pedidos -->
+    <div class="col">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <h5 class="card-title">Total de Pedidos</h5>
+                <p class="card-text">{{ con_pedidos['con'] }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta de Pedidos Pendientes -->
+    <div class="col">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h5 class="card-title">Pedidos Pendientes</h5>
+                <p class="card-text">{{ con_pedidos_pendientes['con'] }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta de Pedidos Enviados -->
+    <div class="col">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <h5 class="card-title">Pedidos Enviados</h5>
+                <p class="card-text">{{ con_pedidos_enviados['con'] }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

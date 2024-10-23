@@ -1,0 +1,2 @@
+Instalar la de requirements.txt
+En .venv/Lib/jwt/api_jws.py y .venv/Lib/jwt/api_jws.py el from collections modificar a "collections.abc"

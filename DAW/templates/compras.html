@@ -1,0 +1,47 @@
+{% extends 'layout.html' %}
+{% block titulo %}Listado de Compras{% endblock %}
+
+{% block custom_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/compras.css') }}">
+{% endblock %}
+
+{% block contenido %}
+<div class="container mt-5">
+    <h1 class="text-center">Listado de Compras</h1>
+    <div class="text-right mb-3">
+        <a href="{{ url_for('crear_compra') }}" class="btn btn-primary">Nueva Compra</a>
+    </div>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>ID Compra</th>
+                <th>Proveedor</th>
+                <th>Fecha de Compra</th>
+                <th>Total</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for compra in compras %}
+            <tr>
+                <td>{{ compra.id_compra }}</td>
+                <td>{{ compra.nombre_proveedor }}</td>
+                <td>{{ compra.fecha_compra.strftime('%d/%m/%Y') }}</td>
+                <td>{{ compra.total }}</td>
+                <td>{{ compra.estado }}</td>
+                <td>
+                    <a href="{{ url_for('ver_compra', id_compra=compra.id_compra) }}" class="btn btn-info btn-sm">Ver</a>
+                    <a href="{{ url_for('editar_compra', id_compra=compra.id_compra) }}" class="btn btn-warning btn-sm">Editar</a>
+                    <a href="{{ url_for('eliminar_compra', id_compra=compra.id_compra) }}" class="btn btn-danger btn-sm">Eliminar</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block custom_js %}
+<script src="{{ url_for('static', filename='js/compras.js') }}"></script>
+{% endblock %}

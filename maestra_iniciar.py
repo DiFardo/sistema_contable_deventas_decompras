@@ -1,9 +1,12 @@
-from flask import Flask, render_template, request, redirect, make_response, flash
+from flask import Flask, render_template, request, redirect, make_response, flash, g
 import hashlib
 from flask_jwt_extended import JWTManager, create_access_token
 import controladores.controlador_usuarios as controlador_usuarios
-from bd_conexion import obtener_conexion
-from controladores.controlador_cuentas import obtener_todas_cuentas
+import controladores.controlador_ventas as controlador_ventas
+import DAW.controladores.controlador_producto as daw_controlador_producto
+import clases.clase_usuario as clase_usuario
+from bd_conexion import obtener_conexion  # Asegúrate de que la conexión a la base de datos esté configurada correctamente
+from controladores.controlador_cuentas import obtener_todas_cuentas  # Importa la función para obtener las cuentas
 
 app = Flask(__name__)
 app.debug = True
@@ -44,37 +47,17 @@ def index():
     ]
     return render_template("index.html", breadcrumbs=breadcrumbs, usuario=usuario)
 
-
-@app.route("/cuentas")
-def cuentas():
-    cuentas_data = obtener_todas_cuentas()
-    token = request.cookies.get('token')
-    dni = request.cookies.get('dni')
-    usuario = controlador_usuarios.obtener_usuario(dni)
-
-    breadcrumbs = [
-        {'name': 'Inicio', 'url': '/index'},
-        {'name': 'Cuentas contables', 'url': '/cuentas'}
-    ]
-    return render_template("cuentas.html", cuentas=cuentas_data, breadcrumbs=breadcrumbs, usuario=usuario)
-
-
-
-
 @app.route("/libro_caja")
 def libro_caja():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
     usuario = controlador_usuarios.obtener_usuario(dni)
-
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Libro Caja y Bancos', 'url': '/libro_caja'}
     ]
     movimientos = []
-
     return render_template("libro_caja.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
-
 
 @app.route("/libro_diario")
 def libro_diario():
@@ -110,13 +93,20 @@ def productos():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
     usuario = controlador_usuarios.obtener_usuario(dni)
-
+    productos = daw_controlador_producto.obtener_todos_los_productos()
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Productos', 'url': '/ventas/productos'}
     ]
-    return render_template("Ventas/productos.html", breadcrumbs=breadcrumbs, usuario=usuario)
+    return render_template("ventas/productos.html", breadcrumbs=breadcrumbs, usuario=usuario, productos=productos)
 
+@app.route('/producto_detalle/<int:id>')
+def producto_detalle(id):
+    producto = daw_controlador_producto.obtener_producto_por_id(id)
+    if not producto:
+        flash('Producto no encontrado')
+        return redirect('ventas/productos')
+    return render_template('ventas/producto_detalle.html', producto=producto)
 
 # INICIAR SESION
 @app.route("/procesar_login", methods=["POST"])
@@ -172,6 +162,55 @@ def procesar_logout():
         return redirect("/login_user")
 
 
+@app.route("/cuentas")
+def cuentas():
+    cuentas_data = obtener_todas_cuentas()  # Llama a la función para obtener los datos de las cuentas
+    token = request.cookies.get('token')
+    dni = request.cookies.get('dni')
+    usuario = controlador_usuarios.obtener_usuario(dni)  # Obtener el usuario con DNI desde la base de datos
+
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Cuentas contables', 'url': '/cuentas'}
+    ]
+    return render_template("cuentas.html", cuentas=cuentas_data, breadcrumbs=breadcrumbs, usuario=usuario)  # Pasar el usuario a la plantilla
+
+@app.route("/ventas_contables")
+def ventas_contables():
+    ventas_data = controlador_ventas.obtener_todas_ventas()
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Ventas contables', 'url': '/ventas_contables'}
+    ]
+    return render_template("ventas/ventas_contables.html", ventas=ventas_data, breadcrumbs=breadcrumbs)
+
+@app.route("/boletas_ventas")
+def boletas_ventas():
+    boletas_data = controlador_ventas.obtener_boletas()
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Boletas', 'url': '/boletas_ventas'}
+    ]
+    return render_template("ventas/boletas_ventas.html", boletas=boletas_data, breadcrumbs=breadcrumbs)
+    
+#@app.before_request
+#def cargar_usuario():
+#   token = request.cookies.get('token')
+ #   dni = request.cookies.get('dni')
+ #   if dni:
+  #      g.usuario = controlador_usuarios.obtener_usuario(dni)  # Almacena el usuario en g
+   # else:
+    #    g.usuario = None  # Si no hay dni, asegura que g.usuario sea None
+
+
+#@app.context_processor
+#def contexto_global():
+ #   return {'usuario': getattr(g, 'usuario', None)}  # Devuelve el usuario o None si no está definido
+
+
+
+
+# Iniciar el servidor
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8000, debug=True)
