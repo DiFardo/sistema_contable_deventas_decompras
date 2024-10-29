@@ -1,7 +1,6 @@
 import psycopg2
 from openpyxl import load_workbook
 from openpyxl.styles import Border, Side, Alignment, Font
-from openpyxl.utils import get_column_letter
 from openpyxl.styles.numbers import FORMAT_DATE_DDMMYY, FORMAT_NUMBER_COMMA_SEPARATED1
 from bd_conexion import obtener_conexion
 
@@ -64,6 +63,9 @@ def generar_registro_venta_excel(mes, anio, ruta_plantilla, ruta_salida):
         total_igv = 0
         total_comprobante = 0
 
+        # Columnas a las que se les aplicará borde, incluso si están vacías
+        columnas_con_borde = list(range(1, 23))  # De la columna 1 a la 17
+
         for fila, registro in enumerate(resultados, start=fila_inicial):
             hoja.row_dimensions[fila].height = alto_fila_base  # Mantener el mismo alto de fila
 
@@ -82,10 +84,14 @@ def generar_registro_venta_excel(mes, anio, ruta_plantilla, ruta_salida):
                 (17, registro[10])  # total_comprobante
             ]
 
-            for col, valor in celdas:
-                celda = hoja.cell(row=fila, column=col, value=valor)
+            for col in columnas_con_borde:
+                celda = hoja.cell(row=fila, column=col)
                 celda.border = borde
                 celda.alignment = Alignment(horizontal='center', vertical='center')
+
+            # Insertar valores específicos
+            for col, valor in celdas:
+                celda = hoja.cell(row=fila, column=col, value=valor)
 
                 # Aplicar formatos específicos
                 if col == 2:  # Columna de fecha
@@ -118,6 +124,10 @@ def generar_registro_venta_excel(mes, anio, ruta_plantilla, ruta_salida):
         total_comprobante_celda = hoja.cell(row=fila_totales, column=17, value=total_comprobante)
         total_comprobante_celda.border = borde
         total_comprobante_celda.number_format = FORMAT_NUMBER_COMMA_SEPARATED1
+
+        # Aplicar bordes a celdas vacías en la fila de "Totales"
+        for col in columnas_con_borde:
+            hoja.cell(row=fila_totales, column=col).border = borde
 
         # Guardar el nuevo archivo de Excel
         workbook.save(ruta_salida)
