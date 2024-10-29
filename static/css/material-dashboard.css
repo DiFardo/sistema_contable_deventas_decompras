@@ -20834,7 +20834,7 @@ fieldset:disabled .btn {
 .card .card-body {
   font-family: "Roboto", Helvetica, Arial, sans-serif;
   padding: 1.5rem; /* Mantiene el padding en general */
-  padding-bottom: 0.2rem; /* Específicamente para la parte inferior */
+  padding-bottom: 0.5rem; /* Específicamente para la parte inferior */
 }
 
 
