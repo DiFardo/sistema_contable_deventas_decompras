@@ -1,14 +1,15 @@
+import psycopg2
+from openpyxl import load_workbook
 from bd_conexion import obtener_conexion
-import openpyxl
-from datetime import datetime
 
-def generar_registro_ventas(mes, anio, ruta_excel):
-    # Conectar a la base de datos
-    conexion = obtener_conexion()
-    cursor = conexion.cursor()
+def generar_registro_venta_excel(mes, anio, ruta_plantilla, ruta_salida):
+    try:
+        # Establecer conexión con la base de datos
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
 
-    # Consultar las ventas agrupadas por comprobante y dentro del mes y año especificados
-    consulta = """
+        # Ejecutar la consulta SQL
+        consulta = """
         SELECT 
             ROW_NUMBER() OVER(ORDER BY v.serie_comprobante, v.numero_comprobante) AS correlativo,
             TO_CHAR(v.fecha, 'DD/MM/YYYY') AS fecha_emision,
@@ -18,6 +19,7 @@ def generar_registro_ventas(mes, anio, ruta_excel):
             CASE 
                 WHEN v.tipo_documento = 'DNI' THEN '1' 
                 WHEN v.tipo_documento = 'Carnet de extranjería' THEN '4'
+                WHEN v.tipo_documento = 'RUC' THEN '6'
                 WHEN v.tipo_documento = 'Pasaporte' THEN '7'
                 ELSE ''
             END AS tipo_documento,
@@ -31,40 +33,47 @@ def generar_registro_ventas(mes, anio, ruta_excel):
         GROUP BY v.serie_comprobante, v.numero_comprobante, v.tipo_documento, 
                  v.numero_documento, v.usuario, v.tipo_comprobante, v.fecha
         ORDER BY v.serie_comprobante, v.numero_comprobante;
-    """
+        """
+        cursor.execute(consulta, (mes, anio))
 
-    cursor.execute(consulta, (mes, anio))
-    ventas = cursor.fetchall()
+        # Obtener los resultados de la consulta
+        resultados = cursor.fetchall()
 
-    # Cargar la plantilla de Excel
-    wb = openpyxl.load_workbook(ruta_excel)
-    ws = wb.active
+        # Cargar la plantilla de Excel
+        workbook = load_workbook(ruta_plantilla)
+        hoja = workbook.active
 
-    # Definir la fila inicial donde se empezará a rellenar el Excel
-    fila_inicial = 10
+        # Insertar los datos en la plantilla
+        fila_inicial = 12  # Supongamos que los datos comienzan en la fila 2
+        for fila, registro in enumerate(resultados, start=fila_inicial):
+            hoja.cell(row=fila, column=1, value=registro[0])  # correlativo
+            hoja.cell(row=fila, column=2, value=registro[1])  # fecha_emision
+            hoja.cell(row=fila, column=4, value=registro[2])  # tipo_comprobante
+            hoja.cell(row=fila, column=5, value=registro[3])  # serie_comprobante
+            hoja.cell(row=fila, column=6, value=registro[4])  # numero_comprobante
+            hoja.cell(row=fila, column=7, value=registro[5])  # tipo_documento
+            hoja.cell(row=fila, column=8, value=registro[6])  # numero_documento
+            hoja.cell(row=fila, column=9, value=registro[7])  # usuario
+            hoja.cell(row=fila, column=10, value=registro[8])  # base_imponible
+            hoja.cell(row=fila, column=14, value=registro[9])  # igv
+            hoja.cell(row=fila, column=16, value=registro[10])  # total_comprobante
 
-    # Rellenar el Excel con los datos obtenidos de la consulta
-    for idx, venta in enumerate(ventas, start=fila_inicial):
-        ws.cell(row=idx, column=1).value = venta[0]  # Correlativo
-        ws.cell(row=idx, column=2).value = venta[1]  # Fecha de emisión
-        ws.cell(row=idx, column=3).value = venta[2]  # Tipo de comprobante
-        ws.cell(row=idx, column=4).value = venta[3]  # Serie
-        ws.cell(row=idx, column=5).value = venta[4]  # Número de comprobante
-        ws.cell(row=idx, column=6).value = venta[5]  # Tipo de documento
-        ws.cell(row=idx, column=7).value = venta[6]  # Número de documento
-        ws.cell(row=idx, column=8).value = venta[7]  # Apellidos y nombres / Razón social
-        ws.cell(row=idx, column=9).value = venta[8]  # Base imponible
-        ws.cell(row=idx, column=10).value = venta[9]  # IGV
-        ws.cell(row=idx, column=11).value = venta[10]  # Importe total
+        # Guardar el nuevo archivo de Excel
+        workbook.save(ruta_salida)
+        print(f"Registro de ventas generado exitosamente en: {ruta_salida}")
 
-    # Guardar el archivo Excel con los datos completados
-    wb.save(ruta_excel)
+    except Exception as e:
+        print(f"Error al generar el registro de ventas: {e}")
+    finally:
+        # Cerrar la conexión con la base de datos
+        if conexion:
+            cursor.close()
+            conexion.close()
 
-    # Cerrar la conexión y el cursor
-    cursor.close()
-    conexion.close()
+# Ejemplo de uso
+mes = 10  # Octubre
+anio = 2024  # Año 2024
+ruta_plantilla = 'plantillas/RegistroVentas.xlsx'
+ruta_salida = f'registro_ventas_{anio}_{mes}.xlsx'
 
-    print(f"Registro de ventas para {mes}/{anio} generado exitosamente en {ruta_excel}.")
-
-# Ejemplo de uso:
-generar_registro_ventas(10, 2024, '/mnt/data/234_formato141.xls')
+generar_registro_venta_excel(mes, anio, ruta_plantilla, ruta_salida)
