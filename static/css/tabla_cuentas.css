@@ -6,7 +6,7 @@
     text-align: center;
     color: #333; /* Color del texto */
     background-color: #f8f9fa; /* Fondo sutil para sobresalir */
-    padding: 15px 75px; /* Espaciado para que cubra toda la cabecera menos el botón de cerrar */
+    padding: 15px 120px; /* Espaciado para que cubra toda la cabecera menos el botón de cerrar */
     border-radius: 10px 10px 0 0; /* Bordes redondeados en la parte superior */
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); /* Sombra para dar el efecto de sobresalir */
     position: relative; /* Necesario para que el botón de cerrar no interfiera */

@@ -1,15 +1,19 @@
-from flask import Flask, render_template, request, redirect, make_response, flash, g
+from flask import Flask, render_template, request, redirect, make_response, flash, g, jsonify
 import hashlib
 from flask_jwt_extended import JWTManager, create_access_token
 import controladores.controlador_usuarios as controlador_usuarios
 import controladores.controlador_ventas as controlador_ventas
 import clases.clase_usuario as clase_usuario
 from bd_conexion import obtener_conexion  # Asegúrate de que la conexión a la base de datos esté configurada correctamente
-from controladores.controlador_cuentas import obtener_todas_cuentas  # Importa la función para obtener las cuentas
-
+from controladores.controlador_cuentas import obtener_todas_cuentas, obtener_cuentas_por_categoria_endpoint, añadir_cuenta
 app = Flask(__name__)
 app.debug = True
 app.config['SECRET_KEY'] = 'super-secret'
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = True
+#app.run(ssl_context=('cert.pem', 'key.pem'))
+
+
 
 # Inicializa JWTManager
 jwt = JWTManager(app)
@@ -86,6 +90,21 @@ def libro_mayor():
     movimientos = []
 
     return render_template("libro_mayor.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
+
+@app.route("/registro_ventas")
+def registro_ventas():
+    token = request.cookies.get('token')
+    dni = request.cookies.get('dni')
+    usuario = controlador_usuarios.obtener_usuario(dni)
+
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Registro ventas', 'url': '/registro_ventas'}
+    ]
+    movimientos = []
+
+    return render_template("registro_ventas.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
+
 
 @app.route("/ventas/productos")
 def productos():
@@ -198,8 +217,19 @@ def boletas_ventas():
 #def contexto_global():
  #   return {'usuario': getattr(g, 'usuario', None)}  # Devuelve el usuario o None si no está definido
 
+# Endpoint para obtener cuentas por categoría
+@app.route("/cuentas/por_categoria", methods=["POST"])
+def cuentas_por_categoria():
+    return obtener_cuentas_por_categoria_endpoint()
 
-
+# Nueva ruta para añadir una cuenta
+@app.route("/cuentas/añadir", methods=["POST"])
+def cuentas_añadir():
+    try:
+        # Llamar a la función para añadir una cuenta desde el controlador
+        return añadir_cuenta()
+    except Exception as e:
+        return jsonify({'error': f'Error en el servidor: {str(e)}'}), 500
 
 # Iniciar el servidor
 

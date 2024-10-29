@@ -61,97 +61,65 @@
     </div>
   </main>
 
-  <!-- Pantalla de carga animada -->
-  <div id="loading-screen" style="display: none;">
-      <div class="spinner"></div>
-      <p>Cargando...</p>
-  </div>
+<!-- Pantalla de carga animada -->
+<div id="loading-screen" style="display: none;">
+  <div class="spinner"></div>
+  <p>Cargando...</p>
+</div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const dniField = document.getElementById('dni');
-      const passwordField = document.getElementById('password');
-      const rememberCheckbox = document.getElementById('flexCheckDefault');
-  
-      // Cargar credenciales almacenadas en localStorage al cargar la página
-      if (localStorage.getItem('rememberCredentials') === 'true') {
-        dniField.value = localStorage.getItem('dni') || '';
-        passwordField.value = localStorage.getItem('password') || '';
-        rememberCheckbox.checked = true;
-        console.log("Credenciales cargadas desde localStorage:", dniField.value, passwordField.value);
-      } else {
-        console.log("No se encontraron credenciales en localStorage o el checkbox no está marcado.");
-      }
-  
-      // Guardar o eliminar credenciales en localStorage cuando se cambia el checkbox
-      rememberCheckbox.addEventListener('change', function () {
-        if (this.checked) {
-          localStorage.setItem('rememberCredentials', 'true');
-          localStorage.setItem('dni', dniField.value);
-          localStorage.setItem('password', passwordField.value);
-          console.log("Credenciales guardadas en localStorage:", dniField.value, passwordField.value);
-        } else {
-          localStorage.removeItem('rememberCredentials');
-          localStorage.removeItem('dni');
-          localStorage.removeItem('password');
-          console.log("Credenciales eliminadas de localStorage.");
-        }
-      });
-  
-      // Guardar credenciales en localStorage antes de enviar el formulario si el checkbox está marcado
-      document.querySelector('form').addEventListener('submit', function () {
-        if (rememberCheckbox.checked) {
-          localStorage.setItem('dni', dniField.value);
-          localStorage.setItem('password', passwordField.value);
-          console.log("Credenciales actualizadas en localStorage antes de enviar el formulario:", dniField.value, passwordField.value);
-        }
-      });
-    });
-  </script>
-  
+<!-- Estilos de la pantalla de carga -->
+<style>
+  #loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #0f313a; /* Fondo rojo */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      flex-direction: column;
+  }
 
-  <!-- Estilos de la pantalla de carga -->
-  <style>
-    #loading-screen {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(255, 255, 255, 1);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-        flex-direction: column;
-    }
+  .spinner {
+      width: 100px; /* Aumentar el ancho de la rueda */
+      height: 100px; /* Aumentar la altura de la rueda */
+      border: 10px solid rgba(255, 255, 255, 0.2); /* Aumentar el grosor de la parte más clara */
+      border-top: 10px solid white; /* Aumentar el grosor de la parte destacada */
+      border-radius: 50%;
+      animation: spin 1s linear infinite; /* Animación continua */
+  }
 
-    .spinner {
-        border: 6px solid rgba(0, 0, 0, 0.1);
-        border-radius: 50%;
-        border-top: 6px solid #3498db;
-        width: 50px;
-        height: 50px;
-        animation: spin 1s ease-in-out infinite;
-    }
+  @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+  }
 
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
+  p {
+      font-size: 20px; /* Tamaño de fuente del texto */
+      font-weight: bold;
+      color: white;
+      margin-top: 10px;
+      animation: blink 1.5s ease-in-out infinite;
+  }
 
-    p {
-        font-size: 18px;
-        font-weight: bold;
-        margin-top: 10px;
-        animation: blink 1.5s ease-in-out infinite;
-    }
+  @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+  }
+</style>
 
-    @keyframes blink {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-    }
-  </style>
+<!-- Core JS Files -->
+<script>
+  // Mostrar la pantalla de carga cuando se envía el formulario
+  document.querySelector('form').addEventListener('submit', function(event) {
+      document.getElementById('loading-screen').style.display = 'flex';
+  });
+</script>
+
+
 
   <!-- Core JS Files -->
   <script src="{{ url_for('static', filename='js/core/popper.min.js') }}"></script>
@@ -159,17 +127,6 @@
   <script src="{{ url_for('static', filename='js/plugins/perfect-scrollbar.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/plugins/smooth-scrollbar.min.js') }}"></script>
 
-  <script>
-    var win = navigator.platform.indexOf('Win') > -1;
-    if (win && document.querySelector('#sidenav-scrollbar')) {
-      var options = { damping: '0.5' }
-      Scrollbar.init(document.querySelector('#sidenav-scrollbar'), options);
-    }
-
-    // Mostrar la pantalla de carga cuando se envía el formulario
-    document.querySelector('form').addEventListener('submit', function(event) {
-        document.getElementById('loading-screen').style.display = 'flex';
-    });
-  </script>
+ 
 </body>
 </html>
