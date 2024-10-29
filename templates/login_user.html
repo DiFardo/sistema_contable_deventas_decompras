@@ -67,6 +67,49 @@
       <p>Cargando...</p>
   </div>
 
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const dniField = document.getElementById('dni');
+      const passwordField = document.getElementById('password');
+      const rememberCheckbox = document.getElementById('flexCheckDefault');
+  
+      // Cargar credenciales almacenadas en localStorage al cargar la página
+      if (localStorage.getItem('rememberCredentials') === 'true') {
+        dniField.value = localStorage.getItem('dni') || '';
+        passwordField.value = localStorage.getItem('password') || '';
+        rememberCheckbox.checked = true;
+        console.log("Credenciales cargadas desde localStorage:", dniField.value, passwordField.value);
+      } else {
+        console.log("No se encontraron credenciales en localStorage o el checkbox no está marcado.");
+      }
+  
+      // Guardar o eliminar credenciales en localStorage cuando se cambia el checkbox
+      rememberCheckbox.addEventListener('change', function () {
+        if (this.checked) {
+          localStorage.setItem('rememberCredentials', 'true');
+          localStorage.setItem('dni', dniField.value);
+          localStorage.setItem('password', passwordField.value);
+          console.log("Credenciales guardadas en localStorage:", dniField.value, passwordField.value);
+        } else {
+          localStorage.removeItem('rememberCredentials');
+          localStorage.removeItem('dni');
+          localStorage.removeItem('password');
+          console.log("Credenciales eliminadas de localStorage.");
+        }
+      });
+  
+      // Guardar credenciales en localStorage antes de enviar el formulario si el checkbox está marcado
+      document.querySelector('form').addEventListener('submit', function () {
+        if (rememberCheckbox.checked) {
+          localStorage.setItem('dni', dniField.value);
+          localStorage.setItem('password', passwordField.value);
+          console.log("Credenciales actualizadas en localStorage antes de enviar el formulario:", dniField.value, passwordField.value);
+        }
+      });
+    });
+  </script>
+  
+
   <!-- Estilos de la pantalla de carga -->
   <style>
     #loading-screen {

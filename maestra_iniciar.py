@@ -135,21 +135,22 @@ def procesar_login():
         flash("Ocurrió un error. Por favor, inténtelo de nuevo.")
         return redirect("/login_user")
 
-
 @app.route("/procesar_logout")
 def procesar_logout():
     try:
         dni = request.cookies.get('dni')
         controlador_usuarios.actualizartoken_usuario(dni, "")  # Borra el token en la base de datos
-        resp = make_response(redirect("/login_user"))
-        resp.set_cookie('token', '', 0)
-        resp.set_cookie('dni', '', 0)
+        resp = make_response(redirect("/login_user"))  # Redirige a la página de inicio de sesión
+        resp.set_cookie('token', '', 0)  # Elimina la cookie del token
+        resp.set_cookie('dni', '', 0)    # Elimina la cookie del dni
         print("Sesión cerrada correctamente")
         return resp
     except Exception as e:
         print(f"Error al cerrar sesión: {e}")
         flash("Error al cerrar la sesión.")
         return redirect("/login_user")
+
+
 
 
 @app.route("/cuentas")
