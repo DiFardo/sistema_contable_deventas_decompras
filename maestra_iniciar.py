@@ -105,6 +105,20 @@ def registro_ventas():
 
     return render_template("registro_ventas.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
 
+@app.route("/registro_compras")
+def registro_compras():
+    token = request.cookies.get('token')
+    dni = request.cookies.get('dni')
+    usuario = controlador_usuarios.obtener_usuario(dni)
+
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Registro compras', 'url': '/registro_compras'}
+    ]
+    movimientos = []
+
+    return render_template("registro_compras.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
+
 
 @app.route("/ventas/productos")
 def productos():
