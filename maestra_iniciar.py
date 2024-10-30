@@ -2,9 +2,12 @@ from flask import Flask, render_template, request, redirect, make_response, flas
 import hashlib
 from flask_jwt_extended import JWTManager, create_access_token
 import controladores.controlador_usuarios as controlador_usuarios
-from bd_conexion import obtener_conexion
-from controladores.controlador_cuentas import obtener_todas_cuentas
-#ola
+import controladores.controlador_ventas as controlador_ventas
+import clases.clase_usuario as clase_usuario
+import controladores.controlador_plantillas as controlador_plantillas
+from bd_conexion import obtener_conexion  # Asegúrate de que la conexión a la base de datos esté configurada correctamente
+from controladores.controlador_cuentas import obtener_todas_cuentas, obtener_cuentas_por_categoria_endpoint, añadir_cuenta
+
 app = Flask(__name__)
 app.debug = True
 app.config['SECRET_KEY'] = 'super-secret'
@@ -90,19 +93,50 @@ def libro_mayor():
 
     return render_template("libro_mayor.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
 
-@app.route("/registro_ventas")
+@app.route("/registro_ventas", methods=["GET"])
 def registro_ventas():
+    token = request.cookies.get('token')
+    dni = request.cookies.get('dni')
+    usuario = controlador_usuarios.obtener_usuario(dni)
+
+    periodo = request.args.get("periodo", None)
+    mes = año = None
+
+    if periodo:
+        año, mes = periodo.split("-")
+
+    registros, total_base_imponible, total_igv, total_total_comprobante = (
+        controlador_plantillas.obtener_registro_ventas(mes, año) if mes and año else ([], 0, 0, 0)
+    )
+
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Registro ventas', 'url': '/registro_ventas'}
+    ]
+
+    return render_template(
+        "registro_ventas.html",
+        registros=registros,
+        total_base_imponible=total_base_imponible,
+        total_operacion_gravada=total_igv,
+        total_total_comprobante=total_total_comprobante,
+        breadcrumbs=breadcrumbs,
+        usuario=usuario
+    )
+
+@app.route("/registro_compras")
+def registro_compras():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
     usuario = controlador_usuarios.obtener_usuario(dni)
 
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
-        {'name': 'Registro ventas', 'url': '/registro_ventas'}
+        {'name': 'Registro compras', 'url': '/registro_compras'}
     ]
     movimientos = []
 
-    return render_template("registro_ventas.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
+    return render_template("registro_compras.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
 
 
 @app.route("/ventas/productos")
@@ -229,8 +263,20 @@ def cuentas_añadir():
     except Exception as e:
         return jsonify({'error': f'Error en el servidor: {str(e)}'}), 500
 
-# Iniciar el servidor
+########### PLANTILLAS ###########
 
+#registro ventas
+@app.route('/exportar-registro-ventas', methods=['GET'])
+def exportar_registro_ventas():
+    periodo = request.args.get('periodo')
+    if not periodo:
+        return jsonify({'error': 'El parámetro "periodo" es requerido.'}), 400
+    try:
+        anio, mes = map(int, periodo.split('-'))
+    except ValueError:
+        return jsonify({'error': 'El formato del período es incorrecto. Debe ser "YYYY-MM".'}), 400
+    return controlador_plantillas.generar_registro_venta_excel(mes, anio)
+
+# Iniciar el servidor
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8000, debug=True)
-
