@@ -8,11 +8,9 @@ from bd_conexion import obtener_conexion
 
 def generar_registro_venta_excel(mes, anio):
     try:
-        # Establecer conexión con la base de datos
         conexion = obtener_conexion()
         cursor = conexion.cursor()
 
-        # Ejecutar la consulta SQL
         consulta = """
         SELECT 
             ROW_NUMBER() OVER(ORDER BY v.serie_comprobante, v.numero_comprobante) AS correlativo,
@@ -40,15 +38,12 @@ def generar_registro_venta_excel(mes, anio):
         """
         cursor.execute(consulta, (mes, anio))
 
-        # Obtener los resultados de la consulta
         resultados = cursor.fetchall()
 
-        # Cargar la plantilla de Excel
         ruta_plantilla = 'plantillas/RegistroVentas.xlsx'
         workbook = load_workbook(ruta_plantilla)
         hoja = workbook.active
 
-        # Estilo de bordes para las celdas
         borde = Border(
             left=Side(style='thin'),
             right=Side(style='thin'),
@@ -56,26 +51,21 @@ def generar_registro_venta_excel(mes, anio):
             bottom=Side(style='thin')
         )
 
-        # Definir la fuente estándar Arial 10
         fuente_estandar = Font(name='Arial', size=10)
 
-        # Copiar el estilo de la fila base (por ejemplo, la fila 12)
         fila_base = 12
         alto_fila_base = hoja.row_dimensions[fila_base].height
 
-        # Insertar los datos en la plantilla
         fila_inicial = fila_base
         total_base_imponible = 0
         total_igv = 0
         total_comprobante = 0
 
-        # Columnas a las que se les aplicará borde, incluso si están vacías
         columnas_con_borde = list(range(1, 23))
 
         for fila, registro in enumerate(resultados, start=fila_inicial):
             hoja.row_dimensions[fila].height = alto_fila_base
 
-            # Insertar valores y aplicar estilos a las celdas
             celdas = [
                 (1, registro[0]),  # Correlativo
                 (2, registro[1]),  # Fecha de emisión
@@ -99,17 +89,17 @@ def generar_registro_venta_excel(mes, anio):
                 celda = hoja.cell(row=fila, column=col, value=valor)
                 celda.font = fuente_estandar
 
-                # Justificar a la derecha si la columna es de números
                 if col in (11, 15, 17):
                     celda.alignment = Alignment(horizontal='right', vertical='center')
                     celda.number_format = FORMAT_NUMBER_COMMA_SEPARATED1
                 elif col == 2:
                     celda.number_format = FORMAT_DATE_DDMMYY
                     celda.alignment = Alignment(horizontal='center', vertical='center')
+                elif col == 6:
+                    celda.alignment = Alignment(horizontal='center', vertical='center')
                 else:
                     celda.alignment = Alignment(horizontal='left', vertical='center')
 
-                # Sumar totales
                 if col == 11:
                     total_base_imponible += valor
                 elif col == 15:

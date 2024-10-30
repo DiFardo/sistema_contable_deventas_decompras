@@ -37,6 +37,25 @@
   .w-correlativo {
     width: 10%;
   }
+
+  @media print {
+    body {
+      visibility: hidden;
+    }
+    .table-wrapper, .table {
+      visibility: visible;
+      width: 100%;
+    }
+    .table-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    /* Establecer orientación horizontal */
+    @page {
+      size: landscape;
+    }
+  }
 </style>
 
 <div id="content">
@@ -57,7 +76,7 @@
     <!-- Encabezado con título adicional -->
     <div class="row mb-3">
       <div class="col-12">
-        <h2 class="text-left">Registro de Ventas e Ingresos</h2>
+        <h2 class="text-left">Registro de ventas e ingresos</h2>
       </div>
     </div>
 
@@ -137,18 +156,18 @@
             <td>{{ registro.tipo_documento }}</td>
             <td>{{ registro.numero_documento }}</td>
             <td>{{ registro.usuario }}</td>
-            <td>{{ registro.base_imponible }}</td>
-            <td>{{ registro.igv }}</td>
-            <td>{{ registro.total_comprobante }}</td>
+            <td class="text-end">{{ registro.base_imponible }}</td>
+            <td class="text-end">{{ registro.igv }}</td>
+            <td class="text-end">{{ registro.total_comprobante }}</td>
           </tr>
           {% endfor %}
         </tbody>
         <tfoot>
           <tr>
             <td colspan="8" class="text-end"><strong>TOTALES</strong></td>
-            <td>{{ total_base_imponible }}</td>
-            <td>{{ total_operacion_gravada }}</td>
-            <td>{{ total_total_comprobante }}</td>
+            <td class="text-end">{{ total_base_imponible }}</td>
+            <td class="text-end">{{ total_operacion_gravada }}</td>
+            <td class="text-end">{{ total_total_comprobante }}</td>
           </tr>
         </tfoot>
       </table>
@@ -200,18 +219,6 @@
     window.location.href = `/exportar-registro-ventas?periodo=${filtroFecha}`;
     }
 
-    function downloadCSV(csv, filename) {
-      var csvFile;
-      var downloadLink;
-
-      csvFile = new Blob([csv], { type: "text/csv" });
-      downloadLink = document.createElement("a");
-      downloadLink.download = filename;
-      downloadLink.href = window.URL.createObjectURL(csvFile);
-      downloadLink.style.display = "none";
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-    }
   </script>
 </div>
 {% endblock %}
