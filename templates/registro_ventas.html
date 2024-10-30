@@ -67,8 +67,7 @@
         <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
           <strong>PERÍODO:</strong>
         </label>
-        <input type="date" class="form-control" id="filtro-fecha" max="{{ current_year }}-12-31"
-          value="{{ current_year }}-01-01">
+        <input type="month" class="form-control" id="filtro-fecha" max="" value="">
       </div>
       <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
         <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
@@ -97,7 +96,7 @@
             <button class="btn btn-primary me-2" onclick="window.print()" style="background-color: #ff5733;">
               <i class="material-icons">print</i> <span>Imprimir</span>
             </button>
-            <button class="btn btn-success" onclick="exportTableToCSV('registro_ventas.csv')">
+            <button class="btn btn-success" onclick="exportarRegistroVentas()">
               <i class="material-icons">file_download</i> <span>Exportar</span>
             </button>
           </div>
@@ -162,21 +161,27 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    function exportTableToCSV(filename) {
-      var csv = [];
-      var rows = document.querySelectorAll("table tr");
+    document.addEventListener("DOMContentLoaded", function() {
+      // Obtener la fecha actual y limitar la selección de mes y año al mes actual
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0'); // Los meses en JS empiezan desde 0
+      const maxDate = `${year}-${month}`;
+      
+      // Establecer el valor máximo para el campo mes
+      const filtroFecha = document.getElementById("filtro-fecha");
+      filtroFecha.max = maxDate;
+      filtroFecha.value = maxDate;
+    });
 
-      for (var i = 0; i < rows.length; i++) {
-        var row = [], cols = rows[i].querySelectorAll("td, th");
-
-        for (var j = 0; j < cols.length; j++)
-          row.push(cols[j].innerText);
-
-        csv.push(row.join(","));
-      }
-
-      // Download CSV file
-      downloadCSV(csv.join("\n"), filename);
+    function exportarRegistroVentas() {
+    const filtroFecha = document.getElementById("filtro-fecha").value;
+    if (!filtroFecha) {
+      alert("Por favor, seleccione un período antes de exportar.");
+      return;
+    }
+    // Redireccionar a la ruta de exportación con el período como parámetro
+    window.location.href = `/exportar-registro-ventas?periodo=${filtroFecha}`;
     }
 
     function downloadCSV(csv, filename) {

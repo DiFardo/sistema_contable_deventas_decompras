@@ -4,6 +4,7 @@ from flask_jwt_extended import JWTManager, create_access_token
 import controladores.controlador_usuarios as controlador_usuarios
 import controladores.controlador_ventas as controlador_ventas
 import clases.clase_usuario as clase_usuario
+import controladores.controlador_plantillas as controlador_plantillas
 from bd_conexion import obtener_conexion  # Asegúrate de que la conexión a la base de datos esté configurada correctamente
 from controladores.controlador_cuentas import obtener_todas_cuentas, obtener_cuentas_por_categoria_endpoint, añadir_cuenta
 app = Flask(__name__)
@@ -244,8 +245,20 @@ def cuentas_añadir():
     except Exception as e:
         return jsonify({'error': f'Error en el servidor: {str(e)}'}), 500
 
-# Iniciar el servidor
+########### PLANTILLAS ###########
 
+#registro ventas
+@app.route('/exportar-registro-ventas', methods=['GET'])
+def exportar_registro_ventas():
+    periodo = request.args.get('periodo')
+    if not periodo:
+        return jsonify({'error': 'El parámetro "periodo" es requerido.'}), 400
+    try:
+        anio, mes = map(int, periodo.split('-'))
+    except ValueError:
+        return jsonify({'error': 'El formato del período es incorrecto. Debe ser "YYYY-MM".'}), 400
+    return controlador_plantillas.generar_registro_venta_excel(mes, anio)
+
+# Iniciar el servidor
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8000, debug=True)
-
