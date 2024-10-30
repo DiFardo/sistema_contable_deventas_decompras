@@ -127,6 +127,57 @@
   <script src="{{ url_for('static', filename='js/plugins/perfect-scrollbar.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/plugins/smooth-scrollbar.min.js') }}"></script>
 
- 
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const dniField = document.getElementById('dni');
+      const passwordField = document.getElementById('password');
+      const rememberCheckbox = document.getElementById('flexCheckDefault');
+  
+      // Cargar las credenciales almacenadas en localStorage
+      const credentials = JSON.parse(localStorage.getItem('credentials')) || {};
+  
+      // Limpia ambos campos al cargar la página
+      dniField.value = '';
+      passwordField.value = '';
+  
+      // Función para autocompletar la contraseña basada en el DNI ingresado
+      function loadPasswordForDni() {
+        const dni = dniField.value;
+        if (credentials[dni]) {
+          // Autocompleta el DNI y la contraseña solo si existe en localStorage
+          dniField.value = dni;
+          passwordField.value = credentials[dni];
+        } else {
+          passwordField.value = ''; // Limpia la contraseña si no hay coincidencia
+        }
+      }
+  
+      // Almacenar las credenciales en localStorage cuando se marca el checkbox
+      rememberCheckbox.addEventListener('change', function () {
+        if (this.checked) {
+          localStorage.setItem('rememberCredentials', 'true');
+          credentials[dniField.value] = passwordField.value; // Guarda el DNI y la contraseña asociada
+          localStorage.setItem('credentials', JSON.stringify(credentials));
+        } else {
+          localStorage.removeItem('rememberCredentials');
+          localStorage.removeItem('credentials');
+        }
+      });
+  
+      // Guardar credenciales antes de enviar el formulario si el checkbox está marcado
+      document.querySelector('form').addEventListener('submit', function () {
+        if (rememberCheckbox.checked) {
+          credentials[dniField.value] = passwordField.value; // Guarda el DNI y la contraseña asociada
+          localStorage.setItem('credentials', JSON.stringify(credentials));
+        }
+      });
+  
+      // Evento para autocompletar la contraseña al seleccionar un DNI
+      dniField.addEventListener('input', loadPasswordForDni);
+    });
+  </script>
+  
+  
 </body>
 </html>
