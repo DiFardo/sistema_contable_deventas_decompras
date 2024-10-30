@@ -3,6 +3,7 @@ from io import BytesIO
 from openpyxl import load_workbook
 from openpyxl.styles import Border, Side, Alignment, Font
 from openpyxl.styles.numbers import FORMAT_DATE_DDMMYY, FORMAT_NUMBER_COMMA_SEPARATED1
+from psycopg2.extras import DictCursor
 from bd_conexion import obtener_conexion
 
 def generar_registro_venta_excel(mes, anio):
@@ -167,3 +168,49 @@ def generar_registro_venta_excel(mes, anio):
         if conexion:
             cursor.close()
             conexion.close()
+
+def obtener_registro_ventas(mes, año):
+    conexion = obtener_conexion()
+    registros = []
+    total_base_imponible = 0
+    total_igv = 0
+    total_total_comprobante = 0
+
+    with conexion.cursor(cursor_factory=DictCursor) as cursor:
+        cursor.execute("""
+            SELECT 
+                ROW_NUMBER() OVER(ORDER BY v.serie_comprobante, v.numero_comprobante) AS correlativo,
+                TO_CHAR(v.fecha, 'DD/MM/YYYY') AS fecha_emision,
+                CASE WHEN v.tipo_comprobante = 'Boleta' THEN '03' ELSE '01' END AS tipo_comprobante,
+                v.serie_comprobante,
+                v.numero_comprobante,
+                CASE 
+                    WHEN v.tipo_documento = 'DNI' THEN '1' 
+                    WHEN v.tipo_documento = 'Carnet de extranjería' THEN '4'
+                    WHEN v.tipo_documento = 'RUC' THEN '6'
+                    WHEN v.tipo_documento = 'Pasaporte' THEN '7'
+                    ELSE ''
+                END AS tipo_documento,
+                v.numero_documento,
+                v.usuario,
+                SUM(v.sub_sin_igv) AS base_imponible,
+                SUM(v.igv) AS igv,
+                SUM(v.subtotal) AS total_comprobante
+            FROM ventas_contables v
+            WHERE EXTRACT(MONTH FROM v.fecha) = %s AND EXTRACT(YEAR FROM v.fecha) = %s
+            GROUP BY v.serie_comprobante, v.numero_comprobante, v.tipo_documento, 
+                     v.numero_documento, v.usuario, v.tipo_comprobante, v.fecha
+            ORDER BY v.serie_comprobante, v.numero_comprobante;
+        """, (mes, año))
+
+        registros = cursor.fetchall()
+
+        # Calcular los totales
+        for registro in registros:
+            total_base_imponible += registro['base_imponible']
+            total_igv += registro['igv']
+            total_total_comprobante += registro['total_comprobante']
+
+    conexion.close()
+
+    return registros, total_base_imponible, total_igv, total_total_comprobante
