@@ -16,6 +16,29 @@
         .hidden {
             display: none;
         }
+
+        .profile-image {
+            position: relative;
+            width: 30px;
+            height: 30px;
+        }
+
+        .profile-image img {
+            border-radius: 50%;
+            width: 100%;
+            height: 100%;
+        }
+
+        .active-status {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 10px;
+            height: 10px;
+            background-color: #2ccc74;
+            border: 2px solid white;
+            border-radius: 50%;
+        }
     </style>
 </head>
 
@@ -154,15 +177,21 @@
 
                                         {% if usuario %}
                                         <li class="nav-item dropdown user-dropdown" onclick="this.classList.toggle('show');">
-                                            <a href="#" class="nav-link" data-toggle="dropdown" aria-expanded="false">
-                                                {{ usuario[4] }} - {{ usuario[5] }}
-                                                <span class="status-indicator"></span>
+                                            <a href="#" class="nav-link d-flex align-items-center" data-toggle="dropdown" aria-expanded="false">
+                                                <!-- Si el usuario tiene una imagen, se usa esa; si no, se usa la imagen por defecto -->
+                                                <div class="profile-image">
+                                                    <img src="{{ url_for('static', filename='img/perfiles/' + (usuario[6] if usuario[6] else 'perfil_defecto.png')) }}" alt="Perfil">
+                                                    <!-- Bolita verde de estado activo -->
+                                                    <div class="active-status"></div>
+                                                </div>
+                                                <span class="ml-2">{{ usuario[4] }} - {{ usuario[5] }}</span>
                                             </a>
                                             <ul class="dropdown-menu">
-                                                <li><a href="#"><span class="material-icons">person_outline</span>Perfil</a></li>
+                                                <li><a href="{{ url_for('perfil_usuario') }}"><span class="material-icons">person_outline</span>Perfil</a></li>
                                                 <li><a href="{{ url_for('procesar_logout') }}"><span class="material-icons">logout</span>Cerrar sesión</a></li>
                                             </ul>
                                         </li>
+
                                         {% else %}
                                         <li class="nav-item">
                                             <span class="nav-link" style="color: white;">Invitado</span>
@@ -207,7 +236,7 @@
         document.addEventListener("DOMContentLoaded", function () {
             const currentPath = window.location.pathname;
             const ventasPaths = ['ventas', 'clientes', 'reportes_ventas'];
-            const contablePaths = ['cuentas', 'libro_diario', 'libro_mayor', 'libro_caja', 'registro_ventas']; // Incluye 'registro_ventas'
+            const contablePaths = ['cuentas', 'libro_diario', 'libro_mayor', 'libro_caja', 'registro_ventas'];
             
             if (ventasPaths.some(path => currentPath.includes(path))) {
                 toggleVisibility("ventas");
