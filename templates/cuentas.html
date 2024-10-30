@@ -13,6 +13,49 @@
 {% endblock %}
 
 {% block contenido %}
+<style>
+  .error-input {
+    border: 1px solid red;
+  }
+
+  .error-message {
+    color: red;
+    font-size: 12px;
+    margin-top: 5px;
+    display: none;
+    /* Ocultamos el mensaje por defecto */
+  }
+
+  #editAccountModal .modal-content {
+    position: relative;
+    /* Permite posicionar elementos hijos de manera absoluta */
+  }
+
+  #loadingSpinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1051;
+    /* Asegura que esté en la parte superior del contenido */
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.4rem;
+    /* Grosor de la línea del spinner */
+    animation: spin 1s linear infinite;
+    /* Añade la animación de giro */
+  }
+
+  @keyframes spin {
+    from {
+      transform: translate(-50%, -50%) rotate(0deg);
+    }
+
+    to {
+      transform: translate(-50%, -50%) rotate(360deg);
+    }
+  }
+</style>
 
 <div id="content">
   <div class="main-content">
@@ -34,7 +77,6 @@
         <h2 class="text-left">Gestión de cuentas contables</h2>
       </div>
     </div>
-
     <div class="table-wrapper">
       <div class="table-title">
         <div class="row align-items-center justify-content-between">
@@ -72,10 +114,9 @@
           {% for cuenta in cuentas %}
           {% if cuenta[3] is none %}
           <!-- Esta es una cuenta de nivel 1 (cuenta padre) -->
-          <tr class="cuenta-padre" data-cuenta-id="{{ cuenta[0] }}">
+          <tr class="cuenta-padre" data-cuenta-id="{{ cuenta[0] }}" data-nivel="{{ cuenta[6] }}">
             <td>
               {% if cuenta[6] %}
-              <!-- Mostrar el botón solo si la cuenta tiene subcuentas -->
               <button class="btn btn-link toggle-subcuentas" data-cuenta-id="{{ cuenta[0] }}">
                 <i class="fas fa-plus"></i>
               </button>
@@ -89,13 +130,9 @@
                 data-categoria="{{ cuenta[5] }}">
                 <i class="material-icons" data-bs-toggle="tooltip" title="Editar">&#xE254;</i>
               </a>
-
-              </a>
               <a href="#deleteAccountModal" class="delete" data-bs-toggle="modal">
                 <i class="material-icons" data-bs-toggle="tooltip" title="Dar de baja">thumb_down</i>
               </a>
-              
-              
               <a href="#" class="view" data-bs-toggle="modal" data-bs-target="#editAccountModal"
                 data-codigo="{{ cuenta[1] }}" data-descripcion="{{ cuenta[2] }}" data-estado="{{ cuenta[4] | lower }}"
                 data-categoria="{{ cuenta[5] }}">
@@ -106,10 +143,9 @@
           {% else %}
           <!-- Esta es una subcuenta (nivel inferior) -->
           <tr class="subcuenta subcuenta-{{ cuenta[3] }} d-none" data-cuenta-id="{{ cuenta[0] }}"
-            data-padre-id="{{ cuenta[3] }}">
+            data-nivel="{{ cuenta[6] }}" data-padre-id="{{ cuenta[3] }}">
             <td>
               {% if cuenta[6] %}
-              <!-- Mostrar el botón solo si la subcuenta tiene sus propias subcuentas -->
               <button class="btn btn-link toggle-subcuentas" data-cuenta-id="{{ cuenta[0] }}">
                 <i class="fas fa-plus"></i>
               </button>
@@ -122,8 +158,6 @@
                 data-codigo="{{ cuenta[1] }}" data-descripcion="{{ cuenta[2] }}" data-estado="{{ cuenta[4] | lower }}"
                 data-categoria="{{ cuenta[5] }}">
                 <i class="material-icons" data-bs-toggle="tooltip" title="Editar">&#xE254;</i>
-              </a>
-
               </a>
               <a href="#deleteAccountModal" class="delete" data-bs-toggle="modal">
                 <i class="material-icons" data-bs-toggle="tooltip" title="Eliminar">&#xE872;</i>
@@ -137,7 +171,6 @@
           </tr>
           {% endif %}
           {% endfor %}
-
         </tbody>
       </table>
 
@@ -170,63 +203,95 @@
     </div>
   </div>
 
-<!-- Modal de edición/ver con los campos reorganizados -->
-<!-- Modal de edición/ver con los campos reorganizados -->
-<div class="modal fade" id="editAccountModal" tabindex="-1" aria-labelledby="editAccountModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
+  <div class="modal fade" id="editAccountModal" tabindex="-1" aria-labelledby="editAccountModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg">
       <div class="modal-content">
-          <div class="modal-header">
-              <h5 class="modal-title" id="editAccountModalLabel">Cuenta contable</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-              <form id="editAccountForm">
-                  <!-- Primero la categoría -->
-                  <div class="mb-3">
-                      <label for="edit-categoria" class="form-label">Categoría</label>
-                      <select class="form-select" id="edit-categoria">
-                          <option value="activo">Activo</option>
-                          <option value="pasivo">Pasivo</option>
-                          <option value="patrimonio">Patrimonio</option>
-                          <option value="ingreso">Ingreso</option>
-                          <option value="gasto">Gasto</option>
-                      </select>
-                  </div>
-                  <!-- Luego el código -->
-                  <div class="mb-3">
-                      <label for="edit-codigo" class="form-label">Código</label>
-                      <input type="text" class="form-control" id="edit-codigo" readonly>
-                  </div>
-                  <!-- Después la descripción -->
-                  <div class="mb-3">
-                      <label for="edit-descripcion" class="form-label">Descripción</label>
-                      <input type="text" class="form-control" id="edit-descripcion">
-                  </div>
-                  <!-- Luego el estado de la cuenta con etiqueta y texto dinámico -->
-                  <div class="mb-3">
-                      <label for="edit-estado" class="form-label">Estado de la cuenta</label>
-                      <div class="form-check">
-                          <input type="checkbox" class="form-check-input" id="edit-estado">
-                          <label class="form-check-label" for="edit-estado" id="estado-label">Cuenta no activa</label>
-                      </div>
-                  </div>
-          
-                  <!-- Botón con color personalizado y responsivo -->
-                  <button type="submit" class="btn btn-primary w-100" id="saveChangesButton">Guardar Cambios</button>
-              </form>
-          </div>
+        <div class="modal-header">
+          <h5 class="modal-title" id="editAccountModalLabel">Cuenta contable</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+         <!-- Spinner de carga centrado dentro del modal -->
+      <div id="loadingSpinner" class="spinner-border text-primary" role="status" style="display: none;">
+        <span class="visually-hidden">Cargando...</span>
       </div>
+        <div class="modal-body">
+          <form id="editAccountForm">
+            <!-- Campo de categoría -->
+            <div class="mb-3">
+              <label for="edit-categoria" class="form-label">Categoría</label>
+              <select class="form-select" id="edit-categoria">
+                <option value="">Seleccione una categoría</option>
+                <option value="activo">Activo</option>
+                <option value="pasivo">Pasivo</option>
+                <option value="patrimonio">Patrimonio</option>
+                <option value="gastos">Gastos</option>
+                <option value="ingresos">Ingresos</option>
+                <option value="saldos">Saldos</option>
+              </select>
+            </div>
+            <!-- Campo de cuenta padre -->
+            <div class="mb-3 cuenta-padre-container" style="display: none;">
+              <label for="edit-cuenta-padre" class="form-label">Cuenta Padre</label>
+              <select class="form-select" id="edit-cuenta-padre">
+                <option value="">Seleccione una cuenta padre</option>
+              </select>
+            </div>
+            <!-- Campo de código -->
+            <div class="mb-3">
+              <label for="edit-codigo" class="form-label">Código</label>
+              <input type="text" class="form-control" id="edit-codigo">
+            </div>
+
+            <!-- Campo de descripción -->
+            <div class="mb-3">
+              <label for="edit-descripcion" class="form-label">Descripción</label>
+              <input type="text" class="form-control" id="edit-descripcion">
+            </div>
+
+            <!-- Campo de estado de la cuenta -->
+            <div class="mb-3">
+              <label for="edit-estado" class="form-label">Estado de la cuenta</label>
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="edit-estado">
+                <label class="form-check-label" for="edit-estado" id="estado-label">Cuenta no activa</label>
+              </div>
+            </div>
+
+            <!-- Botón de guardar cambios -->
+            <button type="submit" class="btn btn-primary w-100" id="saveChangesButton">Guardar Cambios</button>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
-</div>
 
-
-
-
-
+  <!-- Modal de éxito -->
+  <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-success text-white d-flex align-items-center justify-content-between">
+          <h5 class="modal-title" id="successModalLabel">
+            <i class="fas fa-check-circle me-2"></i> ¡Cuenta agregada exitosamente!
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body text-center p-5">
+          <i class="fas fa-check-circle fa-5x text-success mb-4"></i>
+          <h4 id="successMessage" class="mb-3">La cuenta ha sido añadida correctamente.</h4>
+          <p class="lead"><strong id="successCodigo"></strong></p>
+          <p class="lead"><strong id="successDescripcion"></strong></p>
+        </div>
+        <!-- <div class="modal-footer justify-content-center">
+          <button type="button" class="btn btn-info px-5" data-bs-dismiss="modal">Aceptar</button>
+        </div> -->
+      </div>
+    </div>
+  </div>
 
   <!-- Scripts al final de la página para mejorar la carga -->
   <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
-  
+
   <script src="{{ url_for('static', filename='js/pagination.js') }}"></script>
   <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/tabla_cuentas.js') }}"></script>

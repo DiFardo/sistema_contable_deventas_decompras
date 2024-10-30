@@ -16,6 +16,9 @@
         .hidden {
             display: none;
         }
+        .active {
+            background-color: #f0f0f0; /* Resalta la opción activa */
+        }
     </style>
 </head>
 
@@ -26,7 +29,7 @@
         <!-- Sidebar -->
         <nav id="sidebar">
             <div class="sidebar-header">
-                <h3 id="sidebar-title"><span>Sistema Contable</span></h3> <!-- Título dinámico -->
+                <h3 id="sidebar-title"><span>Sistema Contable</span></h3>
             </div>
             <ul id="navbar-options" class="list-unstyled components">
                 <!-- Opciones del menú principal -->
@@ -34,12 +37,6 @@
                     <a href="{{ url_for('index') }}" class="dashboard">
                         <i class="material-icons">dashboard</i>
                         <span>Inicio</span>
-                    </a>
-                </li>
-                <li class="nav-item configuracion">
-                    <a href="#">
-                        <i class="material-icons">settings</i>
-                        <span>Configuración</span>
                     </a>
                 </li>
 
@@ -52,31 +49,57 @@
                 </li>
 
                 <!-- Menú desplegable de Libros Contables -->
-                <li class="nav-item libros hidden">
+                <li class="nav-item libros">
                     <a href="#librosContablesSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
                         <i class="material-icons">library_books</i>
                         <span>Libros Contables</span>
                     </a>
                     <ul class="collapse list-unstyled" id="librosContablesSubmenu">
                         <li>
-                            <a href="{{ url_for('libro_diario') }}">
+                            <a href="{{ url_for('libro_diario') }}" class="{{ 'active' if 'libro_diario' in request.path }}">
                                 <i class="material-icons">book</i>
                                 <span>Libro Diario</span>
                             </a>
                         </li>
                         <li>
-                            <a href="{{ url_for('libro_mayor') }}">
+                            <a href="{{ url_for('libro_mayor') }}" class="{{ 'active' if 'libro_mayor' in request.path }}">
                                 <i class="material-icons">book_online</i>
                                 <span>Libro Mayor</span>
                             </a>
                         </li>
                         <li>
-                            <a href="{{ url_for('libro_caja') }}">
+                            <a href="{{ url_for('libro_caja') }}" class="{{ 'active' if 'libro_caja' in request.path }}">
                                 <i class="material-icons">account_balance_wallet</i>
                                 <span>Caja y Bancos</span>
                             </a>
                         </li>
+                        <li>
+                            <a href="{{ url_for('registro_ventas') }}" class="{{ 'active' if 'registro_ventas' in request.path }}">
+                                <i class="material-icons">receipt_long</i>
+                                <span>Registro de ventas</span>
+                            </a>
+                        </li>
                     </ul>
+                </li>
+
+                <!-- Opciones del Módulo de Ventas -->
+                <li class="nav-item ventas hidden">
+                    <a href="#">
+                        <i class="material-icons">shopping_cart</i>
+                        <span>Productos</span>
+                    </a>
+                </li>
+                <li class="nav-item clientes hidden">
+                    <a href="#">
+                        <i class="material-icons">people</i>
+                        <span>Clientes</span>
+                    </a>
+                </li>
+                <li class="nav-item reportes hidden">
+                    <a href="#">
+                        <i class="material-icons">bar_chart</i>
+                        <span>Reportes de Ventas</span>
+                    </a>
                 </li>
             </ul>
         </nav>
@@ -115,34 +138,22 @@
                                                 <span class="notification">4</span>
                                             </a>
                                             <ul class="dropdown-menu">
-                                                <li>
-                                                    <a href="#">You have 5 new messages</a>
-                                                </li>
-                                                <li>
-                                                    <a href="#">You're now friend with Mike</a>
-                                                </li>
-                                                <li>
-                                                    <a href="#">Wish Mary on her birthday!</a>
-                                                </li>
-                                                <li>
-                                                    <a href="#">5 warnings in Server Console</a>
-                                                </li>
+                                                <li><a href="#">You have 5 new messages</a></li>
+                                                <li><a href="#">You're now friend with Mike</a></li>
+                                                <li><a href="#">Wish Mary on her birthday!</a></li>
+                                                <li><a href="#">5 warnings in Server Console</a></li>
                                             </ul>
                                         </li>
 
                                         {% if usuario %}
                                         <li class="nav-item dropdown user-dropdown" onclick="this.classList.toggle('show');">
                                             <a href="#" class="nav-link" data-toggle="dropdown" aria-expanded="false">
-                                                {{ usuario[4] }} - {{ usuario[5] }} <!-- Nombre completo y rol -->
+                                                {{ usuario[4] }} - {{ usuario[5] }}
                                                 <span class="status-indicator"></span>
                                             </a>
                                             <ul class="dropdown-menu">
-                                                <li>
-                                                    <a href="#"><span class="material-icons">person_outline</span>Perfil</a>
-                                                </li>
-                                                <li>
-                                                    <a href="{{ url_for('procesar_logout') }}"><span class="material-icons">logout</span>Cerrar sesión</a>
-                                                </li>
+                                                <li><a href="#"><span class="material-icons">person_outline</span>Perfil</a></li>
+                                                <li><a href="{{ url_for('procesar_logout') }}"><span class="material-icons">logout</span>Cerrar sesión</a></li>
                                             </ul>
                                         </li>
                                         {% else %}
@@ -168,40 +179,30 @@
 
     <script type="text/javascript">
         function toggleVisibility(module) {
-            // Cambiar el título según el módulo
             const sidebarTitle = document.getElementById('sidebar-title');
+            
             if (module === "contable") {
                 sidebarTitle.innerHTML = '<span>Módulo Contable</span>';
-            } else {
-                sidebarTitle.innerHTML = '<span>Sistema Contable</span>';
-            }
-
-            // Ocultar o mostrar elementos según el módulo
-            if (module === "contable") {
                 document.querySelectorAll('.cuentas').forEach(el => el.classList.remove('hidden'));
                 document.querySelectorAll('.libros').forEach(el => el.classList.remove('hidden'));
-                document.querySelectorAll('.configuracion').forEach(el => el.classList.add('hidden'));
-            } else {
-                document.querySelectorAll('.cuentas').forEach(el => el.classList.add('hidden'));
-                document.querySelectorAll('.libros').forEach(el => el.classList.add('hidden'));
-                document.querySelectorAll('.configuracion').forEach(el => el.classList.remove('hidden'));
+                document.querySelectorAll('.ventas, .clientes').forEach(el => el.classList.add('hidden'));
+            } else if (module === "ventas") {
+                sidebarTitle.innerHTML = '<span>Módulo de Ventas</span>';
+                document.querySelectorAll('.ventas, .clientes').forEach(el => el.classList.remove('hidden'));
+                document.querySelectorAll('.cuentas, .libros').forEach(el => el.classList.add('hidden'));
             }
         }
 
         document.addEventListener("DOMContentLoaded", function () {
             const currentPath = window.location.pathname;
-            const contablePaths = ['cuentas', 'libro_diario', 'libro_mayor', 'libro_caja'];
-
-            const isContableModule = contablePaths.some(path => currentPath.includes(path));
-
-            // Cambiar visibilidad según el módulo
-            if (isContableModule) {
+            const contablePaths = ['cuentas', 'libro_diario', 'libro_mayor', 'libro_caja', 'registro_ventas']; 
+            
+            if (contablePaths.some(path => currentPath.includes(path))) {
                 toggleVisibility("contable");
             } else {
                 toggleVisibility("inicio");
             }
         });
     </script>
-
 </body>
 </html>

@@ -9,7 +9,3 @@ def obtener_conexion():
         password=config('POSTGRES_PASSWORD'),
         database=config('POSTGRES_DB')
     )
-
-
-
-
