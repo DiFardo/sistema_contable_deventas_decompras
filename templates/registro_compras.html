@@ -1,6 +1,6 @@
 {% extends "pagina_maestra.html" %}
 
-{% block titulo %}Registro de Ventas e Ingresos{% endblock %}
+{% block titulo %}Registro de compras{% endblock %}
 
 {% block link %}
 <!-- Material Icons for icons -->
@@ -57,7 +57,7 @@
     <!-- Encabezado con título adicional -->
     <div class="row mb-3">
       <div class="col-12">
-        <h2 class="text-left">Registro de Ventas e Ingresos</h2>
+        <h2 class="text-left">Registro de compras</h2>
       </div>
     </div>
 
@@ -107,24 +107,24 @@
       <!-- Estructura de la tabla del Registro de Ventas e Ingresos -->
       <table class="table table-bordered table-striped table-hover">
         <thead>
-          <tr>
-            <th rowspan="2" class="w-correlativo">NÚMERO CORRELATIVO</th>
-            <th rowspan="2" class="w-correlativo">FECHA DE EMISIÓN</th>
-            <th class="bg-orange" colspan="3">COMPROBANTE DE PAGO O DOCUMENTO</th>
-            <th class="bg-cyan" colspan="3">INFORMACIÓN DEL CLIENTE</th>
-            <th rowspan="2" class="w-correlativo">BASE IMPONIBLE</th>
-            <th rowspan="2" class="w-correlativo">IGV</th>
-            <th rowspan="2" class="w-correlativo">IMPORTE TOTAL</th>
-          </tr>
-          <tr>
-            <th class="bg-orange">TIPO</th>
-            <th class="bg-orange">N° SERIE</th>
-            <th class="bg-orange">N° COMPROBANTE</th>
-            <th class="bg-cyan">TIPO DOCUMENTO</th>
-            <th class="bg-cyan">NÚMERO</th>
-            <th class="bg-cyan">RAZÓN SOCIAL</th>
-          </tr>
-        </thead>
+            <tr>
+              <th rowspan="2" class="w-correlativo">NÚMERO CORRELATIVO</th>
+              <th rowspan="2" class="w-correlativo">FECHA DE EMISIÓN</th>
+              <th class="bg-orange" colspan="3">COMPROBANTE DE PAGO O DOCUMENTO</th>
+              <th class="bg-cyan" colspan="3">INFORMACIÓN DEL PROVEEDOR</th>
+              <th rowspan="2" class="w-correlativo">BASE IMPONIBLE</th>
+              <th rowspan="2" class="w-correlativo">IGV</th>
+              <th rowspan="2" class="w-correlativo">IMPORTE TOTAL</th>
+            </tr>
+            <tr>
+              <th class="bg-orange">TIPO</th>
+              <th class="bg-orange">N° SERIE</th>
+              <th class="bg-orange">N° COMPROBANTE</th>
+              <th class="bg-cyan">TIPO DOCUMENTO</th>
+              <th class="bg-cyan">NÚMERO</th>
+              <th class="bg-cyan">NOMBRES Y APELLIDOS O RAZÓN SOCIAL</th>
+            </tr>
+          </thead>
         <tbody id="tabla-cuerpo">
           <!-- Filas de datos dinámicos -->
           {% for registro in registros %}
@@ -146,7 +146,7 @@
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="8" class="text-end"><strong>TOTALES</strong></td>
+            <td colspan="9" class="text-end"><strong>TOTALES</strong></td>
             <td>{{ total_base_imponible }}</td>
             <td>{{ total_operacion_gravada }}</td>
           </tr>
