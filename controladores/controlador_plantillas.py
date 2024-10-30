@@ -1,4 +1,4 @@
-from flask import send_file, request, jsonify
+from flask import send_file, jsonify
 from io import BytesIO
 from openpyxl import load_workbook
 from openpyxl.styles import Border, Side, Alignment, Font
@@ -55,6 +55,9 @@ def generar_registro_venta_excel(mes, anio):
             bottom=Side(style='thin')
         )
 
+        # Definir la fuente estándar Arial 10
+        fuente_estandar = Font(name='Arial', size=10)
+
         # Copiar el estilo de la fila base (por ejemplo, la fila 12)
         fila_base = 12
         alto_fila_base = hoja.row_dimensions[fila_base].height
@@ -73,35 +76,45 @@ def generar_registro_venta_excel(mes, anio):
 
             # Insertar valores y aplicar estilos a las celdas
             celdas = [
-                (1, registro[0]),
-                (2, registro[1]),
-                (4, registro[2]),
-                (5, registro[3]),
-                (6, registro[4]),
-                (7, registro[5]),
-                (8, registro[6]),
-                (9, registro[7]),
-                (11, registro[8]),
-                (15, registro[9]),
-                (17, registro[10])
+                (1, registro[0]),  # Correlativo
+                (2, registro[1]),  # Fecha de emisión
+                (4, registro[2]),  # Tipo de comprobante
+                (5, registro[3]),  # Serie comprobante
+                (6, registro[4]),  # Número comprobante
+                (7, registro[5]),  # Tipo documento
+                (8, registro[6]),  # Número documento
+                (9, registro[7]),  # Usuario
+                (11, registro[8]),  # Base imponible
+                (15, registro[9]),  # IGV
+                (17, registro[10])  # Total comprobante
             ]
 
             for col in columnas_con_borde:
                 celda = hoja.cell(row=fila, column=col)
                 celda.border = borde
-                celda.alignment = Alignment(horizontal='center', vertical='center')
+                celda.font = fuente_estandar
 
             for col, valor in celdas:
                 celda = hoja.cell(row=fila, column=col, value=valor)
+                celda.font = fuente_estandar
 
-                if col == 2:
-                    celda.number_format = FORMAT_DATE_DDMMYY
-                elif col in (11, 15, 17):
+                # Justificar a la derecha si la columna es de números
+                if col in (11, 15, 17):
+                    celda.alignment = Alignment(horizontal='right', vertical='center')
                     celda.number_format = FORMAT_NUMBER_COMMA_SEPARATED1
+                elif col == 2:
+                    celda.number_format = FORMAT_DATE_DDMMYY
+                    celda.alignment = Alignment(horizontal='center', vertical='center')
+                else:
+                    celda.alignment = Alignment(horizontal='left', vertical='center')
 
-            total_base_imponible += registro[8]
-            total_igv += registro[9]
-            total_comprobante += registro[10]
+                # Sumar totales
+                if col == 11:
+                    total_base_imponible += valor
+                elif col == 15:
+                    total_igv += valor
+                elif col == 17:
+                    total_comprobante += valor
 
         # Escribir los totales en la fila de "Totales"
         fila_totales = fila_inicial + len(resultados)
@@ -109,19 +122,25 @@ def generar_registro_venta_excel(mes, anio):
         celda_totales = hoja.cell(row=fila_totales, column=9, value="TOTALES")
         celda_totales.border = borde
         celda_totales.alignment = Alignment(horizontal='center', vertical='center')
-        celda_totales.font = Font(bold=True)
+        celda_totales.font = Font(name='Arial', size=10, bold=True)
 
         total_base_imponible_celda = hoja.cell(row=fila_totales, column=11, value=total_base_imponible)
         total_base_imponible_celda.border = borde
         total_base_imponible_celda.number_format = FORMAT_NUMBER_COMMA_SEPARATED1
+        total_base_imponible_celda.alignment = Alignment(horizontal='right', vertical='center')
+        total_base_imponible_celda.font = fuente_estandar
 
         total_igv_celda = hoja.cell(row=fila_totales, column=15, value=total_igv)
         total_igv_celda.border = borde
         total_igv_celda.number_format = FORMAT_NUMBER_COMMA_SEPARATED1
+        total_igv_celda.alignment = Alignment(horizontal='right', vertical='center')
+        total_igv_celda.font = fuente_estandar
 
         total_comprobante_celda = hoja.cell(row=fila_totales, column=17, value=total_comprobante)
         total_comprobante_celda.border = borde
         total_comprobante_celda.number_format = FORMAT_NUMBER_COMMA_SEPARATED1
+        total_comprobante_celda.alignment = Alignment(horizontal='right', vertical='center')
+        total_comprobante_celda.font = fuente_estandar
 
         for col in columnas_con_borde:
             hoja.cell(row=fila_totales, column=col).border = borde
