@@ -8,6 +8,7 @@
 <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
 <link href="{{ url_for('static', filename='css/tabla_cuentas.css') }}" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
 {% endblock %}
 
 {% block contenido %}
@@ -40,21 +41,24 @@
       </div>
     </div>
 
+
     <!-- Filtros: Fecha exacta y RUC en una sola fila alineados correctamente con centrado vertical -->
     <div class="row mb-3 align-items-center">
-        <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
-          <label class="me-3 d-flex justify-content-center align-items-center custom-label">
-            <strong>PERÍODO:</strong>
+      <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
+          <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
+              <strong>PERIODO:</strong>
           </label>
-          <input type="date" class="form-control" id="filtro-fecha" max="{{ current_year }}-12-31" value="{{ current_year }}-01-01">
-        </div>
-        <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
-          <label class="me-3 d-flex justify-content-center align-items-center custom-label">
-            <strong>RUC:</strong>
+          <input type="month" class="form-control" id="filtro-fecha" 
+                 max="" 
+                 value="{{ request.args.get('periodo', '') }}">
+      </div>
+      <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
+          <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
+              <strong>RUC:</strong>
           </label>
           <input type="text" class="form-control" value="20612188930" readonly>
-        </div>
       </div>
+  </div>
       
     <div class="table-wrapper">
       <div class="table-title">
@@ -69,14 +73,25 @@
             </div>
           </div>
           <!-- Botones Alineados a la Derecha para Imprimir y Exportar -->
+
           <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-end">
-            <button class="btn btn-primary me-2" onclick="window.print()" style="background-color: #ff5733;">
-                <i class="material-icons">print</i> <span>Imprimir</span>
-              </button>
-            <button class="btn btn-success" onclick="exportTableToCSV('libro_diario.csv')">
-              <i class="material-icons">file_download</i> <span>Exportar</span>
+            <button class="btn btn-primary me-2" onclick="generarReporte()"
+                style="background-color: #ff5733;">
+                <i class="material-icons">print</i>
             </button>
-          </div>
+            <button class="btn btn-success" style="background-color: blue;"
+                onclick="exportTableToCSV('libro_diario.csv')">
+                <i class="fas fa-file-csv"></i>
+            </button>
+            <button class="btn btn-success" onclick="exportTableToExcel()">
+                <i class="fas fa-file-excel"></i>
+            </button>
+            <button class="btn btn-danger" onclick="exportTableToPDF()">
+                <i class="material-icons">picture_as_pdf</i>
+            </button>
+        </div>
+
+
         </div>
       </div>
 
@@ -135,6 +150,28 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
+
+    document.addEventListener("DOMContentLoaded", function() {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const maxDate = ${year}-${month};
+
+      // Establecer el valor máximo para el campo mes
+      const filtroFecha = document.getElementById("filtro-fecha");
+      filtroFecha.max = maxDate;
+
+      // Obtener el parámetro 'periodo' de la URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const periodo = urlParams.get('periodo');
+
+      // Si hay un valor de periodo en la URL, establecerlo como valor del filtro
+      if (periodo) {
+          filtroFecha.value = periodo;
+      }
+
+    });
+
     function exportTableToCSV(filename) {
       var csv = [];
       var rows = document.querySelectorAll("table tr");
@@ -165,22 +202,6 @@
       downloadLink.click();
     }
   
-    // Función para obtener la fecha de hoy en formato YYYY-MM-DD
-    function getTodayDate() {
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0'); // Mes empieza en 0, así que sumamos 1
-      const day = String(today.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    }
-  
-    // Establece la fecha de hoy como valor predeterminado en el filtro de fecha
-    document.addEventListener('DOMContentLoaded', function() {
-      const filtroFecha = document.getElementById('filtro-fecha');
-      const today = getTodayDate();
-      filtroFecha.value = today;  // Establecer valor como fecha de hoy
-      filtroFecha.max = `${today}`;  // Fecha máxima como hoy para no permitir fechas futuras
-    });
   </script>
 
 </div>
