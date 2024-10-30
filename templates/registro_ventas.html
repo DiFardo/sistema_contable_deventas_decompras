@@ -18,6 +18,11 @@
     font-weight: bold;
   }
 
+  td.centered {
+    text-align: center;
+    vertical-align: middle;
+  }
+
   /* Estilos para encabezados con colores específicos */
   .bg-orange {
     background-color: #FF9933;
@@ -149,10 +154,10 @@
           {% for registro in registros %}
           <tr>
             <td class="w-correlativo">{{ registro.correlativo }}</td>
-            <td>{{ registro.fecha_emision }}</td>
+            <td class="centered">{{ registro.fecha_emision }}</td>
             <td>{{ registro.tipo_comprobante }}</td>
             <td>{{ registro.serie_comprobante }}</td>
-            <td>{{ registro.numero_comprobante }}</td>
+            <td class="centered">{{ registro.numero_comprobante }}</td>
             <td>{{ registro.tipo_documento }}</td>
             <td>{{ registro.numero_documento }}</td>
             <td>{{ registro.usuario }}</td>
