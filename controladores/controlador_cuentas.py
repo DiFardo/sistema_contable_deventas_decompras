@@ -149,7 +149,7 @@ def obtener_nivel_cuenta(codigo):
     else:
         return None
     
-    
+
 def añadir_cuenta():
     data = request.get_json()
     codigo = data.get('codigo')
@@ -175,7 +175,6 @@ def añadir_cuenta():
     else:
         cuenta_padre_id = None
 
-    # **CORRECCIÓN AQUÍ**: Verificar si el nivel del código es correcto, pero ahora permitimos los niveles 2, 3 y 4
     if nivel is None or (nivel != 2 and nivel != 3 and nivel != 4):
         return jsonify({'error': 'El nivel del código es incorrecto para la cuenta ingresada.'}), 400
 
@@ -187,6 +186,15 @@ def añadir_cuenta():
                 VALUES (%s, %s, %s, %s, %s, %s) RETURNING cuenta_id;
             """, (codigo, descripcion, cuenta_padre_id, estado, categoria, nivel))
             nueva_cuenta_id = cursor.fetchone()[0]
+
+            # Añadir la notificación
+            mensaje = f"Se ha añadido una nueva cuenta: {descripcion} (Código: {codigo})"
+            url = "/cuentas"
+            cursor.execute("""
+                INSERT INTO notificaciones (mensaje, url, leido)
+                VALUES (%s, %s, FALSE);
+            """, (mensaje, url))
+
             conexion.commit()
 
         return jsonify({
@@ -221,5 +229,69 @@ def validar_nivel_cuenta(codigo):
     return True, cuenta_padre, nivel_cuenta
 
 
+def eliminar_notificacion(notificacion_id):
+    conexion = obtener_conexion()
+    try:
+        with conexion.cursor() as cursor:
+            cursor.execute("""
+                DELETE FROM notificaciones WHERE id = %s;
+            """, (notificacion_id,))
+            conexion.commit()
+        return jsonify({'message': 'Notificación eliminada exitosamente'}), 200
+    except Exception as e:
+        conexion.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conexion.close()
 
 
+
+def contar_notificaciones_no_leidas():
+    conexion = obtener_conexion()
+    total_no_leidas = 0
+    with conexion.cursor() as cursor:
+        cursor.execute("""
+            SELECT COUNT(*) FROM notificaciones WHERE leido = FALSE;
+        """)
+        total_no_leidas = cursor.fetchone()[0]
+    conexion.close()
+    return total_no_leidas
+
+
+def obtener_todas_notificaciones():
+    conexion = obtener_conexion()
+    notificaciones = []
+    with conexion.cursor() as cursor:
+        cursor.execute("""
+            SELECT id, mensaje, url, leido
+            FROM notificaciones
+            ORDER BY creado_en DESC;
+        """)
+        notificaciones = cursor.fetchall()
+    
+    conexion.close()
+
+    notificaciones_json = [
+        {'id': n[0], 'mensaje': n[1], 'url': n[2], 'leido': n[3]} for n in notificaciones
+    ]
+    return jsonify({'notificaciones': notificaciones_json})
+
+
+
+def marcar_notificaciones_leidas():
+    conexion = obtener_conexion()
+    try:
+        with conexion.cursor() as cursor:
+            cursor.execute("""
+                UPDATE notificaciones
+                SET leido = TRUE
+                WHERE leido = FALSE;
+            """)
+            conexion.commit()
+
+        return jsonify({'message': 'Notificaciones marcadas como leídas'}), 200
+    except Exception as e:
+        conexion.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conexion.close()

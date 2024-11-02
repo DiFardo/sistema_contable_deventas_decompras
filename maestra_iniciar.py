@@ -5,7 +5,7 @@ import controladores.controlador_usuarios as controlador_usuarios
 import controladores.controlador_ventas as controlador_ventas
 import clases.clase_usuario as clase_usuario
 from bd_conexion import obtener_conexion  # Asegúrate de que la conexión a la base de datos esté configurada correctamente
-from controladores.controlador_cuentas import obtener_todas_cuentas, obtener_cuentas_por_categoria_endpoint, añadir_cuenta
+from controladores.controlador_cuentas import obtener_todas_cuentas, obtener_cuentas_por_categoria_endpoint, añadir_cuenta,obtener_todas_notificaciones,marcar_notificaciones_leidas,eliminar_notificacion,contar_notificaciones_no_leidas
 app = Flask(__name__)
 app.debug = True
 app.config['SECRET_KEY'] = 'super-secret'
@@ -230,7 +230,40 @@ def cuentas_añadir():
     except Exception as e:
         return jsonify({'error': f'Error en el servidor: {str(e)}'}), 500
 
-# Iniciar el servidor
+
+@app.route('/notificaciones', methods=['GET'])
+def obtener_notificaciones_endpoint():
+    notificaciones = obtener_todas_notificaciones()
+    total_no_leidas = contar_notificaciones_no_leidas()
+    
+    return jsonify({
+        'notificaciones': notificaciones.json['notificaciones'],
+        'total_no_leidas': total_no_leidas
+    })
+
+
+# Ruta para contar notificaciones no leídas
+@app.route('/notificaciones/contar', methods=['GET'])
+def contar_notificaciones_endpoint():
+    total_no_leidas = contar_notificaciones_no_leidas()
+    return jsonify({'total_no_leidas': total_no_leidas})
+
+# Ruta para eliminar una notificación específica
+@app.route('/notificaciones/eliminar', methods=['POST'])
+def eliminar_notificacion_endpoint():
+    data = request.get_json()
+    notificacion_id = data.get('id')
+
+    if not notificacion_id:
+        return jsonify({'error': 'ID de notificación no proporcionado'}), 400
+
+    return eliminar_notificacion(notificacion_id)
+
+# Ruta para marcar todas las notificaciones como leídas
+@app.route('/notificaciones/marcar_leidas', methods=['POST'])
+def marcar_notificaciones_leidas_endpoint():
+    return marcar_notificaciones_leidas()
+
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8000, debug=True)
