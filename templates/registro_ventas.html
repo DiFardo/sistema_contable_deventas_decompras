@@ -18,6 +18,11 @@
     font-weight: bold;
   }
 
+  td.centered {
+    text-align: center;
+    vertical-align: middle;
+  }
+
   /* Estilos para encabezados con colores específicos */
   .bg-orange {
     background-color: #FF9933;
@@ -36,6 +41,25 @@
 
   .w-correlativo {
     width: 10%;
+  }
+
+  @media print {
+    body {
+      visibility: hidden;
+    }
+    .table-wrapper, .table {
+      visibility: visible;
+      width: 100%;
+    }
+    .table-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    /* Establecer orientación horizontal */
+    @page {
+      size: landscape;
+    }
   }
 </style>
 
@@ -57,26 +81,27 @@
     <!-- Encabezado con título adicional -->
     <div class="row mb-3">
       <div class="col-12">
-        <h2 class="text-left">Registro de Ventas e Ingresos</h2>
+        <h2 class="text-left">Registro de ventas e ingresos</h2>
       </div>
     </div>
 
     <!-- Filtros: Fecha exacta y RUC en una sola fila alineados correctamente con centrado vertical -->
     <div class="row mb-3 align-items-center">
       <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
-        <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
-          <strong>PERÍODO:</strong>
-        </label>
-        <input type="date" class="form-control" id="filtro-fecha" max="{{ current_year }}-12-31"
-          value="{{ current_year }}-01-01">
+          <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
+              <strong>PERIODO:</strong>
+          </label>
+          <input type="month" class="form-control" id="filtro-fecha" 
+                 max="" 
+                 value="{{ request.args.get('periodo', '') }}">
       </div>
       <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
-        <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
-          <strong>RUC:</strong>
-        </label>
-        <input type="text" class="form-control" value="20612188930" readonly>
+          <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
+              <strong>RUC:</strong>
+          </label>
+          <input type="text" class="form-control" value="20612188930" readonly>
       </div>
-    </div>
+  </div>
 
     <div class="table-wrapper">
       <div class="table-title">
@@ -97,7 +122,7 @@
             <button class="btn btn-primary me-2" onclick="window.print()" style="background-color: #ff5733;">
               <i class="material-icons">print</i> <span>Imprimir</span>
             </button>
-            <button class="btn btn-success" onclick="exportTableToCSV('registro_ventas.csv')">
+            <button class="btn btn-success" onclick="exportarRegistroVentas()">
               <i class="material-icons">file_download</i> <span>Exportar</span>
             </button>
           </div>
@@ -126,29 +151,28 @@
           </tr>
         </thead>
         <tbody id="tabla-cuerpo">
-          <!-- Filas de datos dinámicos -->
           {% for registro in registros %}
           <tr>
-            <td class="w-correlativo">{{ registro.numero_correlativo }}</td>
-            <td>{{ registro.fecha_emision }}</td>
-            <td>{{ registro.fecha_vencimiento }}</td>
+            <td class="w-correlativo">{{ registro.correlativo }}</td>
+            <td class="centered">{{ registro.fecha_emision }}</td>
             <td>{{ registro.tipo_comprobante }}</td>
             <td>{{ registro.serie_comprobante }}</td>
-            <td>{{ registro.numero_comprobante }}</td>
-            <td>{{ registro.maquina_registradora }}</td>
+            <td class="centered">{{ registro.numero_comprobante }}</td>
             <td>{{ registro.tipo_documento }}</td>
             <td>{{ registro.numero_documento }}</td>
-            <td>{{ registro.razon_social }}</td>
-            <td>{{ registro.base_imponible }}</td>
-            <td>{{ registro.operacion_gravada }}</td>
+            <td>{{ registro.usuario }}</td>
+            <td class="text-end">{{ registro.base_imponible }}</td>
+            <td class="text-end">{{ registro.igv }}</td>
+            <td class="text-end">{{ registro.total_comprobante }}</td>
           </tr>
           {% endfor %}
         </tbody>
         <tfoot>
           <tr>
             <td colspan="8" class="text-end"><strong>TOTALES</strong></td>
-            <td>{{ total_base_imponible }}</td>
-            <td>{{ total_operacion_gravada }}</td>
+            <td class="text-end">{{ total_base_imponible }}</td>
+            <td class="text-end">{{ total_operacion_gravada }}</td>
+            <td class="text-end">{{ total_total_comprobante }}</td>
           </tr>
         </tfoot>
       </table>
@@ -162,35 +186,44 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    function exportTableToCSV(filename) {
-      var csv = [];
-      var rows = document.querySelectorAll("table tr");
+    document.addEventListener("DOMContentLoaded", function() {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const maxDate = `${year}-${month}`;
 
-      for (var i = 0; i < rows.length; i++) {
-        var row = [], cols = rows[i].querySelectorAll("td, th");
+      // Establecer el valor máximo para el campo mes
+      const filtroFecha = document.getElementById("filtro-fecha");
+      filtroFecha.max = maxDate;
 
-        for (var j = 0; j < cols.length; j++)
-          row.push(cols[j].innerText);
+      // Obtener el parámetro 'periodo' de la URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const periodo = urlParams.get('periodo');
 
-        csv.push(row.join(","));
+      // Si hay un valor de periodo en la URL, establecerlo como valor del filtro
+      if (periodo) {
+          filtroFecha.value = periodo;
       }
 
-      // Download CSV file
-      downloadCSV(csv.join("\n"), filename);
+      // Redirige cuando se selecciona un nuevo período
+      filtroFecha.addEventListener('change', function() {
+          const nuevoPeriodo = filtroFecha.value;
+          if (nuevoPeriodo) {
+              window.location.href = `/registro_ventas?periodo=${nuevoPeriodo}`;
+          }
+      });
+    });
+
+    function exportarRegistroVentas() {
+    const filtroFecha = document.getElementById("filtro-fecha").value;
+    if (!filtroFecha) {
+      alert("Por favor, seleccione un período antes de exportar.");
+      return;
+    }
+    // Redireccionar a la ruta de exportación con el período como parámetro
+    window.location.href = `/exportar-registro-ventas?periodo=${filtroFecha}`;
     }
 
-    function downloadCSV(csv, filename) {
-      var csvFile;
-      var downloadLink;
-
-      csvFile = new Blob([csv], { type: "text/csv" });
-      downloadLink = document.createElement("a");
-      downloadLink.download = filename;
-      downloadLink.href = window.URL.createObjectURL(csvFile);
-      downloadLink.style.display = "none";
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-    }
   </script>
 </div>
 {% endblock %}
