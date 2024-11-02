@@ -1,0 +1,195 @@
+{% extends "pagina_maestra.html" %}
+{% block titulo %}Admin Panel{% endblock %}
+{% block link %}
+<!-- Fonts and icons -->
+<link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,900|Roboto+Slab:400,700" rel="stylesheet">
+<!-- Nucleo Icons -->
+<link href="{{ url_for('static', filename='css/nucleo-icons.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/nucleo-svg.css') }}" rel="stylesheet">
+<!-- Font Awesome Icons -->
+<script src="https://kit.fontawesome.com/42d5adcbca.js" crossorigin="anonymous"></script>
+<!-- Material Icons -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+<!-- CSS Files -->
+<link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block contenido %}
+<style>
+    /* General Container Styling */
+    .profile-container {
+        display: flex;
+        background-color: #f8f9fa;
+        min-height: 100vh;
+        justify-content: flex-start;
+        padding: 20px;
+        margin-left: 250px; /* Espacio reservado para la barra lateral */
+    }
+
+    .profile-card {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        display: flex;
+        width: 100%;
+        max-width: 1000px;
+        overflow: hidden;
+    }
+
+    /* Sidebar Styling */
+    .profile-sidebar {
+        background-color: #dfe3e6;
+        padding: 20px;
+        text-align: center;
+        width: 30%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .profile-sidebar img {
+        border-radius: 50%;
+        width: 120px;
+        height: 120px;
+        margin-bottom: 15px;
+    }
+
+    /* Profile Content Styling */
+    .profile-content {
+        padding: 30px;
+        width: 70%;
+    }
+
+    h4 {
+        font-weight: bold;
+    }
+
+    .btn-upload {
+        background-color: #383c4c ;
+        color: white;
+        border: none;
+    }
+
+    .btn-upload:hover {
+        background-color: white;
+        color: black;
+    }
+
+    .btn-update {
+        background-color: #383c4c;
+        color: white;
+        width: 100%;
+        border: none;
+    }
+
+    .btn-update:hover {
+        background-color: white;
+        color: black;
+    }
+
+    .nav-tabs .nav-link.active {
+        color: #383c4c;
+        font-weight: bold;
+        border-bottom: 2px solid #383c4c;
+    }
+
+    .nav-tabs .nav-link {
+        color: #383c4c;
+    }
+
+    .nav-tabs .nav-link:hover {
+        color: #383c4c;
+    }
+
+    .form-control[disabled], .form-control[readonly] {
+        background-color: #e9ecef;
+        opacity: 1;
+    }
+
+    .justificado {
+        text-align: justify;
+    }
+</style>
+
+<div class="profile-container">
+    <div class="profile-card">
+        <!-- Sidebar Profile Section -->
+        <div class="profile-sidebar">
+            <h4 id="displayName">{{ perfil[0] }} {{ perfil[1] }}</h4>
+            
+            <!-- Mostrar la imagen de perfil si existe -->
+            {% if perfil[4] %}
+                <img id="profileImage" src="{{ url_for('static', filename='img/perfiles/' + perfil[4]) }}" alt="User Photo">
+            {% else %}
+                <img id="profileImage" src="https://via.placeholder.com/120" alt="User Photo">
+            {% endif %}
+            
+            <form id="form-imagen" action="{{ url_for('subir_imagen_perfil') }}" method="POST" enctype="multipart/form-data">
+                <input type="file" name="imagen_perfil" id="editar-imagen" style="display:none;" onchange="this.form.submit()">
+            </form>
+            <button class="btn btn-upload mt-2" onclick="document.getElementById('editar-imagen').click()">Cargar nueva foto</button>
+            <p class="text-muted mt-3">{{ perfil[3] }}</p> <!-- Mostrar rol -->
+        </div>
+
+        <!-- Profile Edit Section -->
+        <div class="profile-content">
+            <h4>Editar perfil</h4>
+            <ul class="nav nav-tabs" id="myTab" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="user-info-tab" data-toggle="tab" href="#user-info" role="tab" aria-controls="user-info" aria-selected="true">Modificar usuario</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="funciones-tab" data-toggle="tab" href="#funciones" role="tab" aria-controls="funciones" aria-selected="false">Funciones</a>
+                </li>
+            </ul>
+            <div class="tab-content mt-4" id="myTabContent">
+                <!-- Modificar usuario -->
+                <div class="tab-pane fade show active" id="user-info" role="tabpanel" aria-labelledby="user-info-tab">
+                    <form id="profileForm" action="{{ url_for('actualizar_perfil') }}" method="POST">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="firstName">Nombres</label>
+                                <input type="text" class="form-control" id="firstName" name="nombres" value="{{ perfil[0] }}">
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="lastName">Apellidos</label>
+                                <input type="text" class="form-control" id="lastName" name="apellidos" value="{{ perfil[1] }}">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="username">DNI</label>
+                                <input type="text" class="form-control" id="username" value="{{ perfil[2] }}" disabled>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-update">Actualizar información</button>
+                    </form>
+                </div>
+                
+                <!-- Funciones del rol -->
+                <div class="tab-pane fade" id="funciones" role="tabpanel" aria-labelledby="funciones-tab">
+                    <h5>Funciones del rol</h5>
+                    <ul class="list-group">
+                        <li class="list-group-item"><strong>Rol:</strong> {{ perfil[3] }}</li>
+                        <li class="list-group-item justificado"><strong>Descripción:</strong> {{ descripcion_rol }}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include JavaScript Files -->
+<script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
+
+<script>
+    function loadImage(event) {
+        const image = document.getElementById("profileImage");
+        image.src = URL.createObjectURL(event.target.files[0]);
+    }
+</script>
+{% endblock %}
