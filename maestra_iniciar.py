@@ -15,8 +15,6 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
 #app.run(ssl_context=('cert.pem', 'key.pem'))
 
-
-
 # Inicializa JWTManager
 jwt = JWTManager(app)
 

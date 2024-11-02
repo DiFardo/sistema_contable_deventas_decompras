@@ -79,6 +79,12 @@
                                 <span>Registro de ventas</span>
                             </a>
                         </li>
+                        <li>
+                            <a href="{{ url_for('registro_compras') }}" class="{{ 'active' if 'registro_compras' in request.path }}">
+                                <i class="material-icons">receipt_long</i>
+                                <span>Registro de compras</span>
+                            </a>
+                        </li>
                     </ul>
                 </li>
 
