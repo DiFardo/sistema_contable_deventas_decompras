@@ -17,13 +17,9 @@
             display: none;
         }
 
-        .active {
-            background-color: #f0f0f0;
-            /* Resalta la opción activa */
-        }
-
         .notification-dropdown {
-            width: 350px;
+            width: 100%;
+            max-width: 350px;
             max-height: 400px;
             overflow-y: auto;
             padding: 10px;
@@ -53,14 +49,12 @@
             background-color: #f5f5f5;
         }
 
-        .notification-item:last-child {
-            border-bottom: none;
-        }
-
         .no-notifications {
             padding: 10px;
             text-align: center;
             color: #888;
+        }
+
         .profile-image {
             position: relative;
             width: 30px;
@@ -82,6 +76,32 @@
             background-color: #2ccc74;
             border: 2px solid white;
             border-radius: 50%;
+        }
+
+        /* Responsive adjustments for top navbar */
+        @media (max-width: 768px) {
+            .xp-topbar .row {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0 15px;
+            }
+
+            .xp-searchbar {
+                margin-top: 10px;
+                width: 100%;
+            }
+
+            .xp-profilebar {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                width: 100%;
+            }
+
+            .navbar-nav .nav-item span {
+                display: none; /* Oculta el texto en dispositivos pequeños */
+            }
         }
     </style>
 </head>
@@ -158,13 +178,13 @@
             <div class="top-navbar">
                 <div class="xp-topbar">
                     <div class="row">
-                        <div class="col-2 col-md-1 col-lg-1 order-2 order-md-1 align-self-center">
+                        <div class="col-2 col-md-1 align-self-center">
                             <div class="xp-menubar">
                                 <span class="material-icons text-white">signal_cellular_alt</span>
                             </div>
                         </div>
 
-                        <div class="col-md-5 col-lg-3 order-3 order-md-2">
+                        <div class="col-md-5 order-3 order-md-2">
                             <div class="xp-searchbar">
                                 <form id="searchForm">
                                     <div class="input-group">
@@ -177,7 +197,7 @@
                             </div>
                         </div>
 
-                        <div class="col-10 col-md-6 col-lg-8 order-1 order-md-3">
+                        <div class="col-10 col-md-6 order-1 order-md-3">
                             <div class="xp-profilebar text-right">
                                 <nav class="navbar p-0">
                                     <ul class="nav navbar-nav flex-row ml-auto">
@@ -193,24 +213,19 @@
         
                                         <!-- Perfil del usuario -->
                                         {% if usuario %}
-                                        <li class="nav-item dropdown user-dropdown" onclick="this.classList.toggle('show');">
+                                        <li class="nav-item dropdown user-dropdown">
                                             <a href="#" class="nav-link d-flex align-items-center" data-toggle="dropdown" aria-expanded="false">
-                                                <!-- Si el usuario tiene una imagen, se usa esa; si no, se usa la imagen por defecto -->
                                                 <div class="profile-image">
                                                     <img src="{{ url_for('static', filename='img/perfiles/' + (usuario[6] if usuario[6] else 'perfil_defecto.png')) }}" alt="Perfil">
-                                                    <!-- Bolita verde de estado activo -->
                                                     <div class="active-status"></div>
                                                 </div>
-                                                <span class="ml-2">{{ usuario[4] }} - {{ usuario[5] }}</span>
+                                                <span class="ml-2 d-none d-md-inline">{{ usuario[4] }} - {{ usuario[5] }}</span>
                                             </a>
                                             <ul class="dropdown-menu">
-                                                <li><a href="#"><span class="material-icons">person_outline</span> Perfil</a></li>
-                                                <li><a href="{{ url_for('procesar_logout') }}"><span class="material-icons">logout</span> Cerrar sesión</a></li>
                                                 <li><a href="{{ url_for('perfil_usuario') }}"><span class="material-icons">person_outline</span>Perfil</a></li>
                                                 <li><a href="{{ url_for('procesar_logout') }}"><span class="material-icons">logout</span>Cerrar sesión</a></li>
                                             </ul>
                                         </li>
-
                                         {% else %}
                                         <li class="nav-item">
                                             <span class="nav-link" style="color: white;">Invitado</span>
@@ -232,11 +247,10 @@
     <script src="/static/js/bootstrap.min.js"></script>
     <!-- Archivo JS para manejar notificaciones -->
     <script src="/static/js/notificaciones.js"></script>
-
     <script type="text/javascript">
         function toggleVisibility(module) {
             const sidebarTitle = document.getElementById('sidebar-title');
-
+    
             if (module === "contable") {
                 sidebarTitle.innerHTML = '<span>Módulo Contable</span>';
                 document.querySelectorAll('.cuentas, .libros').forEach(el => el.classList.remove('hidden'));
@@ -247,15 +261,12 @@
                 document.querySelectorAll('.cuentas, .libros').forEach(el => el.classList.add('hidden'));
             }
         }
-
+    
         document.addEventListener("DOMContentLoaded", function () {
             const currentPath = window.location.pathname;
-            const contablePaths = ['cuentas', 'libro_diario', 'libro_mayor', 'libro_caja', 'registro_ventas'];
-
-            if (contablePaths.some(path => currentPath.includes(path))) {
             const ventasPaths = ['ventas', 'clientes', 'reportes_ventas'];
             const contablePaths = ['cuentas', 'libro_diario', 'libro_mayor', 'libro_caja', 'registro_ventas'];
-            
+    
             if (ventasPaths.some(path => currentPath.includes(path))) {
                 toggleVisibility("ventas");
             } else if (contablePaths.some(path => currentPath.includes(path))) {

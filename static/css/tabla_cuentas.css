@@ -268,3 +268,20 @@
 input[type="checkbox"] {
     margin-left: 10px;
 }
+/* Margen para la jerarquía de las subcuentas */
+.subcuenta-1 {
+    padding-left: 20px;
+  }
+  .subcuenta-2 {
+    padding-left: 40px;
+  }
+  .subcuenta-3 {
+    padding-left: 60px;
+  }
+  .subcuenta-4 {
+    padding-left: 80px;
+  }
+  .subcuenta-5 {
+    padding-left: 100px;
+  }
+  

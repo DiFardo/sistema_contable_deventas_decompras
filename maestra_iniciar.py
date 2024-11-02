@@ -7,7 +7,6 @@ import controladores.controlador_ventas as controlador_ventas
 import clases.clase_usuario as clase_usuario
 from bd_conexion import obtener_conexion  # Asegúrate de que la conexión a la base de datos esté configurada correctamente
 from controladores.controlador_cuentas import obtener_todas_cuentas, obtener_cuentas_por_categoria_endpoint, añadir_cuenta,obtener_todas_notificaciones,marcar_notificaciones_leidas,eliminar_notificacion,contar_notificaciones_no_leidas
-from controladores.controlador_cuentas import obtener_todas_cuentas, obtener_cuentas_por_categoria_endpoint, añadir_cuenta
 from werkzeug.utils import secure_filename
 
 # Directorio donde se guardarán las imágenes de perfil

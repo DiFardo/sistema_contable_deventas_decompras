@@ -88,16 +88,6 @@ def obtener_cuentas_por_categoria_endpoint():
     return jsonify(cuentas_json)
 
 
-def verificar_existencia_cuenta(codigo, categoria):
-    conexion = obtener_conexion()
-    cuenta_existe = False
-    with conexion.cursor() as cursor:
-        cursor.execute("""
-            SELECT 1 FROM cuentas WHERE codigo = %s AND LOWER(categoria) = LOWER(%s);
-        """, (codigo, categoria))
-        cuenta_existe = cursor.fetchone() is not None
-    conexion.close()
-    return cuenta_existe
 
 def obtener_ultimo_codigo_subcuenta(cuenta_padre):
     conexion = obtener_conexion()
@@ -112,6 +102,16 @@ def obtener_ultimo_codigo_subcuenta(cuenta_padre):
 
 
 
+def verificar_existencia_cuenta(codigo, categoria):
+    conexion = obtener_conexion()
+    cuenta_existe = False
+    with conexion.cursor() as cursor:
+        cursor.execute("""
+            SELECT 1 FROM cuentas WHERE codigo = %s AND LOWER(categoria) = LOWER(%s);
+        """, (codigo, categoria))
+        cuenta_existe = cursor.fetchone() is not None
+    conexion.close()
+    return cuenta_existe
 
 def obtener_cuenta_padre(codigo):
     """
@@ -120,7 +120,6 @@ def obtener_cuenta_padre(codigo):
     conexion = obtener_conexion()
     cuenta_padre = None
     with conexion.cursor() as cursor:
-        # Buscar la cuenta padre que coincide con los primeros dígitos del código
         cursor.execute("""
             SELECT cuenta_id, codigo
             FROM cuentas
@@ -132,30 +131,13 @@ def obtener_cuenta_padre(codigo):
     conexion.close()
     return cuenta_padre
 
-def obtener_nivel_cuenta(codigo):
-    """
-    Calcula el nivel de la cuenta basado en la longitud del código.
-    Nivel 1: 2 dígitos, Nivel 2: 4 dígitos, Nivel 3: 5 dígitos, Nivel 4: 6 dígitos.
-    """
-    longitud = len(codigo)
-    if longitud <= 2:
-        return 1
-    elif longitud <= 4:
-        return 2
-    elif longitud == 5:
-        return 3
-    elif longitud == 6:
-        return 4
-    else:
-        return None
-    
-
 def añadir_cuenta():
     data = request.get_json()
     codigo = data.get('codigo')
     descripcion = data.get('descripcion')
     estado = data.get('estado')
     categoria = data.get('categoria')
+    nivel_seleccionado = int(data.get('nivel', 2))  # Nivel predeterminado a 2 si no se proporciona
 
     if not categoria or not descripcion or not codigo:
         return jsonify({'error': 'Faltan datos obligatorios'}), 400
@@ -164,10 +146,15 @@ def añadir_cuenta():
     if verificar_existencia_cuenta(codigo, categoria):
         return jsonify({'error': 'El código ya existe en esta categoría.'}), 400
 
-    # Calcular nivel y cuenta padre
-    nivel = obtener_nivel_cuenta(codigo)
+    # Calcular cuenta padre
     cuenta_padre = obtener_cuenta_padre(codigo)
+    longitud_permitida = {2: 3, 3: 4, 4: 5}  # Longitud de código para cada nivel
 
+    # Validar la longitud del código según el nivel seleccionado
+    if len(codigo) != longitud_permitida.get(nivel_seleccionado, 3):  # 3 dígitos como longitud predeterminada
+        return jsonify({'error': f'El código debe tener {longitud_permitida[nivel_seleccionado]} dígitos para el nivel seleccionado.'}), 400
+
+    # Verificar que el código pertenezca a la cuenta padre
     if cuenta_padre:
         cuenta_padre_id, codigo_padre = cuenta_padre
         if not codigo.startswith(codigo_padre):
@@ -175,16 +162,14 @@ def añadir_cuenta():
     else:
         cuenta_padre_id = None
 
-    if nivel is None or (nivel != 2 and nivel != 3 and nivel != 4):
-        return jsonify({'error': 'El nivel del código es incorrecto para la cuenta ingresada.'}), 400
-
+    # Insertar cuenta en la base de datos
     conexion = obtener_conexion()
     try:
         with conexion.cursor() as cursor:
             cursor.execute("""
                 INSERT INTO cuentas (codigo, descripcion, cuenta_padre, estado, categoria, nivel)
                 VALUES (%s, %s, %s, %s, %s, %s) RETURNING cuenta_id;
-            """, (codigo, descripcion, cuenta_padre_id, estado, categoria, nivel))
+            """, (codigo, descripcion, cuenta_padre_id, estado, categoria, nivel_seleccionado))
             nueva_cuenta_id = cursor.fetchone()[0]
 
             # Añadir la notificación
@@ -213,21 +198,6 @@ def añadir_cuenta():
         return jsonify({'error': f'Error al añadir la cuenta: {str(e)}'}), 500
     finally:
         conexion.close()
-
-
-
-def validar_nivel_cuenta(codigo):
-    """
-    Función para validar el nivel de la cuenta y la relación con la cuenta padre.
-    """
-    nivel_cuenta = obtener_nivel_cuenta(codigo)
-    cuenta_padre = obtener_cuenta_padre(codigo)
-
-    if cuenta_padre is None:
-        return False, "No se encontró la cuenta padre para el código ingresado."
-
-    return True, cuenta_padre, nivel_cuenta
-
 
 def eliminar_notificacion(notificacion_id):
     conexion = obtener_conexion()
