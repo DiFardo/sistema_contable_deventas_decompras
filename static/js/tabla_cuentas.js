@@ -115,20 +115,38 @@ document.addEventListener('DOMContentLoaded', function () {
     inputCodigo.addEventListener('input', validarCodigoCuentaPadreYNivel);
     selectCuentaPadre.addEventListener('change', validarCodigoCuentaPadreYNivel);
 
-    function validarCodigoCuentaPadreYNivel() {
-        var cuentaPadreCodigo = selectCuentaPadre.options[selectCuentaPadre.selectedIndex].text.split(" - ")[0].trim();
-        var longitudPermitida;
-        let esValido = true;
+    function validarCamposObligatorios() {
+        let isValid = true;
+        if (!selectCategoria.value) {
+            mostrarError(selectCategoria, errorCategoria, 'Debe seleccionar una categoría.');
+            isValid = false;
+        } else {
+            limpiarError(selectCategoria, errorCategoria);
+        }
 
-        // Verificar que el código pertenece a la cuenta padre
-        if (cuentaPadreCodigo && !inputCodigo.value.startsWith(cuentaPadreCodigo)) {
-            mostrarError(inputCodigo, errorCodigo, 'El código ingresado no pertenece a la cuenta padre seleccionada.');
-            esValido = false;
+        if (!inputCodigo.value) {
+            mostrarError(inputCodigo, errorCodigo, 'El código es obligatorio.');
+            isValid = false;
         } else {
             limpiarError(inputCodigo, errorCodigo);
         }
 
-        // Verificar longitud según nivel seleccionado
+        if (!formDescripcion.value) {
+            mostrarError(formDescripcion, errorDescripcion, 'La descripción es obligatoria.');
+            isValid = false;
+        } else {
+            limpiarError(formDescripcion, errorDescripcion);
+        }
+
+        return isValid;
+    }
+
+    function validarCodigoCuentaPadreYNivel() {
+        let esValido = true;
+        const cuentaPadreCodigo = selectCuentaPadre.options[selectCuentaPadre.selectedIndex]?.text.split(" - ")[0].trim();
+        let longitudPermitida;
+
+        // Validación de longitud según el nivel seleccionado
         switch (nivelSeleccionado) {
             case 2:
                 longitudPermitida = 3;
@@ -146,9 +164,19 @@ document.addEventListener('DOMContentLoaded', function () {
         if (inputCodigo.value.length !== longitudPermitida) {
             mostrarError(inputCodigo, errorCodigo, `El código debe tener ${longitudPermitida} dígitos para el nivel seleccionado.`);
             esValido = false;
-        } else if (esValido) {
+        } else {
             limpiarError(inputCodigo, errorCodigo);
         }
+
+        // Validación de cuenta padre
+        if (cuentaPadreCodigo && !inputCodigo.value.startsWith(cuentaPadreCodigo)) {
+            mostrarError(inputCodigo, errorCodigo, 'El código ingresado no pertenece a la cuenta padre seleccionada.');
+            esValido = false;
+        } else {
+            limpiarError(inputCodigo, errorCodigo);
+        }
+
+        return esValido;
     }
 
     function cargarDatosCuenta(button, editable) {
@@ -156,30 +184,26 @@ document.addEventListener('DOMContentLoaded', function () {
         formDescripcion.value = button.getAttribute('data-descripcion');
         inputEstado.checked = button.getAttribute('data-estado') === 'true';
 
-        var categoriaSeleccionada = button.getAttribute('data-categoria');
+        const categoriaSeleccionada = button.getAttribute('data-categoria');
         if (categoriaSeleccionada) {
-            for (let i = 0; i < selectCategoria.options.length; i++) {
-                if (selectCategoria.options[i].value.toLowerCase() === categoriaSeleccionada.toLowerCase()) {
-                    selectCategoria.selectedIndex = i;
-                    break;
+            Array.from(selectCategoria.options).forEach(option => {
+                if (option.value.toLowerCase() === categoriaSeleccionada.toLowerCase()) {
+                    option.selected = true;
                 }
-            }
+            });
         }
 
         cargarCuentasPorCategoria(categoriaSeleccionada, function () {
-            var cuentaPadreId = button.getAttribute('data-cuenta-padre');
+            const cuentaPadreId = button.getAttribute('data-cuenta-padre');
             if (cuentaPadreId) {
                 selectCuentaPadre.value = cuentaPadreId;
             }
         });
 
-        if (!editable) {
-            deshabilitarCamposModal();
-        } else {
-            habilitarCamposModal();
-        }
-
         estadoLabel.textContent = inputEstado.checked ? 'Cuenta activa' : 'Cuenta no activa';
+
+        if (!editable) deshabilitarCamposModal();
+        else habilitarCamposModal();
     }
 
     function limpiarCamposModal() {
@@ -220,14 +244,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     saveButton.addEventListener('click', function (e) {
         e.preventDefault();
-        if (!validarCodigoCuentaPadreYNivel()) return;
+        if (!validarCamposObligatorios() || !validarCodigoCuentaPadreYNivel()) return;
 
         mostrarSpinner();
-        var codigo = inputCodigo.value;
-        var descripcion = formDescripcion.value;
-        var estado = inputEstado.checked ? 'true' : 'false';
-        var categoria = selectCategoria.value;
-        var cuentaPadre = selectCuentaPadre.value;
+        const codigo = inputCodigo.value;
+        const descripcion = formDescripcion.value;
+        const estado = inputEstado.checked ? 'true' : 'false';
+        const categoria = selectCategoria.value;
+        const cuentaPadre = selectCuentaPadre.value;
 
         fetch('/cuentas/añadir', {
             method: 'POST',
@@ -284,5 +308,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 icon.classList.toggle('fa-minus', !isVisible);
             }
         });
+    });
+
+    // Limpiar errores al cerrar el modal
+    document.getElementById('editAccountModal').addEventListener('hidden.bs.modal', function () {
+        limpiarCamposModal();
     });
 });
