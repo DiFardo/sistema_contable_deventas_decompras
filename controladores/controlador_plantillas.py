@@ -204,3 +204,49 @@ def obtener_registro_ventas(mes, año):
     conexion.close()
 
     return registros, total_base_imponible, total_igv, total_total_comprobante
+
+def obtener_registro_compras(mes, año):
+    conexion = obtener_conexion()
+    registros = []
+    total_base_imponible = 0
+    total_igv = 0
+    total_total_comprobante = 0
+
+    with conexion.cursor(cursor_factory=DictCursor) as cursor:
+        cursor.execute("""
+            SELECT 
+                ROW_NUMBER() OVER(ORDER BY c.serie_comprobante, c.numero_comprobante) AS correlativo,
+                TO_CHAR(c.fecha, 'DD/MM/YYYY') AS fecha_emision,
+                CASE WHEN c.tipo_comprobante = 'Factura' THEN '01' ELSE '03' END AS tipo_comprobante,
+                c.serie_comprobante,
+                c.numero_comprobante,
+                CASE 
+                    WHEN c.tipo_documento = 'DNI' THEN '1' 
+                    WHEN c.tipo_documento = 'Carnet de extranjería' THEN '4'
+                    WHEN c.tipo_documento = 'RUC' THEN '6'
+                    WHEN c.tipo_documento = 'Pasaporte' THEN '7'
+                    ELSE ''
+                END AS tipo_documento,
+                c.numero_documento,
+                c.nombre_proveedor,
+                SUM(c.sub_sin_igv) AS base_imponible,
+                SUM(c.igv) AS igv,
+                SUM(c.subtotal) AS total_comprobante
+            FROM compras_contables c
+            WHERE EXTRACT(MONTH FROM c.fecha) = %s AND EXTRACT(YEAR FROM c.fecha) = %s
+            GROUP BY c.serie_comprobante, c.numero_comprobante, c.tipo_documento, 
+                     c.numero_documento, c.nombre_proveedor, c.tipo_comprobante, c.fecha
+            ORDER BY c.serie_comprobante, c.numero_comprobante;
+        """, (mes, año))
+
+        registros = cursor.fetchall()
+
+        # Calcular los totales
+        for registro in registros:
+            total_base_imponible += registro['base_imponible']
+            total_igv += registro['igv']
+            total_total_comprobante += registro['total_comprobante']
+
+    conexion.close()
+
+    return registros, total_base_imponible, total_igv, total_total_comprobante
