@@ -384,6 +384,17 @@ def exportar_registro_ventas():
         return jsonify({'error': 'El formato del período es incorrecto. Debe ser "YYYY-MM".'}), 400
     return controlador_plantillas.generar_registro_venta_excel(mes, anio)
 
+@app.route('/exportar-registro-compras', methods=['GET'])
+def exportar_registro_compras():
+    periodo = request.args.get('periodo')
+    if not periodo:
+        return jsonify({'error': 'El parámetro "periodo" es requerido.'}), 400
+    try:
+        anio, mes = map(int, periodo.split('-'))
+    except ValueError:
+        return jsonify({'error': 'El formato del período es incorrecto. Debe ser "YYYY-MM".'}), 400
+    return controlador_plantillas.generar_registro_compra_excel(mes, anio)
+
 @app.route('/notificaciones', methods=['GET'])
 def obtener_notificaciones_endpoint():
     notificaciones = obtener_todas_notificaciones()
