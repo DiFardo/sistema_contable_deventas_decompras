@@ -227,6 +227,20 @@ def registro_ventas():
         usuario=usuario
     )
 
+@app.route("/asientos_contables")
+def asientos_contables():
+    token = request.cookies.get('token')
+    dni = request.cookies.get('dni')
+    usuario = controlador_usuarios.obtener_usuario(dni)
+
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Asientos contables', 'url': '/asientos_contables'}
+    ]
+    movimientos = []
+
+    return render_template("asientos_contables.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
+
 @app.route("/registro_compras")
 def registro_compras():
     token = request.cookies.get('token')

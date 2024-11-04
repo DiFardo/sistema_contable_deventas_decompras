@@ -17,6 +17,17 @@
             display: none;
         }
 
+        .navbar-nav .nav-item {
+            position: relative;
+        }
+
+        .navbar-nav .nav-item .dropdown-menu {
+            top: 0;
+            left: 100%;
+            margin-top: 0;
+            margin-left: 10px;
+        }
+
         .notification-dropdown {
             width: 100%;
             max-width: 350px;
@@ -116,19 +127,23 @@
                 <h3 id="sidebar-title"><span>Sistema Contable</span></h3>
             </div>
             <ul id="navbar-options" class="list-unstyled components">
-                <!-- Inicio y Configuración visibles por defecto -->
+                <!-- Inicio visible por defecto -->
                 <li class="nav-item">
                     <a href="{{ url_for('index') }}" class="dashboard">
                         <i class="material-icons">dashboard</i>
                         <span>Inicio</span>
                     </a>
                 </li>
+
+                <!-- Configuración visible solo en Inicio -->
+                {% if request.endpoint == 'index' %}
                 <li class="nav-item">
                     <a href="">
                         <i class="material-icons">settings</i>
                         <span>Configuración</span>
                     </a>
                 </li>
+                {% endif %}
 
                 <!-- Opciones del Módulo Contable -->
                 <li class="nav-item cuentas hidden">
@@ -150,6 +165,13 @@
                         <li><a href="{{ url_for('registro_ventas') }}"><i class="material-icons">receipt_long</i> Registro de Ventas</a></li>
                         <li><a href="{{ url_for('registro_compras') }}"><i class="material-icons">receipt_long</i> Registro de Compras</a></li>
                     </ul>
+                </li>
+
+                <li class="nav-item asientos hidden">
+                    <a href="{{ url_for('asientos_contables') }}">
+                        <i class="material-icons">assignment</i>
+                        <span>Asientos Contables</span>
+                    </a>
                 </li>
 
                 <!-- Opciones del Módulo de Ventas -->
@@ -211,7 +233,7 @@
                                                 <li class="no-notifications">No hay notificaciones nuevas</li>
                                             </ul>
                                         </li>
-        
+
                                         <!-- Perfil del usuario -->
                                         {% if usuario %}
                                         <li class="nav-item dropdown user-dropdown">
@@ -251,29 +273,27 @@
     <script type="text/javascript">
         function toggleVisibility(module) {
             const sidebarTitle = document.getElementById('sidebar-title');
-    
+
             if (module === "contable") {
                 sidebarTitle.innerHTML = '<span>Módulo Contable</span>';
-                document.querySelectorAll('.cuentas, .libros').forEach(el => el.classList.remove('hidden'));
+                document.querySelectorAll('.cuentas, .libros, .asientos').forEach(el => el.classList.remove('hidden'));
                 document.querySelectorAll('.ventas, .clientes, .reportes').forEach(el => el.classList.add('hidden'));
             } else if (module === "ventas") {
                 sidebarTitle.innerHTML = '<span>Módulo de Ventas</span>';
                 document.querySelectorAll('.ventas, .clientes, .reportes').forEach(el => el.classList.remove('hidden'));
-                document.querySelectorAll('.cuentas, .libros').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.cuentas, .libros, .asientos').forEach(el => el.classList.add('hidden'));
             }
         }
-    
+
         document.addEventListener("DOMContentLoaded", function () {
             const currentPath = window.location.pathname;
-            const ventasPaths = ['ventas', 'clientes', 'reportes_ventas'];
-            const contablePaths = ['cuentas', 'libro_diario', 'libro_mayor', 'libro_caja', 'registro_ventas'];
-    
+            const ventasPaths = ['productos', 'clientes', 'reportes_ventas'];
+            const contablePaths = ['cuentas', 'libro_diario', 'libro_mayor', 'libro_caja', 'registro_ventas', 'registro_compras', 'asientos_contables'];
+
             if (ventasPaths.some(path => currentPath.includes(path))) {
                 toggleVisibility("ventas");
             } else if (contablePaths.some(path => currentPath.includes(path))) {
                 toggleVisibility("contable");
-            } else if (currentPath.includes('productos') || currentPath.includes('clientes')) {
-                toggleVisibility("ventas");
             }
         });
     </script>

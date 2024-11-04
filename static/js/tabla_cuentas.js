@@ -114,39 +114,24 @@ document.addEventListener('DOMContentLoaded', function () {
     // Validación en tiempo real
     inputCodigo.addEventListener('input', validarCodigoCuentaPadreYNivel);
     selectCuentaPadre.addEventListener('change', validarCodigoCuentaPadreYNivel);
+    formDescripcion.addEventListener('input', function () {
+        limpiarError(formDescripcion, errorDescripcion);
+    });
 
-    function validarCamposObligatorios() {
-        let isValid = true;
-        if (!selectCategoria.value) {
-            mostrarError(selectCategoria, errorCategoria, 'Debe seleccionar una categoría.');
-            isValid = false;
-        } else {
-            limpiarError(selectCategoria, errorCategoria);
-        }
+    function validarCodigoCuentaPadreYNivel() {
+        var cuentaPadreCodigo = selectCuentaPadre.options[selectCuentaPadre.selectedIndex].text.split(" - ")[0].trim();
+        var longitudPermitida;
+        let esValido = true;
 
-        if (!inputCodigo.value) {
-            mostrarError(inputCodigo, errorCodigo, 'El código es obligatorio.');
-            isValid = false;
+        // Verificar que el código pertenece a la cuenta padre
+        if (cuentaPadreCodigo && !inputCodigo.value.startsWith(cuentaPadreCodigo)) {
+            mostrarError(inputCodigo, errorCodigo, 'El código ingresado no pertenece a la cuenta padre seleccionada.');
+            esValido = false;
         } else {
             limpiarError(inputCodigo, errorCodigo);
         }
 
-        if (!formDescripcion.value) {
-            mostrarError(formDescripcion, errorDescripcion, 'La descripción es obligatoria.');
-            isValid = false;
-        } else {
-            limpiarError(formDescripcion, errorDescripcion);
-        }
-
-        return isValid;
-    }
-
-    function validarCodigoCuentaPadreYNivel() {
-        let esValido = true;
-        const cuentaPadreCodigo = selectCuentaPadre.options[selectCuentaPadre.selectedIndex]?.text.split(" - ")[0].trim();
-        let longitudPermitida;
-
-        // Validación de longitud según el nivel seleccionado
+        // Verificar longitud según nivel seleccionado
         switch (nivelSeleccionado) {
             case 2:
                 longitudPermitida = 3;
@@ -164,19 +149,19 @@ document.addEventListener('DOMContentLoaded', function () {
         if (inputCodigo.value.length !== longitudPermitida) {
             mostrarError(inputCodigo, errorCodigo, `El código debe tener ${longitudPermitida} dígitos para el nivel seleccionado.`);
             esValido = false;
-        } else {
+        } else if (esValido) {
             limpiarError(inputCodigo, errorCodigo);
         }
-
-        // Validación de cuenta padre
-        if (cuentaPadreCodigo && !inputCodigo.value.startsWith(cuentaPadreCodigo)) {
-            mostrarError(inputCodigo, errorCodigo, 'El código ingresado no pertenece a la cuenta padre seleccionada.');
+        
+        // Verificar si la descripción está vacía
+        if (formDescripcion.value.trim() === '') {
+            mostrarError(formDescripcion, errorDescripcion, 'La descripción es requerida.');
             esValido = false;
         } else {
-            limpiarError(inputCodigo, errorCodigo);
+            limpiarError(formDescripcion, errorDescripcion);
         }
 
-        return esValido;
+        return esValido; // Retornar la validez de la validación
     }
 
     function cargarDatosCuenta(button, editable) {
@@ -184,26 +169,30 @@ document.addEventListener('DOMContentLoaded', function () {
         formDescripcion.value = button.getAttribute('data-descripcion');
         inputEstado.checked = button.getAttribute('data-estado') === 'true';
 
-        const categoriaSeleccionada = button.getAttribute('data-categoria');
+        var categoriaSeleccionada = button.getAttribute('data-categoria');
         if (categoriaSeleccionada) {
-            Array.from(selectCategoria.options).forEach(option => {
-                if (option.value.toLowerCase() === categoriaSeleccionada.toLowerCase()) {
-                    option.selected = true;
+            for (let i = 0; i < selectCategoria.options.length; i++) {
+                if (selectCategoria.options[i].value.toLowerCase() === categoriaSeleccionada.toLowerCase()) {
+                    selectCategoria.selectedIndex = i;
+                    break;
                 }
-            });
+            }
         }
 
         cargarCuentasPorCategoria(categoriaSeleccionada, function () {
-            const cuentaPadreId = button.getAttribute('data-cuenta-padre');
+            var cuentaPadreId = button.getAttribute('data-cuenta-padre');
             if (cuentaPadreId) {
                 selectCuentaPadre.value = cuentaPadreId;
             }
         });
 
-        estadoLabel.textContent = inputEstado.checked ? 'Cuenta activa' : 'Cuenta no activa';
+        if (!editable) {
+            deshabilitarCamposModal();
+        } else {
+            habilitarCamposModal();
+        }
 
-        if (!editable) deshabilitarCamposModal();
-        else habilitarCamposModal();
+        estadoLabel.textContent = inputEstado.checked ? 'Cuenta activa' : 'Cuenta no activa';
     }
 
     function limpiarCamposModal() {
@@ -244,14 +233,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     saveButton.addEventListener('click', function (e) {
         e.preventDefault();
-        if (!validarCamposObligatorios() || !validarCodigoCuentaPadreYNivel()) return;
+        if (!validarCodigoCuentaPadreYNivel()) return;
 
         mostrarSpinner();
-        const codigo = inputCodigo.value;
-        const descripcion = formDescripcion.value;
-        const estado = inputEstado.checked ? 'true' : 'false';
-        const categoria = selectCategoria.value;
-        const cuentaPadre = selectCuentaPadre.value;
+        var codigo = inputCodigo.value;
+        var descripcion = formDescripcion.value;
+        var estado = inputEstado.checked ? 'true' : 'false';
+        var categoria = selectCategoria.value;
+        var cuentaPadre = selectCuentaPadre.value;
 
         fetch('/cuentas/añadir', {
             method: 'POST',
@@ -311,7 +300,10 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Limpiar errores al cerrar el modal
-    document.getElementById('editAccountModal').addEventListener('hidden.bs.modal', function () {
+    editModal.addEventListener('hidden.bs.modal', function () {
         limpiarCamposModal();
+        limpiarError(inputCodigo, errorCodigo);
+        limpiarError(formDescripcion, errorDescripcion);
+        limpiarError(selectCategoria, errorCategoria);
     });
 });
