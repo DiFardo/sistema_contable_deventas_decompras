@@ -29,12 +29,12 @@ def generar_registro_venta_excel(mes, anio):
             v.usuario,
             SUM(v.sub_sin_igv) AS base_imponible,
             SUM(v.igv) AS igv,
-            SUM(v.subtotal) AS total_comprobante
+            SUM(v.total) AS total_comprobante
         FROM ventas_contables v
         WHERE EXTRACT(MONTH FROM v.fecha) = %s AND EXTRACT(YEAR FROM v.fecha) = %s
         GROUP BY v.serie_comprobante, v.numero_comprobante, v.tipo_documento, 
                  v.numero_documento, v.usuario, v.tipo_comprobante, v.fecha
-        ORDER BY v.serie_comprobante, v.numero_comprobante;
+        ORDER BY v.fecha, v.serie_comprobante, v.numero_comprobante;
         """
         cursor.execute(consulta, (mes, anio))
 
@@ -185,12 +185,12 @@ def obtener_registro_ventas(mes, año):
                 v.usuario,
                 SUM(v.sub_sin_igv) AS base_imponible,
                 SUM(v.igv) AS igv,
-                SUM(v.subtotal) AS total_comprobante
+                SUM(v.total) AS total_comprobante
             FROM ventas_contables v
             WHERE EXTRACT(MONTH FROM v.fecha) = %s AND EXTRACT(YEAR FROM v.fecha) = %s
             GROUP BY v.serie_comprobante, v.numero_comprobante, v.tipo_documento, 
                      v.numero_documento, v.usuario, v.tipo_comprobante, v.fecha
-            ORDER BY v.serie_comprobante, v.numero_comprobante;
+            ORDER BY v. fecha, v.serie_comprobante, v.numero_comprobante;
         """, (mes, año))
 
         registros = cursor.fetchall()
@@ -231,12 +231,12 @@ def obtener_registro_compras(mes, año):
                 c.nombre_proveedor,
                 SUM(c.sub_sin_igv) AS base_imponible,
                 SUM(c.igv) AS igv,
-                SUM(c.subtotal) AS total_comprobante
+                SUM(c.total) AS total_comprobante
             FROM compras_contables c
             WHERE EXTRACT(MONTH FROM c.fecha) = %s AND EXTRACT(YEAR FROM c.fecha) = %s
             GROUP BY c.serie_comprobante, c.numero_comprobante, c.tipo_documento, 
                      c.numero_documento, c.nombre_proveedor, c.tipo_comprobante, c.fecha
-            ORDER BY c.serie_comprobante, c.numero_comprobante;
+            ORDER BY c.fecha, c.serie_comprobante, c.numero_comprobante;
         """, (mes, año))
 
         registros = cursor.fetchall()
@@ -274,12 +274,12 @@ def generar_registro_compra_excel(mes, anio):
                 c.nombre_proveedor,
                 SUM(c.sub_sin_igv) AS base_imponible,
                 SUM(c.igv) AS igv,
-                SUM(c.subtotal) AS total_comprobante
+                SUM(c.total) AS total_comprobante
             FROM compras_contables c
             WHERE EXTRACT(MONTH FROM c.fecha) = %s AND EXTRACT(YEAR FROM c.fecha) = %s
             GROUP BY c.serie_comprobante, c.numero_comprobante, c.tipo_documento, 
                      c.numero_documento, c.nombre_proveedor, c.tipo_comprobante, c.fecha
-            ORDER BY c.serie_comprobante, c.numero_comprobante;
+            ORDER BY c. fecha, c.serie_comprobante, c.numero_comprobante;
         """
         cursor.execute(consulta, (mes, anio))
 

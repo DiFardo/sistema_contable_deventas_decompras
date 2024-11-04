@@ -27,8 +27,7 @@ def verificar_pedidos():
     while True:
         mysql_cursor.execute("""
             SELECT 
-                dp.id_detalle, 
-                dp.id_pedido, 
+                dp.id_pedido,
                 p.id_usuario,
                 CASE 
                     WHEN u.apellido IS NOT NULL AND u.apellido != '' 
@@ -38,12 +37,9 @@ def verificar_pedidos():
                 u.tipo_documento,
                 u.numero_documento,
                 pa.fecha_pago AS fecha, 
-                dp.id_producto, 
-                pr.nombre_producto, 
-                dp.cantidad, 
-                ROUND(dp.cantidad * pr.precio, 2) AS total_con_igv,
-                ROUND((dp.cantidad * pr.precio) / 1.18, 2) AS sub_sin_igv,
-                ROUND((dp.cantidad * pr.precio) - ((dp.cantidad * pr.precio) / 1.18), 2) AS igv,
+                ROUND(SUM(dp.cantidad * pr.precio) / 1.18, 2) AS sub_sin_igv,
+                ROUND(SUM(dp.cantidad * pr.precio) - (SUM(dp.cantidad * pr.precio) / 1.18), 2) AS igv,
+                ROUND(SUM(dp.cantidad * pr.precio), 2) AS total_con_igv,
                 cp.tipo_comprobante,
                 cp.serie_comprobante,
                 cp.numero_comprobante
@@ -53,7 +49,10 @@ def verificar_pedidos():
             JOIN productos pr ON dp.id_producto = pr.id_producto
             JOIN pagos pa ON pa.id_pedido = p.id_pedido
             JOIN comprobante_pago cp ON cp.id_pedido = p.id_pedido  
-            WHERE p.estado = 'pagado' AND p.registrado_en_contable = FALSE;
+            WHERE p.estado = 'pagado' AND p.registrado_en_contable = FALSE
+            GROUP BY cp.serie_comprobante, cp.numero_comprobante, dp.id_pedido, p.id_usuario, usuario, 
+                     u.tipo_documento, u.numero_documento, pa.fecha_pago, cp.tipo_comprobante
+            ORDER BY pa.fecha_pago, cp.serie_comprobante, cp.numero_comprobante;
         """)
         resultados = mysql_cursor.fetchall()
 
@@ -64,23 +63,20 @@ def verificar_pedidos():
         time.sleep(60)
 
 def registrar_en_contable(detalle):
-    (id_detalle, id_pedido, id_usuario, usuario, tipo_documento, numero_documento, fecha, 
-     id_producto, nombre_producto, cantidad, total_con_igv, sub_sin_igv, igv, 
-     tipo_comprobante, serie_comprobante, numero_comprobante) = detalle
+    (id_pedido, id_usuario, usuario, tipo_documento, numero_documento, fecha, 
+     sub_sin_igv, igv, total_con_igv, tipo_comprobante, serie_comprobante, numero_comprobante) = detalle
 
     try:
         postgres_cursor.execute("""
             INSERT INTO ventas_contables (
-                id_detalle, id_pedido, id_usuario, usuario, tipo_documento, numero_documento, 
-                fecha, id_producto, nombre_producto, cantidad, sub_sin_igv, igv, subtotal, 
-                tipo_comprobante, serie_comprobante, numero_comprobante
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
-        """, (id_detalle, id_pedido, id_usuario, usuario, tipo_documento, numero_documento, 
-              fecha, id_producto, nombre_producto, cantidad, sub_sin_igv, igv, 
-              total_con_igv, tipo_comprobante, serie_comprobante, numero_comprobante))
+                id_pedido, id_usuario, usuario, tipo_documento, numero_documento, fecha, 
+                sub_sin_igv, igv, total, tipo_comprobante, serie_comprobante, numero_comprobante
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+        """, (id_pedido, id_usuario, usuario, tipo_documento, numero_documento, fecha, 
+              sub_sin_igv, igv, total_con_igv, tipo_comprobante, serie_comprobante, numero_comprobante))
         postgres_connection.commit()
 
-        print(f"Detalle de pedido {id_detalle} registrado en el sistema contable.")
+        print(f"Pedido {id_pedido} registrado en el sistema contable.")
 
         mysql_cursor.execute("""
             UPDATE pedidos SET registrado_en_contable = TRUE WHERE id_pedido = %s;
@@ -88,13 +84,12 @@ def registrar_en_contable(detalle):
         mysql_connection.commit()
 
     except Exception as e:
-        print(f"Error al registrar detalle de pedido {id_detalle}: {e}")
+        print(f"Error al registrar pedido {id_pedido}: {e}")
         postgres_connection.rollback()
 
 def verificar_compras():
     mysql_cursor.execute("""
         SELECT 
-            dc.id_detalle_compra,
             c.id_compra,
             c.id_usuario,
             CASE 
@@ -107,12 +102,9 @@ def verificar_compras():
             p.tipo_documento,
             p.numero_documento,
             c.fecha_compra AS fecha,
-            dc.id_insumo,
-            im.nombre_insumo,
-            dc.cantidad,
-            ROUND(dc.cantidad * im.precio_unitario / 1.18, 2) AS sub_sin_igv,
-            ROUND(dc.cantidad * im.precio_unitario - (dc.cantidad * im.precio_unitario / 1.18), 2) AS igv,
-            ROUND(dc.cantidad * im.precio_unitario, 2) AS subtotal,
+            ROUND(SUM(dc.cantidad * im.precio_unitario) / 1.18, 2) AS sub_sin_igv,
+            ROUND(SUM(dc.cantidad * im.precio_unitario) - (SUM(dc.cantidad * im.precio_unitario) / 1.18), 2) AS igv,
+            ROUND(SUM(dc.cantidad * im.precio_unitario), 2) AS subtotal,
             c.tipo_comprobante,
             c.serie_comprobante,
             c.numero_comprobante
@@ -121,7 +113,11 @@ def verificar_compras():
         JOIN usuarios u ON c.id_usuario = u.id_usuario
         JOIN proveedores p ON c.id_proveedor = p.id_proveedor
         JOIN insumos_materiales im ON dc.id_insumo = im.id_insumo
-        WHERE c.estado = 'pagado' AND c.registrado_en_contable = FALSE;
+        WHERE c.estado = 'pagado' AND c.registrado_en_contable = FALSE
+        GROUP BY c.id_compra, c.id_usuario, usuario, c.id_proveedor, p.nombre_proveedor, 
+                 p.tipo_documento, p.numero_documento, c.fecha_compra, 
+                 c.tipo_comprobante, c.serie_comprobante, c.numero_comprobante
+        ORDER BY c.fecha_compra, c.serie_comprobante, c.numero_comprobante;
     """)
     compras_resultados = mysql_cursor.fetchall()
 
@@ -129,23 +125,23 @@ def verificar_compras():
         registrar_compra_en_contable(detalle_compra)
 
 def registrar_compra_en_contable(detalle_compra):
-    (id_detalle_compra, id_compra, id_usuario, usuario, id_proveedor, nombre_proveedor, 
-     tipo_documento, numero_documento, fecha, id_insumo, nombre_insumo, cantidad, 
-     sub_sin_igv, igv, subtotal, tipo_comprobante, serie_comprobante, numero_comprobante) = detalle_compra
+    (id_compra, id_usuario, usuario, id_proveedor, nombre_proveedor, 
+     tipo_documento, numero_documento, fecha, sub_sin_igv, igv, subtotal, 
+     tipo_comprobante, serie_comprobante, numero_comprobante) = detalle_compra
 
     try:
         postgres_cursor.execute("""
             INSERT INTO compras_contables (
-                id_detalle_compra, id_compra, id_usuario, usuario, id_proveedor, nombre_proveedor, 
-                tipo_documento, numero_documento, fecha, id_insumo, nombre_insumo, cantidad, 
-                sub_sin_igv, igv, subtotal, tipo_comprobante, serie_comprobante, numero_comprobante
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
-        """, (id_detalle_compra, id_compra, id_usuario, usuario, id_proveedor, nombre_proveedor, 
-              tipo_documento, numero_documento, fecha, id_insumo, nombre_insumo, cantidad, 
-              sub_sin_igv, igv, subtotal, tipo_comprobante, serie_comprobante, numero_comprobante))
+                id_compra, id_usuario, usuario, id_proveedor, nombre_proveedor, 
+                tipo_documento, numero_documento, fecha, sub_sin_igv, igv, total, 
+                tipo_comprobante, serie_comprobante, numero_comprobante
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+        """, (id_compra, id_usuario, usuario, id_proveedor, nombre_proveedor, 
+              tipo_documento, numero_documento, fecha, sub_sin_igv, igv, subtotal, 
+              tipo_comprobante, serie_comprobante, numero_comprobante))
         postgres_connection.commit()
 
-        print(f"Detalle de compra {id_detalle_compra} registrado en el sistema contable.")
+        print(f"Compra {id_compra} registrada en el sistema contable.")
 
         mysql_cursor.execute("""
             UPDATE compras SET registrado_en_contable = TRUE WHERE id_compra = %s;
@@ -153,7 +149,7 @@ def registrar_compra_en_contable(detalle_compra):
         mysql_connection.commit()
 
     except Exception as e:
-        print(f"Error al registrar detalle de compra {id_detalle_compra}: {e}")
+        print(f"Error al registrar compra {id_compra}: {e}")
         postgres_connection.rollback()
 
 if __name__ == "__main__":
