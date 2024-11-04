@@ -60,6 +60,7 @@ def verificar_pedidos():
         for detalle in resultados:
             registrar_en_contable(detalle)
 
+        verificar_compras()
         time.sleep(60)
 
 def registrar_en_contable(detalle):
@@ -88,6 +89,71 @@ def registrar_en_contable(detalle):
 
     except Exception as e:
         print(f"Error al registrar detalle de pedido {id_detalle}: {e}")
+        postgres_connection.rollback()
+
+def verificar_compras():
+    mysql_cursor.execute("""
+        SELECT 
+            dc.id_detalle_compra,
+            c.id_compra,
+            c.id_usuario,
+            CASE 
+                WHEN u.apellido IS NOT NULL AND u.apellido != '' 
+                    THEN CONCAT(u.nombre, ' ', u.apellido)
+                ELSE u.nombre
+            END AS usuario,
+            c.id_proveedor,
+            p.nombre_proveedor,
+            p.tipo_documento,
+            p.numero_documento,
+            c.fecha_compra AS fecha,
+            dc.id_insumo,
+            im.nombre_insumo,
+            dc.cantidad,
+            ROUND(dc.cantidad * im.precio_unitario / 1.18, 2) AS sub_sin_igv,
+            ROUND(dc.cantidad * im.precio_unitario - (dc.cantidad * im.precio_unitario / 1.18), 2) AS igv,
+            ROUND(dc.cantidad * im.precio_unitario, 2) AS subtotal,
+            c.tipo_comprobante,
+            c.serie_comprobante,
+            c.numero_comprobante
+        FROM detalles_compra dc
+        JOIN compras c ON dc.id_compra = c.id_compra
+        JOIN usuarios u ON c.id_usuario = u.id_usuario
+        JOIN proveedores p ON c.id_proveedor = p.id_proveedor
+        JOIN insumos_materiales im ON dc.id_insumo = im.id_insumo
+        WHERE c.estado = 'pagado' AND c.registrado_en_contable = FALSE;
+    """)
+    compras_resultados = mysql_cursor.fetchall()
+
+    for detalle_compra in compras_resultados:
+        registrar_compra_en_contable(detalle_compra)
+
+def registrar_compra_en_contable(detalle_compra):
+    (id_detalle_compra, id_compra, id_usuario, usuario, id_proveedor, nombre_proveedor, 
+     tipo_documento, numero_documento, fecha, id_insumo, nombre_insumo, cantidad, 
+     sub_sin_igv, igv, subtotal, tipo_comprobante, serie_comprobante, numero_comprobante) = detalle_compra
+
+    try:
+        postgres_cursor.execute("""
+            INSERT INTO compras_contables (
+                id_detalle_compra, id_compra, id_usuario, usuario, id_proveedor, nombre_proveedor, 
+                tipo_documento, numero_documento, fecha, id_insumo, nombre_insumo, cantidad, 
+                sub_sin_igv, igv, subtotal, tipo_comprobante, serie_comprobante, numero_comprobante
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+        """, (id_detalle_compra, id_compra, id_usuario, usuario, id_proveedor, nombre_proveedor, 
+              tipo_documento, numero_documento, fecha, id_insumo, nombre_insumo, cantidad, 
+              sub_sin_igv, igv, subtotal, tipo_comprobante, serie_comprobante, numero_comprobante))
+        postgres_connection.commit()
+
+        print(f"Detalle de compra {id_detalle_compra} registrado en el sistema contable.")
+
+        mysql_cursor.execute("""
+            UPDATE compras SET registrado_en_contable = TRUE WHERE id_compra = %s;
+        """, (id_compra,))
+        mysql_connection.commit()
+
+    except Exception as e:
+        print(f"Error al registrar detalle de compra {id_detalle_compra}: {e}")
         postgres_connection.rollback()
 
 if __name__ == "__main__":

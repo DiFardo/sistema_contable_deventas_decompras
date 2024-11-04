@@ -58,9 +58,6 @@ def subir_imagen_perfil():
     flash('Tipo de archivo no permitido. Selecciona una imagen válida (png, jpg, jpeg, gif).')
     return redirect(url_for('perfil_usuario'))
 
-
-
-
 def obtener_descripcion_rol(rol):
     descripciones = {
         "Coordinador general": "Responsable de supervisar y organizar el equipo para cumplir objetivos, asegurando una comunicación efectiva y la resolución de problemas. Facilita la toma de decisiones, gestiona riesgos y mantiene informadas a las partes interesadas sobre el progreso del proyecto.",
@@ -75,10 +72,6 @@ def obtener_descripcion_rol(rol):
         "Asesor": "Ofrece asesoramiento especializado en áreas clave del proyecto, como estrategias de negocio, tecnología o gestión, y guía al equipo en la toma de decisiones críticas para el éxito del proyecto."
     }
     return descripciones.get(rol, "Rol no identificado")
-
-
-
-
 
 # Ruta para eliminar la imagen de perfil
 @app.route("/eliminar_imagen_perfil", methods=["POST"])
@@ -201,22 +194,17 @@ def registro_ventas():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
     usuario = controlador_usuarios.obtener_usuario(dni)
-
     periodo = request.args.get("periodo", None)
     mes = año = None
-
     if periodo:
         año, mes = periodo.split("-")
-
     registros, total_base_imponible, total_igv, total_total_comprobante = (
         controlador_plantillas.obtener_registro_ventas(mes, año) if mes and año else ([], 0, 0, 0)
     )
-
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Registro ventas', 'url': '/registro_ventas'}
     ]
-
     return render_template(
         "registro_ventas.html",
         registros=registros,
@@ -241,20 +229,32 @@ def asientos_contables():
 
     return render_template("asientos_contables.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
 
-@app.route("/registro_compras")
+
+@app.route("/registro_compras", methods=["GET"])
 def registro_compras():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
     usuario = controlador_usuarios.obtener_usuario(dni)
-
+    periodo = request.args.get("periodo", None)
+    mes = año = None
+    if periodo:
+        año, mes = periodo.split("-")
+    registros, total_base_imponible, total_igv, total_total_comprobante = (
+        controlador_plantillas.obtener_registro_compras(mes, año) if mes and año else ([], 0, 0, 0)
+    )
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Registro compras', 'url': '/registro_compras'}
     ]
-    movimientos = []
-
-    return render_template("registro_compras.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
-
+    return render_template(
+        "registro_compras.html",
+        registros=registros,
+        total_base_imponible=total_base_imponible,
+        total_operacion_gravada=total_igv,
+        total_total_comprobante=total_total_comprobante,
+        breadcrumbs=breadcrumbs,
+        usuario=usuario
+    )
 
 @app.route("/ventas/productos")
 def productos():
@@ -397,6 +397,17 @@ def exportar_registro_ventas():
     except ValueError:
         return jsonify({'error': 'El formato del período es incorrecto. Debe ser "YYYY-MM".'}), 400
     return controlador_plantillas.generar_registro_venta_excel(mes, anio)
+
+@app.route('/exportar-registro-compras', methods=['GET'])
+def exportar_registro_compras():
+    periodo = request.args.get('periodo')
+    if not periodo:
+        return jsonify({'error': 'El parámetro "periodo" es requerido.'}), 400
+    try:
+        anio, mes = map(int, periodo.split('-'))
+    except ValueError:
+        return jsonify({'error': 'El formato del período es incorrecto. Debe ser "YYYY-MM".'}), 400
+    return controlador_plantillas.generar_registro_compra_excel(mes, anio)
 
 @app.route('/notificaciones', methods=['GET'])
 def obtener_notificaciones_endpoint():
