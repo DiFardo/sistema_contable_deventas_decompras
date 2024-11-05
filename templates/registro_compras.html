@@ -1,6 +1,6 @@
 {% extends "pagina_maestra.html" %}
 
-{% block titulo %}Libro Caja y Bancos{% endblock %}
+{% block titulo %}Registro de compras{% endblock %}
 
 {% block link %}
 <!-- Material Icons for icons -->
@@ -14,7 +14,28 @@
 <style>
   th {
     text-align: center;
-    vertical-align: middle; /* Centra verticalmente el contenido */
+    vertical-align: middle;
+    font-weight: bold;
+  }
+
+  /* Estilos para encabezados con colores específicos */
+  .bg-orange {
+    background-color: #FF9933;
+    color: white;
+  }
+
+  .bg-cyan {
+    background-color: #00CCCC;
+    color: white;
+  }
+
+  .bg-green {
+    background-color: #99CC99;
+    color: black;
+  }
+
+  .w-correlativo {
+    width: 10%;
   }
 </style>
 
@@ -36,18 +57,23 @@
     <!-- Encabezado con título adicional -->
     <div class="row mb-3">
       <div class="col-12">
-        <h2 class="text-left">Libro caja y bancos - Detalle de los movimientos del efectivo</h2>
+        <h2 class="text-left">Registro de compras</h2>
       </div>
     </div>
 
     <!-- Filtros: Fecha exacta y RUC en una sola fila alineados correctamente con centrado vertical -->
     <div class="row mb-3 align-items-center">
       <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
-        <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;"><strong>PERÍODO:</strong></label> 
-        <input type="date" class="form-control" id="filtro-fecha" max="{{ current_year }}-12-31" value="{{ current_year }}-01-01">
+        <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
+          <strong>PERÍODO:</strong>
+        </label>
+        <input type="date" class="form-control" id="filtro-fecha" max="{{ current_year }}-12-31"
+          value="{{ current_year }}-01-01">
       </div>
       <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
-        <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;"><strong>RUC:</strong></label>
+        <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
+          <strong>RUC:</strong>
+        </label>
         <input type="text" class="form-control" value="20612188930" readonly>
       </div>
     </div>
@@ -58,7 +84,8 @@
           <!-- Input Group para Filtro de Búsqueda a la izquierda -->
           <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-start">
             <div class="input-group">
-              <input type="text" id="search-input" class="form-control" placeholder="Buscar en la tabla..." aria-label="Buscar">
+              <input type="text" id="search-input" class="form-control"
+                placeholder="Buscar en la tabla..." aria-label="Buscar">
               <button class="btn btn-outline-secondary" type="button">
                 <i class="material-icons">search</i>
               </button>
@@ -68,52 +95,60 @@
           <!-- Botones Alineados a la Derecha para Imprimir y Exportar -->
           <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-end">
             <button class="btn btn-primary me-2" onclick="window.print()" style="background-color: #ff5733;">
-                <i class="material-icons">print</i> <span>Imprimir</span>
-              </button>
-              
-            <button class="btn btn-success" onclick="exportTableToCSV('libro_caja_bancos.csv')">
+              <i class="material-icons">print</i> <span>Imprimir</span>
+            </button>
+            <button class="btn btn-success" onclick="exportTableToCSV('registro_ventas.csv')">
               <i class="material-icons">file_download</i> <span>Exportar</span>
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Estructura de la tabla -->
+      <!-- Estructura de la tabla del Registro de Ventas e Ingresos -->
       <table class="table table-bordered table-striped table-hover">
         <thead>
-          <tr>
-            <th rowspan="2">NÚMERO CORRELATIVO</th>
-            <th rowspan="2">FECHA DE LA OPERACIÓN</th>
-            <th rowspan="2">DESCRIPCIÓN DE LA OPERACIÓN</th>
-            <th colspan="2">CUENTA CONTABLE</th>
-            <th colspan="2">SALDOS Y MOVIMIENTOS</th>
-          </tr>
-          <tr>
-            <th>CÓDIGO</th>
-            <th>DENOMINACIÓN</th>
-            <th>DEUDOR</th>
-            <th>ACREEDOR</th>
-          </tr>
-        </thead>
+            <tr>
+              <th rowspan="2" class="w-correlativo">NÚMERO CORRELATIVO</th>
+              <th rowspan="2" class="w-correlativo">FECHA DE EMISIÓN</th>
+              <th class="bg-orange" colspan="3">COMPROBANTE DE PAGO O DOCUMENTO</th>
+              <th class="bg-cyan" colspan="3">INFORMACIÓN DEL PROVEEDOR</th>
+              <th rowspan="2" class="w-correlativo">BASE IMPONIBLE</th>
+              <th rowspan="2" class="w-correlativo">IGV</th>
+              <th rowspan="2" class="w-correlativo">IMPORTE TOTAL</th>
+            </tr>
+            <tr>
+              <th class="bg-orange">TIPO</th>
+              <th class="bg-orange">N° SERIE</th>
+              <th class="bg-orange">N° COMPROBANTE</th>
+              <th class="bg-cyan">TIPO DOCUMENTO</th>
+              <th class="bg-cyan">NÚMERO</th>
+              <th class="bg-cyan">NOMBRES Y APELLIDOS O RAZÓN SOCIAL</th>
+            </tr>
+          </thead>
         <tbody id="tabla-cuerpo">
-          <!-- Aquí van las filas dinámicas de datos -->
-          {% for movimiento in movimientos %}
+          <!-- Filas de datos dinámicos -->
+          {% for registro in registros %}
           <tr>
-            <td>{{ movimiento.numero_correlativo }}</td>
-            <td>{{ movimiento.fecha_operacion }}</td>
-            <td>{{ movimiento.descripcion_operacion }}</td>
-            <td>{{ movimiento.codigo_cuenta }}</td>
-            <td>{{ movimiento.denominacion_cuenta }}</td>
-            <td>{{ movimiento.deudor }}</td>
-            <td>{{ movimiento.acreedor }}</td>
+            <td class="w-correlativo">{{ registro.numero_correlativo }}</td>
+            <td>{{ registro.fecha_emision }}</td>
+            <td>{{ registro.fecha_vencimiento }}</td>
+            <td>{{ registro.tipo_comprobante }}</td>
+            <td>{{ registro.serie_comprobante }}</td>
+            <td>{{ registro.numero_comprobante }}</td>
+            <td>{{ registro.maquina_registradora }}</td>
+            <td>{{ registro.tipo_documento }}</td>
+            <td>{{ registro.numero_documento }}</td>
+            <td>{{ registro.razon_social }}</td>
+            <td>{{ registro.base_imponible }}</td>
+            <td>{{ registro.operacion_gravada }}</td>
           </tr>
           {% endfor %}
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="5">TOTALES</td>
-            <td>{{ total_deudor }}</td>
-            <td>{{ total_acreedor }}</td>
+            <td colspan="9" class="text-end"><strong>TOTALES</strong></td>
+            <td>{{ total_base_imponible }}</td>
+            <td>{{ total_operacion_gravada }}</td>
           </tr>
         </tfoot>
       </table>
@@ -130,24 +165,24 @@
     function exportTableToCSV(filename) {
       var csv = [];
       var rows = document.querySelectorAll("table tr");
-  
+
       for (var i = 0; i < rows.length; i++) {
         var row = [], cols = rows[i].querySelectorAll("td, th");
-  
-        for (var j = 0; j < cols.length; j++) 
+
+        for (var j = 0; j < cols.length; j++)
           row.push(cols[j].innerText);
-  
-        csv.push(row.join(","));        
+
+        csv.push(row.join(","));
       }
-  
+
       // Download CSV file
       downloadCSV(csv.join("\n"), filename);
     }
-  
+
     function downloadCSV(csv, filename) {
       var csvFile;
       var downloadLink;
-  
+
       csvFile = new Blob([csv], { type: "text/csv" });
       downloadLink = document.createElement("a");
       downloadLink.download = filename;
@@ -156,23 +191,6 @@
       document.body.appendChild(downloadLink);
       downloadLink.click();
     }
-  
-    // Función para obtener la fecha de hoy en formato YYYY-MM-DD
-    function getTodayDate() {
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0'); // Mes empieza en 0, así que sumamos 1
-      const day = String(today.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    }
-  
-    // Establece la fecha de hoy como valor predeterminado en el filtro de fecha
-    document.addEventListener('DOMContentLoaded', function() {
-      const filtroFecha = document.getElementById('filtro-fecha');
-      const today = getTodayDate();
-      filtroFecha.value = today;  // Establecer valor como fecha de hoy
-      filtroFecha.max = `${today}`;  // Fecha máxima como hoy para no permitir fechas futuras
-    });
   </script>
 </div>
 {% endblock %}
