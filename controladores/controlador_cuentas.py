@@ -88,16 +88,6 @@ def obtener_cuentas_por_categoria_endpoint():
     return jsonify(cuentas_json)
 
 
-def verificar_existencia_cuenta(codigo, categoria):
-    conexion = obtener_conexion()
-    cuenta_existe = False
-    with conexion.cursor() as cursor:
-        cursor.execute("""
-            SELECT 1 FROM cuentas WHERE codigo = %s AND LOWER(categoria) = LOWER(%s);
-        """, (codigo, categoria))
-        cuenta_existe = cursor.fetchone() is not None
-    conexion.close()
-    return cuenta_existe
 
 def obtener_ultimo_codigo_subcuenta(cuenta_padre):
     conexion = obtener_conexion()
@@ -111,83 +101,85 @@ def obtener_ultimo_codigo_subcuenta(cuenta_padre):
     return ultimo_codigo
 
 
-def obtener_nivel_cuenta(codigo):
-    """
-    Función para obtener el nivel de una cuenta basado en su código.
-    """
-    if len(codigo) <= 2:  # Nivel 1 (ej. 10, 20)
-        return 1
-    elif len(codigo) <= 4:  # Nivel 2 (ej. 101, 102)
-        return 2
-    elif len(codigo) <= 6:  # Nivel 3 (ej. 1011, 1021)
-        return 3
-    else:  # Niveles más profundos
-        return 4
 
-def validar_nivel_cuenta(codigo, cuenta_padre):
-    """
-    Valida que el código de la nueva cuenta pertenezca al rango de la cuenta padre.
-    """
-    nivel_cuenta = obtener_nivel_cuenta(codigo)
+def verificar_existencia_cuenta(codigo, categoria):
     conexion = obtener_conexion()
+    cuenta_existe = False
+    with conexion.cursor() as cursor:
+        cursor.execute("""
+            SELECT 1 FROM cuentas WHERE codigo = %s AND LOWER(categoria) = LOWER(%s);
+        """, (codigo, categoria))
+        cuenta_existe = cursor.fetchone() is not None
+    conexion.close()
+    return cuenta_existe
 
-    try:
-        with conexion.cursor() as cursor:
-            cursor.execute("""
-                SELECT codigo, nivel FROM cuentas WHERE cuenta_id = %s;
-            """, (cuenta_padre,))
-            cuenta_padre_info = cursor.fetchone()
-
-            if cuenta_padre_info is None:
-                return False, "La cuenta padre no existe."
-
-            codigo_padre, nivel_padre = cuenta_padre_info
-
-            # Verificar si el código de la subcuenta es una extensión válida del código padre
-            if not codigo.startswith(codigo_padre):
-                return False, f"El código '{codigo}' no pertenece al rango de la cuenta padre '{codigo_padre}'."
-
-            # Verificar si el nivel es adecuado
-            if nivel_cuenta != nivel_padre + 1:
-                return False, f"El código '{codigo}' no corresponde al nivel {nivel_padre + 1} esperado."
-
-            return True, ""
-    finally:
-        conexion.close()
-
-
+def obtener_cuenta_padre(codigo):
+    """
+    Determina la cuenta padre adecuada según el código ingresado.
+    """
+    conexion = obtener_conexion()
+    cuenta_padre = None
+    with conexion.cursor() as cursor:
+        cursor.execute("""
+            SELECT cuenta_id, codigo
+            FROM cuentas
+            WHERE %s LIKE CONCAT(codigo, '%%')
+            ORDER BY LENGTH(codigo) DESC
+            LIMIT 1;
+        """, (codigo,))
+        cuenta_padre = cursor.fetchone()
+    conexion.close()
+    return cuenta_padre
 
 def añadir_cuenta():
     data = request.get_json()
     codigo = data.get('codigo')
     descripcion = data.get('descripcion')
-    cuenta_padre = data.get('cuenta_padre')
     estado = data.get('estado')
     categoria = data.get('categoria')
+    nivel_seleccionado = int(data.get('nivel', 2))  # Nivel predeterminado a 2 si no se proporciona
 
     if not categoria or not descripcion or not codigo:
         return jsonify({'error': 'Faltan datos obligatorios'}), 400
 
     # Verificar si ya existe una cuenta con el mismo código y categoría
     if verificar_existencia_cuenta(codigo, categoria):
-        return jsonify({'error': 'La cuenta ya existe en esta categoría'}), 400
+        return jsonify({'error': 'El código ya existe en esta categoría.'}), 400
 
-    nivel = obtener_nivel_cuenta(codigo)
+    # Calcular cuenta padre
+    cuenta_padre = obtener_cuenta_padre(codigo)
+    longitud_permitida = {2: 3, 3: 4, 4: 5}  # Longitud de código para cada nivel
 
-    # Si hay cuenta padre, validar el código y el nivel
+    # Validar la longitud del código según el nivel seleccionado
+    if len(codigo) != longitud_permitida.get(nivel_seleccionado, 3):  # 3 dígitos como longitud predeterminada
+        return jsonify({'error': f'El código debe tener {longitud_permitida[nivel_seleccionado]} dígitos para el nivel seleccionado.'}), 400
+
+    # Verificar que el código pertenezca a la cuenta padre
     if cuenta_padre:
-        valido, mensaje_error = validar_nivel_cuenta(codigo, cuenta_padre)
-        if not valido:
-            return jsonify({'error': mensaje_error}), 400
+        cuenta_padre_id, codigo_padre = cuenta_padre
+        if not codigo.startswith(codigo_padre):
+            return jsonify({'error': f"El código '{codigo}' no pertenece al rango de la cuenta padre '{codigo_padre}'."}), 400
+    else:
+        cuenta_padre_id = None
 
+    # Insertar cuenta en la base de datos
     conexion = obtener_conexion()
     try:
         with conexion.cursor() as cursor:
             cursor.execute("""
                 INSERT INTO cuentas (codigo, descripcion, cuenta_padre, estado, categoria, nivel)
                 VALUES (%s, %s, %s, %s, %s, %s) RETURNING cuenta_id;
-            """, (codigo, descripcion, cuenta_padre, estado, categoria, nivel))
+            """, (codigo, descripcion, cuenta_padre_id, estado, categoria, nivel_seleccionado))
             nueva_cuenta_id = cursor.fetchone()[0]
+
+            # Añadir la notificación
+            mensaje = f"Se ha añadido una nueva cuenta: {descripcion} (Código: {codigo})"
+            url = "/cuentas"
+            cursor.execute("""
+                INSERT INTO notificaciones (mensaje, url, leido)
+                VALUES (%s, %s, FALSE);
+            """, (mensaje, url))
+
             conexion.commit()
 
         return jsonify({
@@ -196,7 +188,7 @@ def añadir_cuenta():
                 'id': nueva_cuenta_id,
                 'codigo': codigo,
                 'descripcion': descripcion,
-                'cuenta_padre': cuenta_padre,
+                'cuenta_padre': cuenta_padre_id,
                 'estado': estado,
                 'categoria': categoria
             }
@@ -207,5 +199,69 @@ def añadir_cuenta():
     finally:
         conexion.close()
 
+def eliminar_notificacion(notificacion_id):
+    conexion = obtener_conexion()
+    try:
+        with conexion.cursor() as cursor:
+            cursor.execute("""
+                DELETE FROM notificaciones WHERE id = %s;
+            """, (notificacion_id,))
+            conexion.commit()
+        return jsonify({'message': 'Notificación eliminada exitosamente'}), 200
+    except Exception as e:
+        conexion.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conexion.close()
 
 
+
+def contar_notificaciones_no_leidas():
+    conexion = obtener_conexion()
+    total_no_leidas = 0
+    with conexion.cursor() as cursor:
+        cursor.execute("""
+            SELECT COUNT(*) FROM notificaciones WHERE leido = FALSE;
+        """)
+        total_no_leidas = cursor.fetchone()[0]
+    conexion.close()
+    return total_no_leidas
+
+
+def obtener_todas_notificaciones():
+    conexion = obtener_conexion()
+    notificaciones = []
+    with conexion.cursor() as cursor:
+        cursor.execute("""
+            SELECT id, mensaje, url, leido
+            FROM notificaciones
+            ORDER BY creado_en DESC;
+        """)
+        notificaciones = cursor.fetchall()
+    
+    conexion.close()
+
+    notificaciones_json = [
+        {'id': n[0], 'mensaje': n[1], 'url': n[2], 'leido': n[3]} for n in notificaciones
+    ]
+    return jsonify({'notificaciones': notificaciones_json})
+
+
+
+def marcar_notificaciones_leidas():
+    conexion = obtener_conexion()
+    try:
+        with conexion.cursor() as cursor:
+            cursor.execute("""
+                UPDATE notificaciones
+                SET leido = TRUE
+                WHERE leido = FALSE;
+            """)
+            conexion.commit()
+
+        return jsonify({'message': 'Notificaciones marcadas como leídas'}), 200
+    except Exception as e:
+        conexion.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conexion.close()

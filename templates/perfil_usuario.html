@@ -17,7 +17,7 @@
 
 {% block contenido %}
 <style>
-    /* General Container Styling */
+    /* Container styling */
     .profile-container {
         display: flex;
         background-color: #f8f9fa;
@@ -33,44 +33,40 @@
         border-radius: 8px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         display: flex;
+        flex-direction: column;
         width: 100%;
-        max-width: 1000px;
+        max-width: 100%;
+        min-width: 320px;
         overflow: hidden;
     }
 
-    /* Sidebar Styling */
+    /* Sidebar styling */
     .profile-sidebar {
-        background-color: #dfe3e6;
+        background-color: #d1d9df;
         padding: 20px;
         text-align: center;
-        width: 30%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
+        flex: 1;
+        min-width: 200px;
     }
 
     .profile-sidebar img {
         border-radius: 50%;
-        width: 120px;
-        height: 120px;
+        width: 100px;
+        height: 100px;
         margin-bottom: 15px;
     }
 
-    /* Profile Content Styling */
+    /* Profile content styling */
     .profile-content {
-        padding: 30px;
-        width: 70%;
-    }
-
-    h4 {
-        font-weight: bold;
+        padding: 20px;
+        flex: 3;
     }
 
     .btn-upload {
-        background-color: #383c4c ;
+        background-color: #383c4c;
         color: white;
         border: none;
+        width: 100%;
     }
 
     .btn-upload:hover {
@@ -111,6 +107,34 @@
 
     .justificado {
         text-align: justify;
+    }
+
+    /* Floating pencil icon */
+    .edit-icon {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: #6c757d;
+        font-size: 18px;
+    }
+
+    .position-relative {
+        position: relative;
+    }
+
+    /* Responsive adjustments */
+    @media (min-width: 768px) {
+        .profile-card {
+            flex-direction: row;
+        }
+        .profile-sidebar {
+            width: 30%;
+        }
+        .profile-content {
+            width: 70%;
+        }
     }
 </style>
 
@@ -198,6 +222,17 @@
     function loadImage(event) {
         const image = document.getElementById("profileImage");
         image.src = URL.createObjectURL(event.target.files[0]);
+    }
+
+    function enableEdit(fieldId) {
+        const field = document.getElementById(fieldId);
+        field.removeAttribute("readonly");
+        field.focus();
+    }
+
+    function disableEdit(fieldId) {
+        const field = document.getElementById(fieldId);
+        field.setAttribute("readonly", "true");
     }
 </script>
 {% endblock %}

@@ -5,7 +5,7 @@ from flask_jwt_extended import JWTManager, create_access_token
 import controladores.controlador_usuarios as controlador_usuarios
 import controladores.controlador_ventas as controlador_ventas
 import clases.clase_usuario as clase_usuario
-from bd_conexion import obtener_conexion  
+from bd_conexion import obtener_conexion  # Asegúrate de que la conexión a la base de datos esté configurada correctamente
 from controladores.controlador_cuentas import obtener_todas_cuentas, obtener_cuentas_por_categoria_endpoint, añadir_cuenta
 from werkzeug.utils import secure_filename
 
@@ -181,10 +181,20 @@ def libro_diario():
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Libro Diario', 'url': '/libro_diario'}
     ]
-    movimientos = []
 
-    return render_template("libro_diario.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
+    movimientos = controlador_plantillas.obtener_libro_diario()
 
+    total_debe = sum(movimiento['debe'] or 0 for movimiento in movimientos)
+    total_haber = sum(movimiento['haber'] or 0 for movimiento in movimientos)
+
+    return render_template(
+        "libro_diario.html",
+        movimientos=movimientos,
+        breadcrumbs=breadcrumbs,
+        usuario=usuario,
+        total_debe=total_debe,
+        total_haber=total_haber
+    )
 
 @app.route("/libro_mayor")
 def libro_mayor():
@@ -200,34 +210,72 @@ def libro_mayor():
 
     return render_template("libro_mayor.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
 
-@app.route("/registro_ventas")
+@app.route("/registro_ventas", methods=["GET"])
 def registro_ventas():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
     usuario = controlador_usuarios.obtener_usuario(dni)
-
+    periodo = request.args.get("periodo", None)
+    mes = año = None
+    if periodo:
+        año, mes = periodo.split("-")
+    registros, total_base_imponible, total_igv, total_total_comprobante = (
+        controlador_plantillas.obtener_registro_ventas(mes, año) if mes and año else ([], 0, 0, 0)
+    )
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Registro ventas', 'url': '/registro_ventas'}
     ]
-    movimientos = []
+    return render_template(
+        "registro_ventas.html",
+        registros=registros,
+        total_base_imponible=total_base_imponible,
+        total_operacion_gravada=total_igv,
+        total_total_comprobante=total_total_comprobante,
+        breadcrumbs=breadcrumbs,
+        usuario=usuario
+    )
 
-    return render_template("registro_ventas.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
-
-@app.route("/registro_compras")
-def registro_compras():
+@app.route("/asientos_contables")
+def asientos_contables():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
     usuario = controlador_usuarios.obtener_usuario(dni)
 
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
-        {'name': 'Registro compras', 'url': '/registro_compras'}
+        {'name': 'Asientos contables', 'url': '/asientos_contables'}
     ]
     movimientos = []
 
-    return render_template("registro_compras.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
+    return render_template("asientos_contables.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
 
+
+@app.route("/registro_compras", methods=["GET"])
+def registro_compras():
+    token = request.cookies.get('token')
+    dni = request.cookies.get('dni')
+    usuario = controlador_usuarios.obtener_usuario(dni)
+    periodo = request.args.get("periodo", None)
+    mes = año = None
+    if periodo:
+        año, mes = periodo.split("-")
+    registros, total_base_imponible, total_igv, total_total_comprobante = (
+        controlador_plantillas.obtener_registro_compras(mes, año) if mes and año else ([], 0, 0, 0)
+    )
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Registro compras', 'url': '/registro_compras'}
+    ]
+    return render_template(
+        "registro_compras.html",
+        registros=registros,
+        total_base_imponible=total_base_imponible,
+        total_operacion_gravada=total_igv,
+        total_total_comprobante=total_total_comprobante,
+        breadcrumbs=breadcrumbs,
+        usuario=usuario
+    )
 
 @app.route("/ventas/productos")
 def productos():
@@ -357,6 +405,64 @@ def cuentas_añadir():
     except Exception as e:
         return jsonify({'error': f'Error en el servidor: {str(e)}'}), 500
 
+########### PLANTILLAS ###########
+
+#registro ventas
+@app.route('/exportar-registro-ventas', methods=['GET'])
+def exportar_registro_ventas():
+    periodo = request.args.get('periodo')
+    if not periodo:
+        return jsonify({'error': 'El parámetro "periodo" es requerido.'}), 400
+    try:
+        anio, mes = map(int, periodo.split('-'))
+    except ValueError:
+        return jsonify({'error': 'El formato del período es incorrecto. Debe ser "YYYY-MM".'}), 400
+    return controlador_plantillas.generar_registro_venta_excel(mes, anio)
+
+@app.route('/exportar-registro-compras', methods=['GET'])
+def exportar_registro_compras():
+    periodo = request.args.get('periodo')
+    if not periodo:
+        return jsonify({'error': 'El parámetro "periodo" es requerido.'}), 400
+    try:
+        anio, mes = map(int, periodo.split('-'))
+    except ValueError:
+        return jsonify({'error': 'El formato del período es incorrecto. Debe ser "YYYY-MM".'}), 400
+    return controlador_plantillas.generar_registro_compra_excel(mes, anio)
+
+@app.route('/notificaciones', methods=['GET'])
+def obtener_notificaciones_endpoint():
+    notificaciones = obtener_todas_notificaciones()
+    total_no_leidas = contar_notificaciones_no_leidas()
+    
+    return jsonify({
+        'notificaciones': notificaciones.json['notificaciones'],
+        'total_no_leidas': total_no_leidas
+    })
+
+
+# Ruta para contar notificaciones no leídas
+@app.route('/notificaciones/contar', methods=['GET'])
+def contar_notificaciones_endpoint():
+    total_no_leidas = contar_notificaciones_no_leidas()
+    return jsonify({'total_no_leidas': total_no_leidas})
+
+# Ruta para eliminar una notificación específica
+@app.route('/notificaciones/eliminar', methods=['POST'])
+def eliminar_notificacion_endpoint():
+    data = request.get_json()
+    notificacion_id = data.get('id')
+
+    if not notificacion_id:
+        return jsonify({'error': 'ID de notificación no proporcionado'}), 400
+
+    return eliminar_notificacion(notificacion_id)
+
+# Ruta para marcar todas las notificaciones como leídas
+@app.route('/notificaciones/marcar_leidas', methods=['POST'])
+def marcar_notificaciones_leidas_endpoint():
+    return marcar_notificaciones_leidas()
+
 @app.route("/perfil_usuario")
 def perfil_usuario():
     token = request.cookies.get('token')
@@ -478,7 +584,5 @@ def personal():
 
 
 # Iniciar el servidor
-
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8000, debug=True)
-
