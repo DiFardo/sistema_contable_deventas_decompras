@@ -129,6 +129,7 @@ a:focus {
 #sidebar.active {
     width: 0;
     overflow: hidden;
+    transform: none; /* Asegurar que no afecta a pantallas grandes */
 }
 
 #sidebar::-webkit-scrollbar {
@@ -229,6 +230,7 @@ a:focus {
 
 #content-wrapper.active {
     margin-left: 0;
+    width: 100%;
 }
 
 #content {
@@ -258,6 +260,7 @@ a:focus {
         margin-left: 0;
     }
 }
+
 
 /*========= Navbar Design Start =========*/
 
@@ -388,7 +391,11 @@ input[type="search"] {
     .xp-searchbar {
         margin-top: 20px;
     }
+    #content-wrapper {
+        margin-left: 0;
+    }
 }
+
 
 .navbar-nav > li.show .dropdown-menu {
     transform: translate3d(0, 0, 0);
@@ -582,7 +589,7 @@ table.table th i {
 
 table.table td:last-child {
     opacity: 0.9;
-    /* font-size: 22px; */
+    font-size: 22px;
     margin: 0px 5px;
 }
 
@@ -732,22 +739,28 @@ footer {
 /*------- Footer Design End ------*/
 
 /*======== Responsive Sidebar ========*/
-
 @media only screen and (max-width: 992px) {
     #content-wrapper {
         margin-left: 0;
     }
+}
+
+@media only screen and (max-width: 992px) {
     #sidebar {
         position: fixed;
         top: 0;
         bottom: 0;
         z-index: 10;
         width: 260px;
-        transform: translatex(-100%);
+        transform: translateX(-100%);
         transition: all 150ms linear;
         box-shadow: none !important;
     }
 
+    #sidebar.active {
+        transform: translateX(0%);
+        width: 260px; /* Asegúrate de que el ancho es correcto */
+    }
     .body-overlay {
         position: fixed;
         top: 0;
@@ -762,9 +775,15 @@ footer {
         background-color: rgba(0, 0, 0, 0.5);
     }
 
+    .body-overlay.active {
+        opacity: 1;
+        display: block;
+        visibility: visible;
+        z-index: 15;
+    }
     #sidebar.show-nav,
     .body-overlay.show-nav {
-        transform: translatex(0%);
+        transform: translateX(0%);
         opacity: 1;
         display: block;
         visibility: visible;
