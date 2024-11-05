@@ -582,7 +582,7 @@ table.table th i {
 
 table.table td:last-child {
     opacity: 0.9;
-    font-size: 22px;
+    /* font-size: 22px; */
     margin: 0px 5px;
 }
 
