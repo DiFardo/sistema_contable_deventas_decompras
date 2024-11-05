@@ -161,17 +161,6 @@ def actualizar_perfil():
     return redirect(url_for('perfil_usuario'))
 
 
-@app.route("/libro_caja")
-def libro_caja():
-    token = request.cookies.get('token')
-    dni = request.cookies.get('dni')
-    usuario = controlador_usuarios.obtener_usuario(dni)
-    breadcrumbs = [
-        {'name': 'Inicio', 'url': '/index'},
-        {'name': 'Libro Caja y Bancos', 'url': '/libro_caja'}
-    ]
-    movimientos = []
-    return render_template("libro_caja.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
 
 @app.route("/libro_diario")
 def libro_diario():
@@ -211,6 +200,33 @@ def libro_mayor():
     movimientos = []
 
     return render_template("libro_mayor.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
+
+@app.route("/libro_caja")
+def libro_caja():
+    token = request.cookies.get('token')
+    dni = request.cookies.get('dni')
+    usuario = controlador_usuarios.obtener_usuario(dni)
+
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Libro Caja y Bancos', 'url': '/libro_caja'}
+    ]
+
+    movimientos = controlador_plantillas.obtener_libro_caja()  # Llamada a la función para obtener los movimientos de caja
+
+    # Cálculo de totales para las columnas de saldo deudor y saldo acreedor
+    total_deudor = sum(movimiento['saldo_deudor'] or 0 for movimiento in movimientos)
+    total_acreedor = sum(movimiento['saldo_acreedor'] or 0 for movimiento in movimientos)
+
+    return render_template(
+        "libro_caja.html",
+        movimientos=movimientos,
+        breadcrumbs=breadcrumbs,
+        usuario=usuario,
+        total_deudor=total_deudor,
+        total_acreedor=total_acreedor
+    )
+
 
 @app.route("/registro_ventas", methods=["GET"])
 def registro_ventas():
