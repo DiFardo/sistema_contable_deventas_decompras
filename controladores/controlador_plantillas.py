@@ -312,6 +312,139 @@ def generar_registro_compra_excel(mes, anio):
             cursor.close()
             conexion.close()
 
+def generar_libro_diario_excel(fecha):
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+        
+        consulta = """
+            SELECT
+                DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo,
+                TO_CHAR(ac.fecha, 'DD/MM/YYYY') AS fecha,
+                CASE
+                    WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la venta de mercadería'
+                    WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
+                    ELSE ''
+                END AS glosa,
+                CASE
+                    WHEN m.tipo_movimiento = 'Compras' THEN 8
+                    WHEN m.tipo_movimiento = 'Ventas' THEN 14
+                    ELSE NULL
+                END AS codigo_del_libro,
+                DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo_documento,
+                ac.numero_documento AS numero_documento_sustentatorio,
+                ac.codigo_cuenta,
+                ac.denominacion,
+                ac.debe,
+                ac.haber
+            FROM asientos_contables ac
+            JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
+            WHERE ac.fecha::date = %s::date
+            ORDER BY numero_correlativo, ac.id;
+        """
+        cursor.execute(consulta, (fecha,))
+        resultados = cursor.fetchall()
+
+        ruta_plantilla = 'plantillas/LibroDiario.xlsx'
+        workbook = load_workbook(ruta_plantilla)
+        hoja = workbook.active
+
+        borde = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+        fuente_estandar = Font(name='Arial', size=10)
+
+        fila_base = 11
+        alto_fila_base = hoja.row_dimensions[fila_base].height
+
+        fila_inicial = fila_base
+        total_debe = 0
+        total_haber = 0
+
+        columnas_con_borde = list(range(1, 11))
+
+        for fila, registro in enumerate(resultados, start=fila_inicial):
+            hoja.row_dimensions[fila].height = alto_fila_base
+
+            celdas = [
+                (1, registro[0]),  # Correlativo
+                (2, registro[1]),  # Fecha
+                (3, registro[2]),  # Glosa
+                (4, registro[3]),  # Código del libro
+                (5, registro[4]),  # Número correlativo del documento
+                (6, registro[5]),  # Número documento sustentatorio
+                (7, registro[6]),  # Código cuenta
+                (8, registro[7]),  # Denominación
+                (9, registro[8]),  # Debe
+                (10, registro[9])  # Haber
+            ]
+
+            for col in columnas_con_borde:
+                celda = hoja.cell(row=fila, column=col)
+                celda.border = borde
+                celda.font = fuente_estandar
+
+            for col, valor in celdas:
+                celda = hoja.cell(row=fila, column=col, value=valor)
+                celda.font = fuente_estandar
+
+                if col in (9, 10):
+                    celda.alignment = Alignment(horizontal='right', vertical='center')
+                    celda.number_format = FORMAT_NUMBER_COMMA_SEPARATED1
+                elif col == 2:
+                    celda.number_format = FORMAT_DATE_DDMMYY
+                    celda.alignment = Alignment(horizontal='center', vertical='center')
+                elif col == 6:
+                    celda.alignment = Alignment(horizontal='center', vertical='center')
+                else:
+                    celda.alignment = Alignment(horizontal='left', vertical='center')
+
+                if col == 9:
+                    total_debe += valor or 0
+                elif col == 10:
+                    total_haber += valor or 0
+
+        fila_totales = fila_inicial + len(resultados)
+        hoja.row_dimensions[fila_totales].height = alto_fila_base
+        celda_totales = hoja.cell(row=fila_totales, column=8, value="TOTALES")
+        celda_totales.border = borde
+        celda_totales.alignment = Alignment(horizontal='center', vertical='center')
+        celda_totales.font = Font(name='Arial', size=10, bold=True)
+
+        total_debe_celda = hoja.cell(row=fila_totales, column=9, value=total_debe)
+        total_debe_celda.border = borde
+        total_debe_celda.number_format = FORMAT_NUMBER_COMMA_SEPARATED1
+        total_debe_celda.alignment = Alignment(horizontal='right', vertical='center')
+        total_debe_celda.font = fuente_estandar
+
+        total_haber_celda = hoja.cell(row=fila_totales, column=10, value=total_haber)
+        total_haber_celda.border = borde
+        total_haber_celda.number_format = FORMAT_NUMBER_COMMA_SEPARATED1
+        total_haber_celda.alignment = Alignment(horizontal='right', vertical='center')
+        total_haber_celda.font = fuente_estandar
+
+        for col in columnas_con_borde:
+            hoja.cell(row=fila_totales, column=col).border = borde
+
+        output = BytesIO()
+        workbook.save(output)
+        output.seek(0)
+
+        nombre_archivo = f'libro_diario_{fecha}.xlsx'
+
+        return send_file(
+            output,
+            download_name=nombre_archivo,
+            as_attachment=True,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+
+    except Exception as e:
+        print(f"Error al generar el libro diario: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if conexion:
+            cursor.close()
+            conexion.close()
+
 def obtener_registro_ventas(mes, año):
     conexion = obtener_conexion()
     registros = []
@@ -348,7 +481,6 @@ def obtener_registro_ventas(mes, año):
 
         registros = cursor.fetchall()
 
-        # Calcular los totales
         for registro in registros:
             total_base_imponible += registro['base_imponible']
             total_igv += registro['igv']
@@ -403,9 +535,11 @@ def obtener_registro_compras(mes, año):
 
     return registros, total_base_imponible, total_igv, total_total_comprobante
 
-def obtener_libro_diario():
+def obtener_libro_diario(fecha):
     conexion = obtener_conexion()
     movimientos = []
+    total_debe = 0
+    total_haber = 0
 
     with conexion.cursor(cursor_factory=DictCursor) as cursor:
         cursor.execute("""
@@ -430,13 +564,18 @@ def obtener_libro_diario():
                 ac.haber
             FROM asientos_contables ac
             JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
+            WHERE ac.fecha::date = %s::date
             ORDER BY numero_correlativo, ac.id;
-        """)
+        """, (fecha,))
         
         movimientos = cursor.fetchall()
 
+        for movimiento in movimientos:
+            total_debe += movimiento['debe'] or 0
+            total_haber += movimiento['haber'] or 0
+
     conexion.close()
-    return movimientos
+    return movimientos, total_debe, total_haber
 
 def obtener_libro_caja():
     conexion = obtener_conexion()

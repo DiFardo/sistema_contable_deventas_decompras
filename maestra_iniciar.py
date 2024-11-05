@@ -9,6 +9,7 @@ import controladores.controlador_plantillas as controlador_plantillas
 from bd_conexion import obtener_conexion  # Asegúrate de que la conexión a la base de datos esté configurada correctamente
 from controladores.controlador_cuentas import obtener_todas_cuentas, obtener_cuentas_por_categoria_endpoint, añadir_cuenta,obtener_todas_notificaciones,marcar_notificaciones_leidas,eliminar_notificacion,contar_notificaciones_no_leidas
 from werkzeug.utils import secure_filename
+import datetime
 
 # Directorio donde se guardarán las imágenes de perfil
 UPLOAD_FOLDER = 'static/img/perfiles'
@@ -58,20 +59,33 @@ def subir_imagen_perfil():
     flash('Tipo de archivo no permitido. Selecciona una imagen válida (png, jpg, jpeg, gif).')
     return redirect(url_for('perfil_usuario'))
 
+
+
+
+# ... tus importaciones ...
+
+# Diccionario de descripciones de roles
+descripciones = {
+    "Coordinador general": "Responsable de supervisar y organizar el equipo para cumplir objetivos, asegurando una comunicación efectiva y la resolución de problemas. Facilita la toma de decisiones, gestiona riesgos y mantiene informadas a las partes interesadas sobre el progreso del proyecto.",
+    "Administrador de base de datos": "Responsable del diseño, implementación, seguridad y mantenimiento de la base de datos. Debe tener experiencia en la optimización del rendimiento de consultas y asegurar la integridad de los datos, con un enfoque en la resolución de problemas y la gestión eficiente de los datos.",
+    "Analista": "Encargado de recopilar y analizar los requisitos del sistema. Debe ser capaz de identificar las necesidades del cliente y traducirlas en especificaciones técnicas claras para el equipo. Fuerte capacidad de análisis y comunicación efectiva son clave.",
+    "Diseñador": "Encargado de la creación del diseño visual y de la experiencia del usuario (UI/UX). Debe ser capaz de crear interfaces atractivas y funcionales, asegurando que el sistema sea intuitivo y fácil de usar para los usuarios finales.",
+    "Arquitecto de software": "Responsable de diseñar la estructura técnica del sistema, seleccionando tecnologías y definiendo los componentes clave. Debe tener una visión amplia del sistema y asegurarse de que el software cumpla con los requisitos de escalabilidad, seguridad y eficiencia.",
+    "Programador": "Encargados de la codificación del sistema siguiendo las especificaciones del analista y el diseño del arquitecto. Deben tener experiencia en lenguajes de programación adecuados y ser capaces de trabajar en equipo, respetando plazos y estándares de calidad.",
+    "Supervisor de calidad": "Responsable de asegurar que el sistema cumpla con los estándares de calidad definidos. Debe gestionar las pruebas y asegurar que se mantengan altos niveles de rendimiento, usabilidad y seguridad, monitoreando el progreso y haciendo ajustes si es necesario.",
+    "Tester": "Encargados de realizar pruebas funcionales y de rendimiento del sistema para identificar errores y áreas de mejora. Deben tener habilidades técnicas para diseñar casos de prueba efectivos y capacidad para detectar problemas antes del despliegue del sistema.",
+    "Capacitador": "Responsable de desarrollar y ejecutar planes de capacitación para los usuarios finales. Debe ser capaz de crear manuales y ofrecer formación clara y efectiva, asegurándose de que los usuarios puedan manejar el sistema correctamente.",
+    "Asesor": "Ofrece asesoramiento especializado en áreas clave del proyecto, como estrategias de negocio, tecnología o gestión, y guía al equipo en la toma de decisiones críticas para el éxito del proyecto.",
+    "Administrador del negocio": "Administrador del negocio"
+}
+
 def obtener_descripcion_rol(rol):
-    descripciones = {
-        "Coordinador general": "Responsable de supervisar y organizar el equipo para cumplir objetivos, asegurando una comunicación efectiva y la resolución de problemas. Facilita la toma de decisiones, gestiona riesgos y mantiene informadas a las partes interesadas sobre el progreso del proyecto.",
-        "Administrador de base de datos": "Responsable del diseño, implementación, seguridad y mantenimiento de la base de datos. Debe tener experiencia en la optimización del rendimiento de consultas y asegurar la integridad de los datos, con un enfoque en la resolución de problemas y la gestión eficiente de los datos.",
-        "Analista": "Encargado de recopilar y analizar los requisitos del sistema. Debe ser capaz de identificar las necesidades del cliente y traducirlas en especificaciones técnicas claras para el equipo. Fuerte capacidad de análisis y comunicación efectiva son clave.",
-        "Diseñador": "Encargado de la creación del diseño visual y de la experiencia del usuario (UI/UX). Debe ser capaz de crear interfaces atractivas y funcionales, asegurando que el sistema sea intuitivo y fácil de usar para los usuarios finales.",
-        "Arquitecto de software": "Responsable de diseñar la estructura técnica del sistema, seleccionando tecnologías y definiendo los componentes clave. Debe tener una visión amplia del sistema y asegurarse de que el software cumpla con los requisitos de escalabilidad, seguridad y eficiencia.",
-        "Programador": "Encargados de la codificación del sistema siguiendo las especificaciones del analista y el diseño del arquitecto. Deben tener experiencia en lenguajes de programación adecuados y ser capaces de trabajar en equipo, respetando plazos y estándares de calidad.",
-        "Supervisor de calidad": "Responsable de asegurar que el sistema cumpla con los estándares de calidad definidos. Debe gestionar las pruebas y asegurar que se mantengan altos niveles de rendimiento, usabilidad y seguridad, monitoreando el progreso y haciendo ajustes si es necesario.",
-        "Tester": "Encargados de realizar pruebas funcionales y de rendimiento del sistema para identificar errores y áreas de mejora. Deben tener habilidades técnicas para diseñar casos de prueba efectivos y capacidad para detectar problemas antes del despliegue del sistema.",
-        "Capacitador": "Responsable de desarrollar y ejecutar planes de capacitación para los usuarios finales. Debe ser capaz de crear manuales y ofrecer formación clara y efectiva, asegurándose de que los usuarios puedan manejar el sistema correctamente.",
-        "Asesor": "Ofrece asesoramiento especializado en áreas clave del proyecto, como estrategias de negocio, tecnología o gestión, y guía al equipo en la toma de decisiones críticas para el éxito del proyecto."
-    }
     return descripciones.get(rol, "Rol no identificado")
+
+
+
+
+
 
 # Ruta para eliminar la imagen de perfil
 @app.route("/eliminar_imagen_perfil", methods=["POST"])
@@ -149,29 +163,29 @@ def actualizar_perfil():
 
 
 
-@app.route("/libro_diario")
+@app.route("/libro_diario", methods=["GET"])
 def libro_diario():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
     usuario = controlador_usuarios.obtener_usuario(dni)
-
+    fecha = request.args.get("fecha", None)
+    
+    movimientos, total_debe, total_haber = (
+        controlador_plantillas.obtener_libro_diario(fecha) if fecha else ([], 0, 0)
+    )
+    
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
-        {'name': 'Libro Diario', 'url': '/libro_diario'}
+        {'name': 'Libro diario', 'url': '/libro_diario'}
     ]
-
-    movimientos = controlador_plantillas.obtener_libro_diario()
-
-    total_debe = sum(movimiento['debe'] or 0 for movimiento in movimientos)
-    total_haber = sum(movimiento['haber'] or 0 for movimiento in movimientos)
-
+    
     return render_template(
         "libro_diario.html",
         movimientos=movimientos,
-        breadcrumbs=breadcrumbs,
-        usuario=usuario,
         total_debe=total_debe,
-        total_haber=total_haber
+        total_haber=total_haber,
+        breadcrumbs=breadcrumbs,
+        usuario=usuario
     )
 
 @app.route("/libro_mayor")
@@ -435,6 +449,17 @@ def exportar_registro_compras():
         return jsonify({'error': 'El formato del período es incorrecto. Debe ser "YYYY-MM".'}), 400
     return controlador_plantillas.generar_registro_compra_excel(mes, anio)
 
+@app.route('/exportar-libro-diario', methods=['GET'])
+def exportar_libro_diario():
+    fecha = request.args.get('fecha')
+    if not fecha:
+        return jsonify({'error': 'El parámetro "fecha" es requerido.'}), 400
+    try:
+        datetime.datetime.strptime(fecha, '%Y-%m-%d')
+    except ValueError:
+        return jsonify({'error': 'El formato de la fecha es incorrecto. Debe ser "YYYY-MM-DD".'}), 400
+    return controlador_plantillas.generar_libro_diario_excel(fecha)
+
 @app.route('/notificaciones', methods=['GET'])
 def obtener_notificaciones_endpoint():
     notificaciones = obtener_todas_notificaciones()
@@ -492,6 +517,101 @@ def perfil_usuario():
     ]
     
     return render_template("perfil_usuario.html", usuario=usuario, perfil=perfil, descripcion_rol=descripcion_rol, breadcrumbs=breadcrumbs)
+
+
+
+
+
+
+
+
+####################################
+###### Mantenimiento personal ######
+####################################
+@app.route('/agregar_usuario', methods=['POST'])
+def agregar_usuario():
+    # Obtener datos del formulario
+    dni = request.form['dni']
+    nombre = request.form['nombre']
+    apellido = request.form['apellido']
+    rol = request.form['rol']
+    password = request.form['password']
+
+    # Llamar a la función para agregar usuario en el controlador
+    success = controlador_usuarios.agregar_usuario(dni, nombre, apellido, rol, password)
+
+    if success:
+        flash("Usuario agregado exitosamente.")
+    else:
+        flash("Hubo un error al agregar el usuario. Verifica que el DNI no exista ya en el sistema.")
+
+    return redirect(url_for('personal'))
+
+@app.route('/editar_usuario', methods=['POST'])
+def editar_usuario():
+    # Obtener datos del formulario
+    dni = request.form['dni']
+    nombre = request.form['nombre']
+    apellido = request.form['apellido']
+    rol = request.form['rol']
+
+    # Llamar a la función para editar usuario en el controlador
+    success = controlador_usuarios.editar_usuario(dni, nombre, apellido, rol)
+
+    if success:
+        flash("Usuario actualizado exitosamente.")
+    else:
+        flash("Hubo un error al actualizar el usuario.")
+
+    return redirect(url_for('personal'))
+
+
+@app.route('/eliminar_usuario', methods=['POST'])
+def eliminar_usuario():
+    # Obtener DNI del usuario a eliminar
+    dni = request.form['dni']
+
+    # Llamar a la función para eliminar usuario en el controlador
+    success = controlador_usuarios.eliminar_usuario(dni)
+
+    if success:
+        flash("Usuario eliminado exitosamente.")
+    else:
+        flash("Hubo un error al eliminar el usuario.")
+
+    return redirect(url_for('personal'))
+
+
+@app.route('/personal')
+def personal():
+    # Obtener el token y DNI del usuario desde las cookies
+    token = request.cookies.get('token')
+    dni = request.cookies.get('dni')
+    
+    # Validar si el usuario está autenticado
+    if not token or not validar_token():
+        return redirect("/login_user")
+    
+    # Obtener la información del usuario autenticado
+    usuario = controlador_usuarios.obtener_usuario(dni)
+    
+    # Obtener datos de todos los usuarios para la tabla
+    usuarios = controlador_usuarios.obtener_todos_usuarios()
+    
+    # Obtener la lista de roles desde el diccionario 'descripciones'
+    roles = list(descripciones.keys())
+    
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Gestión de Usuarios', 'url': '/personal'}
+    ]
+    
+    return render_template('personal.html', usuarios=usuarios, breadcrumbs=breadcrumbs, usuario=usuario, roles=roles)
+
+
+
+
+
 
 # Iniciar el servidor
 if __name__ == "__main__":

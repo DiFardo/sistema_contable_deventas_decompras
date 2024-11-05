@@ -13,13 +13,24 @@
 
 <body>
     
-    {%block navbar%}
-    {%include 'navbar.html'%}
-    {%endblock%}
+    {% extends 'navbar.html' %}
 
-    {%block contenido %}
+{% block titulo %}
+    <!-- Título de la página -->
+    {% if titulo %}
+        {{ titulo }}
+    {% else %}
+        Sistema Contable
+    {% endif %}
+{% endblock %}
+
+{% block contenido %}
+    {% block contenido_pagina %}
+    <!-- Aquí irá el contenido específico de cada página -->
     {% endblock %}
+{% endblock %}
 
+    
 </body>
 
 </html>
