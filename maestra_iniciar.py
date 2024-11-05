@@ -5,7 +5,7 @@ from flask_jwt_extended import JWTManager, create_access_token
 import controladores.controlador_usuarios as controlador_usuarios
 import controladores.controlador_ventas as controlador_ventas
 import clases.clase_usuario as clase_usuario
-from bd_conexion import obtener_conexion  # Asegúrate de que la conexión a la base de datos esté configurada correctamente
+from bd_conexion import obtener_conexion  
 from controladores.controlador_cuentas import obtener_todas_cuentas, obtener_cuentas_por_categoria_endpoint, añadir_cuenta
 from werkzeug.utils import secure_filename
 
@@ -60,7 +60,6 @@ def subir_imagen_perfil():
 
 
 
-# ... tus importaciones ...
 
 # Diccionario de descripciones de roles
 descripciones = {
@@ -468,7 +467,7 @@ def personal():
     
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
-        {'name': 'Gestión de Usuarios', 'url': '/personal'}
+        {'name': 'Gestión de usuarios', 'url': '/personal'}
     ]
     
     return render_template('personal.html', usuarios=usuarios, breadcrumbs=breadcrumbs, usuario=usuario, roles=roles)
