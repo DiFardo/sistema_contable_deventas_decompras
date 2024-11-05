@@ -170,10 +170,20 @@ def libro_diario():
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Libro Diario', 'url': '/libro_diario'}
     ]
-    movimientos = []
 
-    return render_template("libro_diario.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
+    movimientos = controlador_plantillas.obtener_libro_diario()
 
+    total_debe = sum(movimiento['debe'] or 0 for movimiento in movimientos)
+    total_haber = sum(movimiento['haber'] or 0 for movimiento in movimientos)
+
+    return render_template(
+        "libro_diario.html",
+        movimientos=movimientos,
+        breadcrumbs=breadcrumbs,
+        usuario=usuario,
+        total_debe=total_debe,
+        total_haber=total_haber
+    )
 
 @app.route("/libro_mayor")
 def libro_mayor():

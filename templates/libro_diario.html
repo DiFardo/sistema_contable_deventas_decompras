@@ -84,17 +84,17 @@
       <table class="table table-bordered table-striped table-hover">
         <thead>
           <tr>
-            <th rowspan="2">ASIENTO</th>
+            <th rowspan="2">NÚMERO CORRELATIVO</th>
             <th rowspan="2">FECHA</th>
             <th rowspan="2">DESCRIPCIÓN DE LA OPERACIÓN</th>
-            <th colspan="2">REFERENCIA DE LA OPERACIÓN</th>
-            <th colspan="3">CUENTA CONTABLE</th>
+            <th colspan="3">REFERENCIA DE LA OPERACIÓN</th>
+            <th colspan="2">CUENTA CONTABLE</th>
             <th colspan="2">MOVIMIENTO</th>
           </tr>
           <tr>
             <th>CÓDIGO DEL LIBRO</th>
             <th>NÚMERO CORRELATIVO</th>
-            <th>NÚMERO DOCUMENTO</th>
+            <th>NÚMERO DOCUMENTO SUSTENTATORIO</th>
             <th>CÓDIGO</th>
             <th>DENOMINACIÓN</th>
             <th>DEBE</th>
@@ -105,15 +105,29 @@
           <!-- Aquí van las filas dinámicas de datos -->
           {% for movimiento in movimientos %}
           <tr>
-            <td>{{ movimiento.numero_correlativo }}</td>
-            <td>{{ movimiento.fecha_operacion }}</td>
-            <td>{{ movimiento.descripcion_operacion }}</td>
-            <td>{{ movimiento.codigo_libro }}</td>
-            <td>{{ movimiento.numero_correlativo_referencia }}</td>
-            <td>{{ movimiento.codigo_cuenta }}</td>
-            <td>{{ movimiento.denominacion_cuenta }}</td>
-            <td>{{ movimiento.debe }}</td>
-            <td>{{ movimiento.haber }}</td>
+            {% if movimiento.debe is none and movimiento.haber is none %}
+              <td>-</td>
+              <td>-</td>
+              <td>-</td>
+              <td>-</td>
+              <td>-</td>
+              <td>-</td>
+              <td>{{ movimiento.codigo_cuenta or "-" }}</td>
+              <td>{{ movimiento.denominacion or "-" }}</td>
+              <td>-</td>
+              <td>-</td>
+            {% else %}
+              <td>{{ movimiento.numero_correlativo or "-" }}</td>
+              <td>{{ movimiento.fecha or "-" }}</td>
+              <td>{{ movimiento.glosa or "-" }}</td>
+              <td>{{ movimiento.codigo_del_libro or "-" }}</td>
+              <td>{{ movimiento.numero_correlativo_documento or "-" }}</td>
+              <td>{{ movimiento.numero_documento_sustentatorio or "-" }}</td>
+              <td>{{ movimiento.codigo_cuenta or "-" }}</td>
+              <td>{{ movimiento.denominacion or "-" }}</td>
+              <td>{{ movimiento.debe or "-" }}</td>
+              <td>{{ movimiento.haber or "-" }}</td>
+            {% endif %}
           </tr>
           {% endfor %}
         </tbody>

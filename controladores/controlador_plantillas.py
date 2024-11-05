@@ -159,98 +159,6 @@ def generar_registro_venta_excel(mes, anio):
             cursor.close()
             conexion.close()
 
-def obtener_registro_ventas(mes, año):
-    conexion = obtener_conexion()
-    registros = []
-    total_base_imponible = 0
-    total_igv = 0
-    total_total_comprobante = 0
-
-    with conexion.cursor(cursor_factory=DictCursor) as cursor:
-        cursor.execute("""
-            SELECT 
-                ROW_NUMBER() OVER(ORDER BY v.serie_comprobante, v.numero_comprobante) AS correlativo,
-                TO_CHAR(v.fecha, 'DD/MM/YYYY') AS fecha_emision,
-                CASE WHEN v.tipo_comprobante = 'Boleta' THEN '03' ELSE '01' END AS tipo_comprobante,
-                v.serie_comprobante,
-                v.numero_comprobante,
-                CASE 
-                    WHEN v.tipo_documento = 'DNI' THEN '1' 
-                    WHEN v.tipo_documento = 'Carnet de extranjería' THEN '4'
-                    WHEN v.tipo_documento = 'RUC' THEN '6'
-                    WHEN v.tipo_documento = 'Pasaporte' THEN '7'
-                    ELSE ''
-                END AS tipo_documento,
-                v.numero_documento,
-                v.usuario,
-                SUM(v.sub_sin_igv) AS base_imponible,
-                SUM(v.igv) AS igv,
-                SUM(v.total) AS total_comprobante
-            FROM ventas_contables v
-            WHERE EXTRACT(MONTH FROM v.fecha) = %s AND EXTRACT(YEAR FROM v.fecha) = %s
-            GROUP BY v.serie_comprobante, v.numero_comprobante, v.tipo_documento, 
-                     v.numero_documento, v.usuario, v.tipo_comprobante, v.fecha
-            ORDER BY v. fecha, v.serie_comprobante, v.numero_comprobante;
-        """, (mes, año))
-
-        registros = cursor.fetchall()
-
-        # Calcular los totales
-        for registro in registros:
-            total_base_imponible += registro['base_imponible']
-            total_igv += registro['igv']
-            total_total_comprobante += registro['total_comprobante']
-
-    conexion.close()
-
-    return registros, total_base_imponible, total_igv, total_total_comprobante
-
-def obtener_registro_compras(mes, año):
-    conexion = obtener_conexion()
-    registros = []
-    total_base_imponible = 0
-    total_igv = 0
-    total_total_comprobante = 0
-
-    with conexion.cursor(cursor_factory=DictCursor) as cursor:
-        cursor.execute("""
-            SELECT 
-                ROW_NUMBER() OVER(ORDER BY c.serie_comprobante, c.numero_comprobante) AS correlativo,
-                TO_CHAR(c.fecha, 'DD/MM/YYYY') AS fecha_emision,
-                CASE WHEN c.tipo_comprobante = 'Factura' THEN '01' ELSE '03' END AS tipo_comprobante,
-                c.serie_comprobante,
-                c.numero_comprobante,
-                CASE 
-                    WHEN c.tipo_documento = 'DNI' THEN '1' 
-                    WHEN c.tipo_documento = 'Carnet de extranjería' THEN '4'
-                    WHEN c.tipo_documento = 'RUC' THEN '6'
-                    WHEN c.tipo_documento = 'Pasaporte' THEN '7'
-                    ELSE ''
-                END AS tipo_documento,
-                c.numero_documento,
-                c.nombre_proveedor,
-                SUM(c.sub_sin_igv) AS base_imponible,
-                SUM(c.igv) AS igv,
-                SUM(c.total) AS total_comprobante
-            FROM compras_contables c
-            WHERE EXTRACT(MONTH FROM c.fecha) = %s AND EXTRACT(YEAR FROM c.fecha) = %s
-            GROUP BY c.serie_comprobante, c.numero_comprobante, c.tipo_documento, 
-                     c.numero_documento, c.nombre_proveedor, c.tipo_comprobante, c.fecha
-            ORDER BY c.fecha, c.serie_comprobante, c.numero_comprobante;
-        """, (mes, año))
-
-        registros = cursor.fetchall()
-
-        # Calcular los totales
-        for registro in registros:
-            total_base_imponible += registro['base_imponible']
-            total_igv += registro['igv']
-            total_total_comprobante += registro['total_comprobante']
-
-    conexion.close()
-
-    return registros, total_base_imponible, total_igv, total_total_comprobante
-
 def generar_registro_compra_excel(mes, anio):
     try:
         conexion = obtener_conexion()
@@ -403,3 +311,129 @@ def generar_registro_compra_excel(mes, anio):
         if conexion:
             cursor.close()
             conexion.close()
+
+def obtener_registro_ventas(mes, año):
+    conexion = obtener_conexion()
+    registros = []
+    total_base_imponible = 0
+    total_igv = 0
+    total_total_comprobante = 0
+
+    with conexion.cursor(cursor_factory=DictCursor) as cursor:
+        cursor.execute("""
+            SELECT 
+                ROW_NUMBER() OVER(ORDER BY v.serie_comprobante, v.numero_comprobante) AS correlativo,
+                TO_CHAR(v.fecha, 'DD/MM/YYYY') AS fecha_emision,
+                CASE WHEN v.tipo_comprobante = 'Boleta' THEN '03' ELSE '01' END AS tipo_comprobante,
+                v.serie_comprobante,
+                v.numero_comprobante,
+                CASE 
+                    WHEN v.tipo_documento = 'DNI' THEN '1' 
+                    WHEN v.tipo_documento = 'Carnet de extranjería' THEN '4'
+                    WHEN v.tipo_documento = 'RUC' THEN '6'
+                    WHEN v.tipo_documento = 'Pasaporte' THEN '7'
+                    ELSE ''
+                END AS tipo_documento,
+                v.numero_documento,
+                v.usuario,
+                SUM(v.sub_sin_igv) AS base_imponible,
+                SUM(v.igv) AS igv,
+                SUM(v.total) AS total_comprobante
+            FROM ventas_contables v
+            WHERE EXTRACT(MONTH FROM v.fecha) = %s AND EXTRACT(YEAR FROM v.fecha) = %s
+            GROUP BY v.serie_comprobante, v.numero_comprobante, v.tipo_documento, 
+                     v.numero_documento, v.usuario, v.tipo_comprobante, v.fecha
+            ORDER BY v. fecha, v.serie_comprobante, v.numero_comprobante;
+        """, (mes, año))
+
+        registros = cursor.fetchall()
+
+        # Calcular los totales
+        for registro in registros:
+            total_base_imponible += registro['base_imponible']
+            total_igv += registro['igv']
+            total_total_comprobante += registro['total_comprobante']
+
+    conexion.close()
+
+    return registros, total_base_imponible, total_igv, total_total_comprobante
+
+def obtener_registro_compras(mes, año):
+    conexion = obtener_conexion()
+    registros = []
+    total_base_imponible = 0
+    total_igv = 0
+    total_total_comprobante = 0
+
+    with conexion.cursor(cursor_factory=DictCursor) as cursor:
+        cursor.execute("""
+            SELECT 
+                ROW_NUMBER() OVER(ORDER BY c.serie_comprobante, c.numero_comprobante) AS correlativo,
+                TO_CHAR(c.fecha, 'DD/MM/YYYY') AS fecha_emision,
+                CASE WHEN c.tipo_comprobante = 'Factura' THEN '01' ELSE '03' END AS tipo_comprobante,
+                c.serie_comprobante,
+                c.numero_comprobante,
+                CASE 
+                    WHEN c.tipo_documento = 'DNI' THEN '1' 
+                    WHEN c.tipo_documento = 'Carnet de extranjería' THEN '4'
+                    WHEN c.tipo_documento = 'RUC' THEN '6'
+                    WHEN c.tipo_documento = 'Pasaporte' THEN '7'
+                    ELSE ''
+                END AS tipo_documento,
+                c.numero_documento,
+                c.nombre_proveedor,
+                SUM(c.sub_sin_igv) AS base_imponible,
+                SUM(c.igv) AS igv,
+                SUM(c.total) AS total_comprobante
+            FROM compras_contables c
+            WHERE EXTRACT(MONTH FROM c.fecha) = %s AND EXTRACT(YEAR FROM c.fecha) = %s
+            GROUP BY c.serie_comprobante, c.numero_comprobante, c.tipo_documento, 
+                     c.numero_documento, c.nombre_proveedor, c.tipo_comprobante, c.fecha
+            ORDER BY c.fecha, c.serie_comprobante, c.numero_comprobante;
+        """, (mes, año))
+
+        registros = cursor.fetchall()
+
+        for registro in registros:
+            total_base_imponible += registro['base_imponible']
+            total_igv += registro['igv']
+            total_total_comprobante += registro['total_comprobante']
+
+    conexion.close()
+
+    return registros, total_base_imponible, total_igv, total_total_comprobante
+
+def obtener_libro_diario():
+    conexion = obtener_conexion()
+    movimientos = []
+
+    with conexion.cursor(cursor_factory=DictCursor) as cursor:
+        cursor.execute("""
+            SELECT
+                DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo,
+                ac.fecha,
+                CASE
+                    WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la venta de mercadería'
+                    WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
+                    ELSE ''
+                END AS glosa,
+                CASE
+                    WHEN m.tipo_movimiento = 'Compras' THEN 8
+                    WHEN m.tipo_movimiento = 'Ventas' THEN 14
+                    ELSE NULL
+                END AS codigo_del_libro,
+                DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo_documento,
+                ac.numero_documento AS numero_documento_sustentatorio,
+                ac.codigo_cuenta,
+                ac.denominacion,
+                ac.debe,
+                ac.haber
+            FROM asientos_contables ac
+            JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
+            ORDER BY numero_correlativo, ac.id;
+        """)
+        
+        movimientos = cursor.fetchall()
+
+    conexion.close()
+    return movimientos

@@ -92,3 +92,112 @@ SELECT
 FROM compras_contables c
 
 ORDER BY fecha, serie_comprobante, numero_comprobante;
+
+-----------------------------------------------------------------------
+
+-- Trigger para la tabla ventas_contables
+CREATE OR REPLACE FUNCTION insertar_movimiento_venta()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO movimientos (
+        movimiento_id,
+        fecha,
+        tipo_comprobante,
+        serie_comprobante,
+        numero_comprobante,
+        tipo_documento,
+        numero_documento,
+        entidad,
+        tipo_movimiento,
+        sub_sin_igv,
+        igv,
+        total
+    )
+    VALUES (
+        'V-' || NEW.id,  -- Generar un ID único combinando un prefijo con el ID de la venta
+        NEW.fecha,
+        NEW.tipo_comprobante,
+        NEW.serie_comprobante,
+        NEW.numero_comprobante,
+        NEW.tipo_documento,
+        NEW.numero_documento,
+        NEW.usuario,         -- Usuario como entidad en ventas
+        'Ventas',
+        NEW.sub_sin_igv,
+        NEW.igv,
+        NEW.total
+    );
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_insertar_movimiento_venta
+AFTER INSERT ON ventas_contables
+FOR EACH ROW
+EXECUTE FUNCTION insertar_movimiento_venta();
+
+
+-- Trigger para la tabla compras_contables
+CREATE OR REPLACE FUNCTION insertar_movimiento_compra()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO movimientos (
+        movimiento_id,
+        fecha,
+        tipo_comprobante,
+        serie_comprobante,
+        numero_comprobante,
+        tipo_documento,
+        numero_documento,
+        entidad,
+        tipo_movimiento,
+        sub_sin_igv,
+        igv,
+        total
+    )
+    VALUES (
+        'C-' || NEW.id,  -- Generar un ID único combinando un prefijo con el ID de la compra
+        NEW.fecha,
+        NEW.tipo_comprobante,
+        NEW.serie_comprobante,
+        NEW.numero_comprobante,
+        NEW.tipo_documento,
+        NEW.numero_documento,
+        NEW.nombre_proveedor,  -- Nombre del proveedor como entidad en compras
+        'Compras',
+        NEW.sub_sin_igv,
+        NEW.igv,
+        NEW.total
+    );
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_insertar_movimiento_compra
+AFTER INSERT ON compras_contables
+FOR EACH ROW
+EXECUTE FUNCTION insertar_movimiento_compra();
+-------------------------------------------------------------------------
+--LIBRO DIARIO:
+SELECT
+    DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo,
+    ac.fecha,
+    CASE
+        WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la venta de mercadería'
+        WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
+        ELSE ''
+    END AS glosa,
+    CASE
+        WHEN m.tipo_movimiento = 'Compras' THEN 8
+        WHEN m.tipo_movimiento = 'Ventas' THEN 14
+        ELSE NULL
+    END AS codigo_del_libro,
+    DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo_documento,
+    ac.numero_documento AS numero_documento_sustentatorio,
+    ac.codigo_cuenta,
+    ac.denominacion,
+    ac.debe,
+    ac.haber
+FROM asientos_contables ac
+JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
+ORDER BY numero_correlativo, ac.id;
