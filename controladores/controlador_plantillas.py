@@ -576,3 +576,31 @@ def obtener_libro_diario(fecha):
 
     conexion.close()
     return movimientos, total_debe, total_haber
+
+def obtener_libro_caja():
+    conexion = obtener_conexion()
+    movimientos_caja = []
+
+    with conexion.cursor(cursor_factory=DictCursor) as cursor:
+        cursor.execute("""
+            SELECT
+                DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo, -- Correlativo único del registro
+                ac.fecha AS fecha_operacion, -- Fecha de la operación
+                CASE
+                    WHEN m.tipo_movimiento = 'Compras' THEN 'Por la venta de mercadería'
+                    WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la compra de insumos'
+                    ELSE 'Descripción no especificada'
+                END AS descripcion_operacion, -- Descripción de la operación
+                ac.codigo_cuenta AS codigo_cuenta_asociada, -- Código de la cuenta contable asociada
+                ac.denominacion AS denominacion_cuenta_asociada, -- Denominación de la cuenta contable
+                ac.debe AS saldo_deudor, -- Monto en el debe (movimiento deudor)
+                ac.haber AS saldo_acreedor -- Monto en el haber (movimiento acreedor)
+            FROM asientos_contables ac
+            JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
+            ORDER BY numero_correlativo, ac.id;
+        """)
+        
+        movimientos_caja = cursor.fetchall()
+
+    conexion.close()
+    return movimientos_caja
