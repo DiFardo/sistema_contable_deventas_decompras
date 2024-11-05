@@ -582,7 +582,7 @@ table.table th i {
 
 table.table td:last-child {
     opacity: 0.9;
-    font-size: 22px;
+    /* font-size: 22px; */
     margin: 0px 5px;
 }
 
@@ -734,6 +734,9 @@ footer {
 /*======== Responsive Sidebar ========*/
 
 @media only screen and (max-width: 992px) {
+    #content-wrapper {
+        margin-left: 0;
+    }
     #sidebar {
         position: fixed;
         top: 0;

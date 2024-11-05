@@ -5,6 +5,7 @@ from flask_jwt_extended import JWTManager, create_access_token
 import controladores.controlador_usuarios as controlador_usuarios
 import controladores.controlador_ventas as controlador_ventas
 import clases.clase_usuario as clase_usuario
+import controladores.controlador_plantillas as controlador_plantillas
 from bd_conexion import obtener_conexion  # Asegúrate de que la conexión a la base de datos esté configurada correctamente
 from controladores.controlador_cuentas import obtener_todas_cuentas, obtener_cuentas_por_categoria_endpoint, añadir_cuenta
 from werkzeug.utils import secure_filename
