@@ -25,6 +25,7 @@ postgres_cursor = postgres_connection.cursor()
 
 def verificar_pedidos():
     while True:
+        print("Ejecutando verificación...")
         mysql_cursor.execute("""
             SELECT 
                 dp.id_pedido,
@@ -60,7 +61,7 @@ def verificar_pedidos():
             registrar_en_contable(detalle)
 
         verificar_compras()
-        time.sleep(60)
+        time.sleep(30)
 
 def registrar_en_contable(detalle):
     (id_pedido, id_usuario, usuario, tipo_documento, numero_documento, fecha, 

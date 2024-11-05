@@ -224,7 +224,7 @@ a:focus {
     transition: all 0.3s;
     display: flex;
     flex-direction: column;
-    margin-left: 260px;
+    /* margin-left: 260px; */  
 }
 
 #content-wrapper.active {
