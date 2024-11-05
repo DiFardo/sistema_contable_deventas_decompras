@@ -9,6 +9,7 @@ import controladores.controlador_plantillas as controlador_plantillas
 from bd_conexion import obtener_conexion  # Asegúrate de que la conexión a la base de datos esté configurada correctamente
 from controladores.controlador_cuentas import obtener_todas_cuentas, obtener_cuentas_por_categoria_endpoint, añadir_cuenta,obtener_todas_notificaciones,marcar_notificaciones_leidas,eliminar_notificacion,contar_notificaciones_no_leidas
 from werkzeug.utils import secure_filename
+import datetime
 
 # Directorio donde se guardarán las imágenes de perfil
 UPLOAD_FOLDER = 'static/img/perfiles'
@@ -160,29 +161,29 @@ def libro_caja():
     movimientos = []
     return render_template("libro_caja.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
 
-@app.route("/libro_diario")
+@app.route("/libro_diario", methods=["GET"])
 def libro_diario():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
     usuario = controlador_usuarios.obtener_usuario(dni)
-
+    fecha = request.args.get("fecha", None)
+    
+    movimientos, total_debe, total_haber = (
+        controlador_plantillas.obtener_libro_diario(fecha) if fecha else ([], 0, 0)
+    )
+    
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
-        {'name': 'Libro Diario', 'url': '/libro_diario'}
+        {'name': 'Libro diario', 'url': '/libro_diario'}
     ]
-
-    movimientos = controlador_plantillas.obtener_libro_diario()
-
-    total_debe = sum(movimiento['debe'] or 0 for movimiento in movimientos)
-    total_haber = sum(movimiento['haber'] or 0 for movimiento in movimientos)
-
+    
     return render_template(
         "libro_diario.html",
         movimientos=movimientos,
-        breadcrumbs=breadcrumbs,
-        usuario=usuario,
         total_debe=total_debe,
-        total_haber=total_haber
+        total_haber=total_haber,
+        breadcrumbs=breadcrumbs,
+        usuario=usuario
     )
 
 @app.route("/libro_mayor")
@@ -404,6 +405,17 @@ def exportar_registro_compras():
     except ValueError:
         return jsonify({'error': 'El formato del período es incorrecto. Debe ser "YYYY-MM".'}), 400
     return controlador_plantillas.generar_registro_compra_excel(mes, anio)
+
+@app.route('/exportar-libro-diario', methods=['GET'])
+def exportar_libro_diario():
+    fecha = request.args.get('fecha')
+    if not fecha:
+        return jsonify({'error': 'El parámetro "fecha" es requerido.'}), 400
+    try:
+        datetime.datetime.strptime(fecha, '%Y-%m-%d')
+    except ValueError:
+        return jsonify({'error': 'El formato de la fecha es incorrecto. Debe ser "YYYY-MM-DD".'}), 400
+    return controlador_plantillas.generar_libro_diario_excel(fecha)
 
 @app.route('/notificaciones', methods=['GET'])
 def obtener_notificaciones_endpoint():
