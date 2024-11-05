@@ -153,11 +153,15 @@
                             <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label for="firstName">Nombres</label>
-                                    <input type="text" class="form-control" id="firstName" name="nombres" value="{{ perfil[0] }}">
+                                    <input type="text" class="form-control" id="firstName" name="nombres" value="{{ perfil[0] }}" 
+                                           pattern="[A-Za-zÀ-ÿ\s]+" title="Solo se permiten letras" required 
+                                           oninput="this.value = this.value.replace(/[^A-Za-zÀ-ÿ\s]/g, '')">
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="lastName">Apellidos</label>
-                                    <input type="text" class="form-control" id="lastName" name="apellidos" value="{{ perfil[1] }}">
+                                    <input type="text" class="form-control" id="lastName" name="apellidos" value="{{ perfil[1] }}" 
+                                           pattern="[A-Za-zÀ-ÿ\s]+" title="Solo se permiten letras" required 
+                                           oninput="this.value = this.value.replace(/[^A-Za-zÀ-ÿ\s]/g, '')">
                                 </div>
                             </div>
                             <div class="form-row">
@@ -168,6 +172,7 @@
                             </div>
                             <button type="submit" class="btn btn-update">Actualizar información</button>
                         </form>
+                        
                     </div>
                     
                     <!-- Funciones del rol -->
