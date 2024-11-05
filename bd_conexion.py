@@ -7,5 +7,5 @@ def obtener_conexion():
         port=config('POSTGRES_PORT', default='26134'),
         user=config('POSTGRES_USER', default='avnadmin'),
         password=config('POSTGRES_PASSWORD', default='AVNS_8q6hd4Rhe2XMjRIpU_G'),
-        database=config('POSTGRES_DB', default='servidor_sistema_contable')
+        database=config('POSTGRES_DB', default='prueba_perfil')
     )
