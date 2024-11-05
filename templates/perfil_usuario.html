@@ -1,5 +1,5 @@
 {% extends "pagina_maestra.html" %}
-{% block titulo %}Admin Panel{% endblock %}
+{% block titulo %}Perfil de Usuario{% endblock %}
 {% block link %}
 <!-- Fonts and icons -->
 <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,900|Roboto+Slab:400,700" rel="stylesheet">
@@ -17,14 +17,15 @@
 
 {% block contenido %}
 <style>
-    /* General Container Styling */
+    /* Container styling */
     .profile-container {
         display: flex;
         background-color: #f8f9fa;
         min-height: 100vh;
-        justify-content: flex-start;
+        justify-content: center; /* Centrar horizontalmente */
         padding: 20px;
-        margin-left: 250px; /* Espacio reservado para la barra lateral */
+        /* Eliminamos margin-left */
+        /* margin-left: 250px; */
     }
 
     .profile-card {
@@ -32,44 +33,40 @@
         border-radius: 8px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         display: flex;
+        flex-direction: column;
         width: 100%;
-        max-width: 1000px;
+        max-width: 100%;
+        min-width: 320px;
         overflow: hidden;
     }
 
-    /* Sidebar Styling */
+    /* Sidebar styling */
     .profile-sidebar {
-        background-color: #dfe3e6;
+        background-color: #d1d9df;
         padding: 20px;
         text-align: center;
-        width: 30%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
+        flex: 1;
+        min-width: 200px;
     }
 
     .profile-sidebar img {
         border-radius: 50%;
-        width: 120px;
-        height: 120px;
+        width: 100px;
+        height: 100px;
         margin-bottom: 15px;
     }
 
-    /* Profile Content Styling */
+    /* Profile content styling */
     .profile-content {
-        padding: 30px;
-        width: 70%;
-    }
-
-    h4 {
-        font-weight: bold;
+        padding: 20px;
+        flex: 3;
     }
 
     .btn-upload {
-        background-color: #383c4c ;
+        background-color: #383c4c;
         color: white;
         border: none;
+        width: 100%;
     }
 
     .btn-upload:hover {
@@ -111,70 +108,105 @@
     .justificado {
         text-align: justify;
     }
+
+    /* Floating pencil icon */
+    .edit-icon {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: #6c757d;
+        font-size: 18px;
+    }
+
+    .position-relative {
+        position: relative;
+    }
+
+    /* Responsive adjustments */
+    @media (min-width: 768px) {
+        .profile-card {
+            flex-direction: row;
+        }
+        .profile-sidebar {
+            width: 30%;
+        }
+        .profile-content {
+            width: 70%;
+        }
+    }
 </style>
 
-<div class="profile-container">
-    <div class="profile-card">
-        <!-- Sidebar Profile Section -->
-        <div class="profile-sidebar">
-            <h4 id="displayName">{{ perfil[0] }} {{ perfil[1] }}</h4>
-            
-            <!-- Mostrar la imagen de perfil si existe -->
-            {% if perfil[4] %}
-                <img id="profileImage" src="{{ url_for('static', filename='img/perfiles/' + perfil[4]) }}" alt="User Photo">
-            {% else %}
-                <img id="profileImage" src="https://via.placeholder.com/120" alt="User Photo">
-            {% endif %}
-            
-            <form id="form-imagen" action="{{ url_for('subir_imagen_perfil') }}" method="POST" enctype="multipart/form-data">
-                <input type="file" name="imagen_perfil" id="editar-imagen" style="display:none;" onchange="this.form.submit()">
-            </form>
-            <button class="btn btn-upload mt-2" onclick="document.getElementById('editar-imagen').click()">Cargar nueva foto</button>
-            <p class="text-muted mt-3">{{ perfil[3] }}</p> <!-- Mostrar rol -->
-        </div>
-
-        <!-- Profile Edit Section -->
-        <div class="profile-content">
-            <h4>Editar perfil</h4>
-            <ul class="nav nav-tabs" id="myTab" role="tablist">
-                <li class="nav-item">
-                    <a class="nav-link active" id="user-info-tab" data-toggle="tab" href="#user-info" role="tab" aria-controls="user-info" aria-selected="true">Modificar usuario</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="funciones-tab" data-toggle="tab" href="#funciones" role="tab" aria-controls="funciones" aria-selected="false">Funciones</a>
-                </li>
-            </ul>
-            <div class="tab-content mt-4" id="myTabContent">
-                <!-- Modificar usuario -->
-                <div class="tab-pane fade show active" id="user-info" role="tabpanel" aria-labelledby="user-info-tab">
-                    <form id="profileForm" action="{{ url_for('actualizar_perfil') }}" method="POST">
-                        <div class="form-row">
-                            <div class="form-group col-md-6">
-                                <label for="firstName">Nombres</label>
-                                <input type="text" class="form-control" id="firstName" name="nombres" value="{{ perfil[0] }}">
-                            </div>
-                            <div class="form-group col-md-6">
-                                <label for="lastName">Apellidos</label>
-                                <input type="text" class="form-control" id="lastName" name="apellidos" value="{{ perfil[1] }}">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group col-md-6">
-                                <label for="username">DNI</label>
-                                <input type="text" class="form-control" id="username" value="{{ perfil[2] }}" disabled>
-                            </div>
-                        </div>
-                        <button type="submit" class="btn btn-update">Actualizar información</button>
-                    </form>
-                </div>
+<div class="main-content">
+    <div class="profile-container">
+        <div class="profile-card">
+            <!-- Sidebar Profile Section -->
+            <div class="profile-sidebar">
+                <h4 id="displayName">{{ perfil[0] }} {{ perfil[1] }}</h4>
                 
-                <!-- Funciones del rol -->
-                <div class="tab-pane fade" id="funciones" role="tabpanel" aria-labelledby="funciones-tab">
-                    <h5>Funciones del rol</h5>
-                    <ul class="list-group">
-                        <li class="list-group-item"><strong>Rol:</strong> {{ perfil[3] }}</li>
-                        <li class="list-group-item justificado"><strong>Descripción:</strong> {{ descripcion_rol }}</li>
-                    </ul>
+                <!-- Mostrar la imagen de perfil si existe -->
+                {% if perfil[4] %}
+                    <img id="profileImage" src="{{ url_for('static', filename='img/perfiles/' + perfil[4]) }}" alt="User Photo">
+                {% else %}
+                    <img id="profileImage" src="https://via.placeholder.com/120" alt="User Photo">
+                {% endif %}
+                
+                <form id="form-imagen" action="{{ url_for('subir_imagen_perfil') }}" method="POST" enctype="multipart/form-data">
+                    <input type="file" name="imagen_perfil" id="editar-imagen" style="display:none;" onchange="this.form.submit()">
+                </form>
+                <button class="btn btn-upload mt-2" onclick="document.getElementById('editar-imagen').click()">Cargar nueva foto</button>
+                <p class="text-muted mt-3">{{ perfil[3] }}</p> <!-- Mostrar rol -->
+            </div>
+
+            <!-- Profile Edit Section -->
+            <div class="profile-content">
+                <h4>Editar perfil</h4>
+                <ul class="nav nav-tabs" id="myTab" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="user-info-tab" data-toggle="tab" href="#user-info" role="tab" aria-controls="user-info" aria-selected="true">Modificar usuario</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="funciones-tab" data-toggle="tab" href="#funciones" role="tab" aria-controls="funciones" aria-selected="false">Funciones</a>
+                    </li>
+                </ul>
+                <div class="tab-content mt-4" id="myTabContent">
+                    <!-- Modificar usuario -->
+                    <div class="tab-pane fade show active" id="user-info" role="tabpanel" aria-labelledby="user-info-tab">
+                        <form id="profileForm" action="{{ url_for('actualizar_perfil') }}" method="POST">
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="firstName">Nombres</label>
+                                    <input type="text" class="form-control" id="firstName" name="nombres" value="{{ perfil[0] }}" 
+                                           pattern="[A-Za-zÀ-ÿ\s]+" title="Solo se permiten letras" required 
+                                           oninput="this.value = this.value.replace(/[^A-Za-zÀ-ÿ\s]/g, '')">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="lastName">Apellidos</label>
+                                    <input type="text" class="form-control" id="lastName" name="apellidos" value="{{ perfil[1] }}" 
+                                           pattern="[A-Za-zÀ-ÿ\s]+" title="Solo se permiten letras" required 
+                                           oninput="this.value = this.value.replace(/[^A-Za-zÀ-ÿ\s]/g, '')">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="username">DNI</label>
+                                    <input type="text" class="form-control" id="username" value="{{ perfil[2] }}" disabled>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-update">Actualizar información</button>
+                        </form>
+                        
+                    </div>
+                    
+                    <!-- Funciones del rol -->
+                    <div class="tab-pane fade" id="funciones" role="tabpanel" aria-labelledby="funciones-tab">
+                        <h5>Funciones del rol</h5>
+                        <ul class="list-group">
+                            <li class="list-group-item"><strong>Rol:</strong> {{ perfil[3] }}</li>
+                            <li class="list-group-item justificado"><strong>Descripción:</strong> {{ descripcion_rol }}</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
@@ -182,14 +214,25 @@
 </div>
 
 <!-- Include JavaScript Files -->
+<script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
 
 <script>
     function loadImage(event) {
         const image = document.getElementById("profileImage");
         image.src = URL.createObjectURL(event.target.files[0]);
+    }
+
+    function enableEdit(fieldId) {
+        const field = document.getElementById(fieldId);
+        field.removeAttribute("readonly");
+        field.focus();
+    }
+
+    function disableEdit(fieldId) {
+        const field = document.getElementById(fieldId);
+        field.setAttribute("readonly", "true");
     }
 </script>
 {% endblock %}
