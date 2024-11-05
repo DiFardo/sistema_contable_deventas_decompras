@@ -115,14 +115,14 @@ a:focus {
 /* Estilos para el menú lateral */
 #sidebar {
     width: 260px;
-    transition: all 0.3s;
+    transition: transform 0.3s ease-in-out;
     background-color: #dadada;
     box-shadow: 0 0 30px 0 rgba(200, 200, 200, 0.2);
     position: fixed;
     top: 0;
     bottom: 0;
     left: 0;
-    z-index: 11;
+    z-index: 16;
     overflow: auto;
 }
 
@@ -742,6 +742,7 @@ footer {
 @media only screen and (max-width: 992px) {
     #content-wrapper {
         margin-left: 0;
+       
     }
 }
 
@@ -770,8 +771,9 @@ footer {
         display: none;
         visibility: hidden;
         opacity: 0;
-        z-index: 3;
+        z-index: 15;
         transition: all 150ms linear;
+        transition: opacity 0.3s ease-in-out;
         background-color: rgba(0, 0, 0, 0.5);
     }
 
@@ -779,7 +781,7 @@ footer {
         opacity: 1;
         display: block;
         visibility: visible;
-        z-index: 15;
+        left: 260px;
     }
     #sidebar.show-nav,
     .body-overlay.show-nav {
@@ -788,6 +790,7 @@ footer {
         display: block;
         visibility: visible;
         z-index: 15;
+        left: 260px;
     }
 }
 

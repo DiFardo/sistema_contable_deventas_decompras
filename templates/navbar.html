@@ -82,13 +82,16 @@
             border-radius: 50%;
         }
 
-        /* Responsive adjustments for top navbar */
+        /* Ajustes responsivos para el navbar superior */
         @media (max-width: 768px) {
             .xp-topbar .row {
-                flex-direction: row;
-                justify-content: space-between;
-                align-items: center;
+                flex-wrap: wrap;
                 padding: 0 15px;
+            }
+
+            .xp-profilebar {
+                margin-top: 10px;
+                width: 100%;
             }
 
             .xp-searchbar {
@@ -96,17 +99,15 @@
                 width: 100%;
             }
 
-            .xp-profilebar {
-                display: flex;
-                align-items: center;
-                justify-content: flex-end;
-                width: 100%;
+            .navbar-nav .nav-item span {
+                display: none; /* Oculta el texto en dispositivos pequeños */
             }
 
-            .navbar-nav .nav-item span {
-                display: none;
-                /* Oculta el texto en dispositivos pequeños */
+            .xp-menubar {
+                position: relative;
+                z-index: 1000; /* Asegura que el botón esté por encima de otros elementos */
             }
+            
         }
     </style>
 </head>
@@ -146,22 +147,16 @@
                 </li>
 
                 <li class="nav-item libros hidden">
-                    <a href="#librosContablesSubmenu" data-toggle="collapse" aria-expanded="false"
-                        class="dropdown-toggle">
+                    <a href="#librosContablesSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
                         <i class="material-icons">library_books</i>
                         <span>Libros Contables</span>
                     </a>
                     <ul class="collapse list-unstyled" id="librosContablesSubmenu">
-                        <li><a href="{{ url_for('libro_diario') }}"><i class="material-icons">book</i> Libro Diario</a>
-                        </li>
-                        <li><a href="{{ url_for('libro_mayor') }}"><i class="material-icons">book_online</i> Libro
-                                Mayor</a></li>
-                        <li><a href="{{ url_for('libro_caja') }}"><i class="material-icons">account_balance_wallet</i>
-                                Caja y Bancos</a></li>
-                        <li><a href="{{ url_for('registro_ventas') }}"><i class="material-icons">receipt_long</i>
-                                Registro de Ventas</a></li>
-                        <li><a href="{{ url_for('registro_compras') }}"><i class="material-icons">receipt_long</i>
-                                Registro de Compras</a></li>
+                        <li><a href="{{ url_for('libro_diario') }}"><i class="material-icons">book</i> Libro Diario</a></li>
+                        <li><a href="{{ url_for('libro_mayor') }}"><i class="material-icons">book_online</i> Libro Mayor</a></li>
+                        <li><a href="{{ url_for('libro_caja') }}"><i class="material-icons">account_balance_wallet</i> Caja y Bancos</a></li>
+                        <li><a href="{{ url_for('registro_ventas') }}"><i class="material-icons">receipt_long</i> Registro de Ventas</a></li>
+                        <li><a href="{{ url_for('registro_compras') }}"><i class="material-icons">receipt_long</i> Registro de Compras</a></li>
                     </ul>
                 </li>
 
@@ -199,34 +194,22 @@
             <!-- Top Navbar -->
             <div class="top-navbar">
                 <div class="xp-topbar">
-                    <div class="row">
-                        <div class="col-2 col-md-1 align-self-center">
+                    <div class="row align-items-center">
+                        <!-- Menú lateral -->
+                        <div class="col-2 col-md-1 order-1">
                             <div class="xp-menubar">
                                 <span class="material-icons text-white">menu</span>
                             </div>
                         </div>
 
-                        <div class="col-md-5 order-3 order-md-2">
-                            <div class="xp-searchbar">
-                                <form id="searchForm">
-                                    <div class="input-group">
-                                        <input type="search" class="form-control" placeholder="Buscar" id="searchInput">
-                                        <div class="input-group-append">
-                                            <button class="btn" type="button" onclick="searchText()">Buscar</button>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="col-10 col-md-6 order-1 order-md-3">
+                        <!-- Barra de perfil -->
+                        <div class="col-8 col-md-6 order-2 order-md-3">
                             <div class="xp-profilebar text-right">
                                 <nav class="navbar p-0">
                                     <ul class="nav navbar-nav flex-row ml-auto">
                                         <!-- Notificaciones y perfil de usuario -->
                                         <li class="dropdown nav-item active">
-                                            <a href="#" class="nav-link" id="notification-icon" data-toggle="dropdown"
-                                                aria-expanded="false">
+                                            <a href="#" class="nav-link" id="notification-icon" data-toggle="dropdown" aria-expanded="false">
                                                 <span class="material-icons">notifications</span>
                                                 <span class="notification" id="notification-count">0</span>
                                             </a>
@@ -236,21 +219,16 @@
                                         </li>
                                         {% if usuario %}
                                         <li class="nav-item dropdown user-dropdown">
-                                            <a href="#" class="nav-link d-flex align-items-center"
-                                                data-toggle="dropdown">
+                                            <a href="#" class="nav-link d-flex align-items-center" data-toggle="dropdown">
                                                 <div class="profile-image">
-                                                    <img src="{{ url_for('static', filename='img/perfiles/' + (usuario[6] if usuario[6] else 'perfil_defecto.png')) }}"
-                                                        alt="Perfil">
+                                                    <img src="{{ url_for('static', filename='img/perfiles/' + (usuario[6] if usuario[6] else 'perfil_defecto.png')) }}" alt="Perfil">
                                                     <div class="active-status"></div>
                                                 </div>
-                                                <span class="ml-2 d-none d-md-inline">{{ usuario[4] }} - {{ usuario[5]
-                                                    }}</span>
+                                                <span class="ml-2 d-none d-md-inline">{{ usuario[4] }} - {{ usuario[5] }}</span>
                                             </a>
                                             <ul class="dropdown-menu dropdown-menu-right">
-                                                <li><a href="{{ url_for('perfil_usuario') }}"><span
-                                                            class="material-icons">person_outline</span>Perfil</a></li>
-                                                <li><a href="{{ url_for('procesar_logout') }}"><span
-                                                            class="material-icons">logout</span>Cerrar sesión</a></li>
+                                                <li><a href="{{ url_for('perfil_usuario') }}"><span class="material-icons">person_outline</span>Perfil</a></li>
+                                                <li><a href="{{ url_for('procesar_logout') }}"><span class="material-icons">logout</span>Cerrar sesión</a></li>
                                             </ul>
                                         </li>
                                         {% else %}
@@ -260,6 +238,20 @@
                                         {% endif %}
                                     </ul>
                                 </nav>
+                            </div>
+                        </div>
+
+                        <!-- Barra de búsqueda -->
+                        <div class="col-12 col-md-5 order-3 order-md-2">
+                            <div class="xp-searchbar">
+                                <form id="searchForm">
+                                    <div class="input-group">
+                                        <input type="search" class="form-control" placeholder="Buscar" id="searchInput">
+                                        <div class="input-group-append">
+                                            <button class="btn" type="button" onclick="searchText()">Buscar</button>
+                                        </div>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -314,20 +306,18 @@
             }
 
             // Ajustar el comportamiento del menú lateral
-            // Ajustar el comportamiento del menú lateral
             $(".xp-menubar").on('click', function () {
                 $('#sidebar').toggleClass('active');
-                $('#content-wrapper').toggleClass('active'); // Toggle the content wrapper width
+                $('#content-wrapper').toggleClass('active');
                 $('.body-overlay').toggleClass('active');
             });
 
             // Cerrar el menú lateral al hacer clic en el overlay
             $('.body-overlay').on('click', function () {
                 $('#sidebar').removeClass('active');
-                $('#content-wrapper').removeClass('active'); // Reset content wrapper width
+                $('#content-wrapper').removeClass('active');
                 $(this).removeClass('active');
             });
-
         });
     </script>
 
