@@ -130,3 +130,143 @@
     border-color: #525252; /* Cambia el color del borde cuando está seleccionado */
 }
 
+.error-input {
+    border: 1px solid red;
+  }
+
+  .error-message {
+    color: red;
+    font-size: 12px;
+    margin-top: 5px;
+    display: none;
+    /* Ocultamos el mensaje por defecto */
+  }
+
+  #editAccountModal .modal-content {
+    position: relative;
+    /* Permite posicionar elementos hijos de manera absoluta */
+  }
+
+  #loadingSpinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1051;
+    /* Asegura que esté en la parte superior del contenido */
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.4rem;
+    /* Grosor de la línea del spinner */
+    animation: spin 1s linear infinite;
+    /* Añade la animación de giro */
+  }
+
+  @keyframes spin {
+    from {
+      transform: translate(-50%, -50%) rotate(0deg);
+    }
+
+    to {
+      transform: translate(-50%, -50%) rotate(360deg);
+    }
+  }
+
+/* Estilos para el botón flotante de configuración */
+.open-configurator {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #383838;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    z-index: 1000;
+}
+
+.open-configurator i {
+    font-size: 24px;
+}
+
+/* Estilos para el panel lateral de configuración */
+.config-panel {
+    position: fixed;
+    top: 0;
+    right: -350px; /* Oculto inicialmente */
+    width: 350px;
+    height: 100%;
+    background-color: #f8f9fa;
+    box-shadow: -4px 0 10px rgba(0, 0, 0, 0.2);
+    z-index: 1001;
+    transition: right 0.3s ease;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.config-panel.open {
+    right: 0; /* Muestra el panel cuando está abierto */
+}
+
+.config-panel .close-config-panel {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.config-title {
+    margin-top: 40px;
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.config-options {
+    margin-top: 20px;
+}
+
+.option {
+    margin-bottom: 15px;
+}
+
+.color-options {
+    display: flex;
+    gap: 10px;
+}
+
+.color-circle {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 1px solid #ccc;
+}
+
+.sidenav-type-btn {
+    margin-right: 10px;
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.sidenav-type-btn.active {
+    background-color: #007bff;
+    color: white;
+}
+
+input[type="checkbox"] {
+    margin-left: 10px;
+}
+
+  

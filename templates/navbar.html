@@ -21,6 +21,44 @@
             display: none;
         }
 
+        .notification-dropdown {
+            width: 100%;
+            max-width: 350px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+
+        .notification-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+            position: relative;
+        }
+
+        .notification-item .delete-icon {
+            cursor: pointer;
+            color: rgb(46, 46, 46);
+            font-size: 20px;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .notification-item.not-read {
+            background-color: #f5f5f5;
+        }
+
+        .no-notifications {
+            padding: 10px;
+            text-align: center;
+            color: #888;
+        }
+
         .profile-image {
             position: relative;
             width: 30px;
@@ -43,6 +81,32 @@
             border: 2px solid white;
             border-radius: 50%;
         }
+
+        /* Responsive adjustments for top navbar */
+        @media (max-width: 768px) {
+            .xp-topbar .row {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0 15px;
+            }
+
+            .xp-searchbar {
+                margin-top: 10px;
+                width: 100%;
+            }
+
+            .xp-profilebar {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                width: 100%;
+            }
+
+            .navbar-nav .nav-item span {
+                display: none; /* Oculta el texto en dispositivos pequeños */
+            }
+        }
     </style>
 </head>
 
@@ -51,28 +115,28 @@
         <!-- Sidebar -->
         <nav id="sidebar">
             <div class="sidebar-header">
-                <h3 id="sidebar-title"><span>Sistema Contable</span></h3> <!-- Título dinámico -->
+                <h3 id="sidebar-title"><span>Sistema Contable</span></h3>
             </div>
             <ul id="navbar-options" class="list-unstyled components">
-                <!-- Opciones del menú principal -->
+                <!-- Inicio visible por defecto -->
                 <li class="nav-item">
                     <a href="{{ url_for('index') }}" class="dashboard">
                         <i class="material-icons">dashboard</i>
                         <span>Inicio</span>
                     </a>
                 </li>
-                <li class="nav-item configuracion">
-                    <a href="#">
+
+                <!-- Configuración visible solo en Inicio -->
+                {% if request.endpoint == 'index' %}
+                <li class="nav-item">
+                    <a href="">
                         <i class="material-icons">settings</i>
                         <span>Configuración</span>
                     </a>
-                    <ul class="collapse list-unstyled" id="ventasSubmenu">
-                        <li><a href=""><i class="material-icons">receipt</i> Boletas emitidas</a></li>
-                        <li><a href=""><i class="material-icons">assignment</i> Pedidos emitidos</a></li>
-                    </ul>
                 </li>
+                {% endif %}
 
-                <!-- Cuentas Contables -->
+                <!-- Opciones del Módulo Contable -->
                 <li class="nav-item cuentas hidden">
                     <a href="{{ url_for('cuentas') }}">
                         <i class="material-icons">folder</i>
@@ -80,38 +144,25 @@
                     </a>
                 </li>
 
-                <!-- Menú desplegable de Libros Contables -->
                 <li class="nav-item libros hidden">
                     <a href="#librosContablesSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
                         <i class="material-icons">library_books</i>
                         <span>Libros Contables</span>
                     </a>
                     <ul class="collapse list-unstyled" id="librosContablesSubmenu">
-                        <li>
-                            <a href="{{ url_for('libro_diario') }}">
-                                <i class="material-icons">book</i>
-                                <span>Libro Diario</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ url_for('libro_mayor') }}">
-                                <i class="material-icons">book_online</i>
-                                <span>Libro Mayor</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ url_for('libro_caja') }}">
-                                <i class="material-icons">account_balance_wallet</i>
-                                <span>Caja y Bancos</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ url_for('registro_ventas') }}">
-                                <i class="material-icons">receipt_long</i>
-                                <span>Registro de Ventas e Ingresos</span>
-                            </a>
-                        </li>
+                        <li><a href="{{ url_for('libro_diario') }}"><i class="material-icons">book</i> Libro Diario</a></li>
+                        <li><a href="{{ url_for('libro_mayor') }}"><i class="material-icons">book_online</i> Libro Mayor</a></li>
+                        <li><a href="{{ url_for('libro_caja') }}"><i class="material-icons">account_balance_wallet</i> Caja y Bancos</a></li>
+                        <li><a href="{{ url_for('registro_ventas') }}"><i class="material-icons">receipt_long</i> Registro de Ventas</a></li>
+                        <li><a href="{{ url_for('registro_compras') }}"><i class="material-icons">receipt_long</i> Registro de Compras</a></li>
                     </ul>
+                </li>
+
+                <li class="nav-item asientos hidden">
+                    <a href="{{ url_for('asientos_contables') }}">
+                        <i class="material-icons">assignment</i>
+                        <span>Asientos Contables</span>
+                    </a>
                 </li>
 
                 <!-- Opciones del Módulo de Ventas -->
@@ -142,13 +193,13 @@
             <div class="top-navbar">
                 <div class="xp-topbar">
                     <div class="row">
-                        <div class="col-2 col-md-1 col-lg-1 order-2 order-md-1 align-self-center">
+                        <div class="col-2 col-md-1 align-self-center">
                             <div class="xp-menubar">
                                 <span class="material-icons text-white">menu</span>
                             </div>
                         </div>
 
-                        <div class="col-md-5 col-lg-3 order-3 order-md-2">
+                        <div class="col-md-5 order-3 order-md-2">
                             <div class="xp-searchbar">
                                 <form id="searchForm">
                                     <div class="input-group">
@@ -161,33 +212,30 @@
                             </div>
                         </div>
 
-                        <div class="col-10 col-md-6 col-lg-8 order-1 order-md-3">
+                        <div class="col-10 col-md-6 order-1 order-md-3">
                             <div class="xp-profilebar text-right">
                                 <nav class="navbar p-0">
                                     <ul class="nav navbar-nav flex-row ml-auto">
                                         <!-- Notificaciones y perfil de usuario -->
                                         <li class="dropdown nav-item active">
-                                            <a href="#" class="nav-link" data-toggle="dropdown">
+                                            <a href="#" class="nav-link" id="notification-icon" data-toggle="dropdown" aria-expanded="false">
                                                 <span class="material-icons">notifications</span>
-                                                <span class="notification">4</span>
+                                                <span class="notification" id="notification-count">0</span>
                                             </a>
-                                            <ul class="dropdown-menu">
-                                                <li><a href="#">You have 5 new messages</a></li>
-                                                <li><a href="#">You're now friend with Mike</a></li>
-                                                <li><a href="#">Wish Mary on her birthday!</a></li>
-                                                <li><a href="#">5 warnings in Server Console</a></li>
+                                            <ul class="dropdown-menu notification-dropdown" id="notification-list">
+                                                <li class="no-notifications">No hay notificaciones nuevas</li>
                                             </ul>
                                         </li>
                                         {% if usuario %}
-                                        <li class="nav-item dropdown user-dropdown" onclick="this.classList.toggle('show');">
+                                        <li class="nav-item dropdown user-dropdown">
                                             <a href="#" class="nav-link d-flex align-items-center" data-toggle="dropdown">
                                                 <div class="profile-image">
                                                     <img src="{{ url_for('static', filename='img/perfiles/' + (usuario[6] if usuario[6] else 'perfil_defecto.png')) }}" alt="Perfil">
                                                     <div class="active-status"></div>
                                                 </div>
-                                                <span class="ml-2">{{ usuario[4] }} - {{ usuario[5] }}</span>
+                                                <span class="ml-2 d-none d-md-inline">{{ usuario[4] }} - {{ usuario[5] }}</span>
                                             </a>
-                                            <ul class="dropdown-menu">
+                                            <ul class="dropdown-menu dropdown-menu-right">
                                                 <li><a href="{{ url_for('perfil_usuario') }}"><span class="material-icons">person_outline</span>Perfil</a></li>
                                                 <li><a href="{{ url_for('procesar_logout') }}"><span class="material-icons">logout</span>Cerrar sesión</a></li>
                                             </ul>
@@ -201,7 +249,6 @@
                                 </nav>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -220,31 +267,30 @@
     <script src="/static/js/jquery-3.3.1.min.js"></script>
     <script src="/static/js/popper.min.js"></script>
     <script src="/static/js/bootstrap.min.js"></script>
-
+    <!-- Archivo JS para manejar notificaciones -->
+    <script src="/static/js/notificaciones.js"></script>
     <script type="text/javascript">
         function toggleVisibility(module) {
             const sidebarTitle = document.getElementById('sidebar-title');
 
             if (module === "contable") {
                 sidebarTitle.innerHTML = '<span>Módulo Contable</span>';
-                document.querySelectorAll('.cuentas').forEach(el => el.classList.remove('hidden'));
-                document.querySelectorAll('.libros').forEach(el => el.classList.remove('hidden'));
-                document.querySelectorAll('.ventas, .clientes, .reportes, .configuracion').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.cuentas, .libros, .asientos').forEach(el => el.classList.remove('hidden'));
+                document.querySelectorAll('.ventas, .clientes, .reportes').forEach(el => el.classList.add('hidden'));
             } else if (module === "ventas") {
                 sidebarTitle.innerHTML = '<span>Módulo de Ventas</span>';
                 document.querySelectorAll('.ventas, .clientes, .reportes').forEach(el => el.classList.remove('hidden'));
-                document.querySelectorAll('.cuentas, .libros, .configuracion').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.cuentas, .libros, .asientos').forEach(el => el.classList.add('hidden'));
             } else {
                 sidebarTitle.innerHTML = '<span>Sistema Contable</span>';
-                document.querySelectorAll('.configuracion').forEach(el => el.classList.remove('hidden'));
-                document.querySelectorAll('.cuentas, .libros, .ventas, .clientes, .reportes').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.cuentas, .libros, .asientos, .ventas, .clientes, .reportes').forEach(el => el.classList.add('hidden'));
             }
         }
 
         document.addEventListener("DOMContentLoaded", function () {
             const currentPath = window.location.pathname;
             const ventasPaths = ['ventas', 'clientes', 'reportes_ventas'];
-            const contablePaths = ['cuentas', 'libro_diario', 'libro_mayor', 'libro_caja', 'registro_ventas'];
+            const contablePaths = ['cuentas', 'libro_diario', 'libro_mayor', 'libro_caja', 'registro_ventas', 'registro_compras', 'asientos_contables'];
 
             if (ventasPaths.some(path => currentPath.includes(path))) {
                 toggleVisibility("ventas");
@@ -271,4 +317,5 @@
     </script>
 
 </body>
+
 </html>

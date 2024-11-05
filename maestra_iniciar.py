@@ -5,6 +5,7 @@ from flask_jwt_extended import JWTManager, create_access_token
 import controladores.controlador_usuarios as controlador_usuarios
 import controladores.controlador_ventas as controlador_ventas
 import clases.clase_usuario as clase_usuario
+import controladores.controlador_plantillas as controlador_plantillas
 from bd_conexion import obtener_conexion  # Asegúrate de que la conexión a la base de datos esté configurada correctamente
 from controladores.controlador_cuentas import obtener_todas_cuentas, obtener_cuentas_por_categoria_endpoint, añadir_cuenta
 from werkzeug.utils import secure_filename
@@ -60,7 +61,6 @@ def subir_imagen_perfil():
 
 
 
-# ... tus importaciones ...
 
 # Diccionario de descripciones de roles
 descripciones = {
@@ -182,10 +182,20 @@ def libro_diario():
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Libro Diario', 'url': '/libro_diario'}
     ]
-    movimientos = []
 
-    return render_template("libro_diario.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
+    movimientos = controlador_plantillas.obtener_libro_diario()
 
+    total_debe = sum(movimiento['debe'] or 0 for movimiento in movimientos)
+    total_haber = sum(movimiento['haber'] or 0 for movimiento in movimientos)
+
+    return render_template(
+        "libro_diario.html",
+        movimientos=movimientos,
+        breadcrumbs=breadcrumbs,
+        usuario=usuario,
+        total_debe=total_debe,
+        total_haber=total_haber
+    )
 
 @app.route("/libro_mayor")
 def libro_mayor():
@@ -201,34 +211,72 @@ def libro_mayor():
 
     return render_template("libro_mayor.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
 
-@app.route("/registro_ventas")
+@app.route("/registro_ventas", methods=["GET"])
 def registro_ventas():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
     usuario = controlador_usuarios.obtener_usuario(dni)
-
+    periodo = request.args.get("periodo", None)
+    mes = año = None
+    if periodo:
+        año, mes = periodo.split("-")
+    registros, total_base_imponible, total_igv, total_total_comprobante = (
+        controlador_plantillas.obtener_registro_ventas(mes, año) if mes and año else ([], 0, 0, 0)
+    )
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Registro ventas', 'url': '/registro_ventas'}
     ]
-    movimientos = []
+    return render_template(
+        "registro_ventas.html",
+        registros=registros,
+        total_base_imponible=total_base_imponible,
+        total_operacion_gravada=total_igv,
+        total_total_comprobante=total_total_comprobante,
+        breadcrumbs=breadcrumbs,
+        usuario=usuario
+    )
 
-    return render_template("registro_ventas.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
-
-@app.route("/registro_compras")
-def registro_compras():
+@app.route("/asientos_contables")
+def asientos_contables():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
     usuario = controlador_usuarios.obtener_usuario(dni)
 
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
-        {'name': 'Registro compras', 'url': '/registro_compras'}
+        {'name': 'Asientos contables', 'url': '/asientos_contables'}
     ]
     movimientos = []
 
-    return render_template("registro_compras.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
+    return render_template("asientos_contables.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
 
+
+@app.route("/registro_compras", methods=["GET"])
+def registro_compras():
+    token = request.cookies.get('token')
+    dni = request.cookies.get('dni')
+    usuario = controlador_usuarios.obtener_usuario(dni)
+    periodo = request.args.get("periodo", None)
+    mes = año = None
+    if periodo:
+        año, mes = periodo.split("-")
+    registros, total_base_imponible, total_igv, total_total_comprobante = (
+        controlador_plantillas.obtener_registro_compras(mes, año) if mes and año else ([], 0, 0, 0)
+    )
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Registro compras', 'url': '/registro_compras'}
+    ]
+    return render_template(
+        "registro_compras.html",
+        registros=registros,
+        total_base_imponible=total_base_imponible,
+        total_operacion_gravada=total_igv,
+        total_total_comprobante=total_total_comprobante,
+        breadcrumbs=breadcrumbs,
+        usuario=usuario
+    )
 
 @app.route("/ventas/productos")
 def productos():
@@ -299,7 +347,186 @@ def procesar_logout():
         return redirect("/login_user")
 
 
+@app.route("/cuentas")
+def cuentas():
+    cuentas_data = obtener_todas_cuentas()  # Llama a la función para obtener los datos de las cuentas
+    token = request.cookies.get('token')
+    dni = request.cookies.get('dni')
+    usuario = controlador_usuarios.obtener_usuario(dni)  # Obtener el usuario con DNI desde la base de datos
+
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Cuentas contables', 'url': '/cuentas'}
+    ]
+    return render_template("cuentas.html", cuentas=cuentas_data, breadcrumbs=breadcrumbs, usuario=usuario)  # Pasar el usuario a la plantilla
+
+@app.route("/ventas_contables")
+def ventas_contables():
+    ventas_data = controlador_ventas.obtener_todas_ventas()
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Ventas contables', 'url': '/ventas_contables'}
+    ]
+    return render_template("ventas/ventas_contables.html", ventas=ventas_data, breadcrumbs=breadcrumbs)
+
+@app.route("/boletas_ventas")
+def boletas_ventas():
+    boletas_data = controlador_ventas.obtener_boletas()
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Boletas', 'url': '/boletas_ventas'}
+    ]
+    return render_template("ventas/boletas_ventas.html", boletas=boletas_data, breadcrumbs=breadcrumbs)
+    
+#@app.before_request
+#def cargar_usuario():
+#   token = request.cookies.get('token')
+ #   dni = request.cookies.get('dni')
+ #   if dni:
+  #      g.usuario = controlador_usuarios.obtener_usuario(dni)  # Almacena el usuario en g
+   # else:
+    #    g.usuario = None  # Si no hay dni, asegura que g.usuario sea None
+
+
+#@app.context_processor
+#def contexto_global():
+ #   return {'usuario': getattr(g, 'usuario', None)}  # Devuelve el usuario o None si no está definido
+
+# Endpoint para obtener cuentas por categoría
+@app.route("/cuentas/por_categoria", methods=["POST"])
+def cuentas_por_categoria():
+    return obtener_cuentas_por_categoria_endpoint()
+
+# Nueva ruta para añadir una cuenta
+@app.route("/cuentas/añadir", methods=["POST"])
+def cuentas_añadir():
+    try:
+        # Llamar a la función para añadir una cuenta desde el controlador
+        return añadir_cuenta()
+    except Exception as e:
+        return jsonify({'error': f'Error en el servidor: {str(e)}'}), 500
+
+@app.route("/perfil_usuario")
+def perfil_usuario():
+    token = request.cookies.get('token')
+    dni = request.cookies.get('dni')
+
+    if not token or not validar_token():
+        return redirect("/login_user")
+    
+    usuario = controlador_usuarios.obtener_usuario(dni)
+    perfil = controlador_usuarios.obtener_detalles_perfil(dni)
+    
+    if not perfil:
+        flash("Usuario no encontrado.")
+        return redirect("/index")
+    
+    # Obtener la descripción del rol
+    descripcion_rol = obtener_descripcion_rol(perfil[3])
+
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Perfil del Usuario', 'url': '/perfil_usuario'}
+    ]
+    
+    return render_template("perfil_usuario.html", usuario=usuario, perfil=perfil, descripcion_rol=descripcion_rol, breadcrumbs=breadcrumbs)
+
+
+
+
+
+
+
+
+####################################
+###### Mantenimiento personal ######
+####################################
+@app.route('/agregar_usuario', methods=['POST'])
+def agregar_usuario():
+    # Obtener datos del formulario
+    dni = request.form['dni']
+    nombre = request.form['nombre']
+    apellido = request.form['apellido']
+    rol = request.form['rol']
+    password = request.form['password']
+
+    # Llamar a la función para agregar usuario en el controlador
+    success = controlador_usuarios.agregar_usuario(dni, nombre, apellido, rol, password)
+
+    if success:
+        flash("Usuario agregado exitosamente.")
+    else:
+        flash("Hubo un error al agregar el usuario. Verifica que el DNI no exista ya en el sistema.")
+
+    return redirect(url_for('personal'))
+
+@app.route('/editar_usuario', methods=['POST'])
+def editar_usuario():
+    # Obtener datos del formulario
+    dni = request.form['dni']
+    nombre = request.form['nombre']
+    apellido = request.form['apellido']
+    rol = request.form['rol']
+
+    # Llamar a la función para editar usuario en el controlador
+    success = controlador_usuarios.editar_usuario(dni, nombre, apellido, rol)
+
+    if success:
+        flash("Usuario actualizado exitosamente.")
+    else:
+        flash("Hubo un error al actualizar el usuario.")
+
+    return redirect(url_for('personal'))
+
+
+@app.route('/eliminar_usuario', methods=['POST'])
+def eliminar_usuario():
+    # Obtener DNI del usuario a eliminar
+    dni = request.form['dni']
+
+    # Llamar a la función para eliminar usuario en el controlador
+    success = controlador_usuarios.eliminar_usuario(dni)
+
+    if success:
+        flash("Usuario eliminado exitosamente.")
+    else:
+        flash("Hubo un error al eliminar el usuario.")
+
+    return redirect(url_for('personal'))
+
+
+@app.route('/personal')
+def personal():
+    # Obtener el token y DNI del usuario desde las cookies
+    token = request.cookies.get('token')
+    dni = request.cookies.get('dni')
+    
+    # Validar si el usuario está autenticado
+    if not token or not validar_token():
+        return redirect("/login_user")
+    
+    # Obtener la información del usuario autenticado
+    usuario = controlador_usuarios.obtener_usuario(dni)
+    
+    # Obtener datos de todos los usuarios para la tabla
+    usuarios = controlador_usuarios.obtener_todos_usuarios()
+    
+    # Obtener la lista de roles desde el diccionario 'descripciones'
+    roles = list(descripciones.keys())
+    
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Gestión de Usuarios', 'url': '/personal'}
+    ]
+    
+    return render_template('personal.html', usuarios=usuarios, breadcrumbs=breadcrumbs, usuario=usuario, roles=roles)
+
+
+
+
+
+
+# Iniciar el servidor
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8000, debug=True)
-
