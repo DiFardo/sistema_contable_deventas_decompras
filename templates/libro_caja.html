@@ -90,7 +90,7 @@
         <tbody id="tabla-cuerpo">
           {% set last_correlativo = None %}
           {% for movimiento in movimientos %}
-          <tr data-fecha="{{ movimiento.fecha_operacion | date('Y-m-d') }}">
+          <tr>
             {% if movimiento.numero_correlativo != last_correlativo %}
               <td>{{ movimiento.numero_correlativo }}</td>
               {% set last_correlativo = movimiento.numero_correlativo %}
@@ -114,6 +114,28 @@
           </tr>
         </tfoot>
       </table>
+
+      <!-- Controles de paginación y selector de número de registros -->
+      <div class="d-flex justify-content-between align-items-center mt-3">
+        <div class="d-flex me-3">
+          <label for="records-per-page" class="me-2">Registros por página:</label>
+          <input type="number" id="records-per-page" class="form-control" value="10" min="1" max="100" style="width: 80px;">
+        </div>
+        <nav aria-label="Page navigation example align-items-center">
+          <ul class="pagination" id="pagination">
+            <li class="page-item">
+              <a class="page-link" href="#" aria-label="Previous" id="prev-page">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="#" aria-label="Next" id="next-page">
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
     </div>
   </div>
 
@@ -121,9 +143,9 @@
   <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='js/paginacion_libros.js') }}"></script>
 
   <script>
-    // Función para exportar la tabla a CSV
     function exportTableToCSV(filename) {
       var csv = [];
       var rows = document.querySelectorAll("table tr");
@@ -142,20 +164,6 @@
       document.body.appendChild(downloadLink);
       downloadLink.click();
     }
-
-    // Filtrado por fecha
-    document.getElementById("filtro-fecha").addEventListener("change", function () {
-      const selectedDate = this.value;
-      const rows = document.querySelectorAll("#tabla-cuerpo tr");
-      rows.forEach(row => {
-        const rowDate = row.getAttribute("data-fecha");
-        if (selectedDate === rowDate || selectedDate === "") {
-          row.style.display = "";
-        } else {
-          row.style.display = "none";
-        }
-      });
-    });
   </script>
 </div>
 {% endblock %}
