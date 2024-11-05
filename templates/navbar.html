@@ -2,19 +2,34 @@
 <html lang="en">
 
 <head>
+    <!-- Meta etiquetas y enlaces a CSS -->
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Sistema Contable</title>
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <!-- Tu archivo custom.css -->
     <link rel="stylesheet" href="/static/css/custom.css">
-    <!-- Google fonts -->
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Material Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Icons" rel="stylesheet">
+
     <style>
         .hidden {
             display: none;
+        }
+
+        .navbar-nav .nav-item {
+            position: relative;
+        }
+
+        .navbar-nav .nav-item .dropdown-menu {
+            top: 0;
+            left: 100%;
+            margin-top: 0;
+            margin-left: 10px;
         }
 
         .notification-dropdown {
@@ -107,28 +122,30 @@
 </head>
 
 <body>
-    <div class="wrapper sidebar-active">
-        <div class="body-overlay"></div>
-
+    <div class="wrapper">
         <!-- Sidebar -->
         <nav id="sidebar">
             <div class="sidebar-header">
                 <h3 id="sidebar-title"><span>Sistema Contable</span></h3>
             </div>
             <ul id="navbar-options" class="list-unstyled components">
-                <!-- Inicio y Configuración visibles por defecto -->
+                <!-- Inicio visible por defecto -->
                 <li class="nav-item">
                     <a href="{{ url_for('index') }}" class="dashboard">
                         <i class="material-icons">dashboard</i>
                         <span>Inicio</span>
                     </a>
                 </li>
+
+                <!-- Configuración visible solo en Inicio -->
+                {% if request.endpoint == 'index' %}
                 <li class="nav-item">
                     <a href="">
                         <i class="material-icons">settings</i>
                         <span>Configuración</span>
                     </a>
                 </li>
+                {% endif %}
 
                 <!-- Opciones del Módulo Contable -->
                 <li class="nav-item cuentas hidden">
@@ -150,6 +167,13 @@
                         <li><a href="{{ url_for('registro_ventas') }}"><i class="material-icons">receipt_long</i> Registro de Ventas</a></li>
                         <li><a href="{{ url_for('registro_compras') }}"><i class="material-icons">receipt_long</i> Registro de Compras</a></li>
                     </ul>
+                </li>
+
+                <li class="nav-item asientos hidden">
+                    <a href="{{ url_for('asientos_contables') }}">
+                        <i class="material-icons">assignment</i>
+                        <span>Asientos Contables</span>
+                    </a>
                 </li>
 
                 <!-- Opciones del Módulo de Ventas -->
@@ -174,14 +198,15 @@
             </ul>
         </nav>
 
-        <!-- page-content -->
-        <div id="content">
+        <!-- Content Wrapper -->
+        <div id="content-wrapper">
+            <!-- Top Navbar -->
             <div class="top-navbar">
                 <div class="xp-topbar">
                     <div class="row">
                         <div class="col-2 col-md-1 align-self-center">
                             <div class="xp-menubar">
-                                <span class="material-icons text-white">signal_cellular_alt</span>
+                                <span class="material-icons text-white">menu</span>
                             </div>
                         </div>
 
@@ -202,6 +227,7 @@
                             <div class="xp-profilebar text-right">
                                 <nav class="navbar p-0">
                                     <ul class="nav navbar-nav flex-row ml-auto">
+                                        <!-- Notificaciones y perfil de usuario -->
                                         <li class="dropdown nav-item active">
                                             <a href="#" class="nav-link" id="notification-icon" data-toggle="dropdown" aria-expanded="false">
                                                 <span class="material-icons">notifications</span>
@@ -211,11 +237,9 @@
                                                 <li class="no-notifications">No hay notificaciones nuevas</li>
                                             </ul>
                                         </li>
-        
-                                        <!-- Perfil del usuario -->
                                         {% if usuario %}
-                                        <li class="nav-item dropdown user-dropdown">
-                                            <a href="#" class="nav-link d-flex align-items-center" data-toggle="dropdown" aria-expanded="false">
+                                        <li class="nav-item dropdown user-dropdown" onclick="this.classList.toggle('show');">
+                                            <a href="#" class="nav-link d-flex align-items-center" data-toggle="dropdown">
                                                 <div class="profile-image">
                                                     <img src="{{ url_for('static', filename='img/perfiles/' + (usuario[6] if usuario[6] else 'perfil_defecto.png')) }}" alt="Perfil">
                                                     <div class="active-status"></div>
@@ -239,7 +263,15 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Main Content -->
+            <div id="content">
+                {% block contenido %}{% endblock %}
+            </div>
         </div>
+
+        <!-- Overlay para el menú lateral en pantallas pequeñas -->
+        <div class="body-overlay"></div>
     </div>
 
     <!-- Optional JavaScript -->
@@ -251,32 +283,45 @@
     <script type="text/javascript">
         function toggleVisibility(module) {
             const sidebarTitle = document.getElementById('sidebar-title');
-    
+
             if (module === "contable") {
                 sidebarTitle.innerHTML = '<span>Módulo Contable</span>';
-                document.querySelectorAll('.cuentas, .libros').forEach(el => el.classList.remove('hidden'));
+                document.querySelectorAll('.cuentas, .libros, .asientos').forEach(el => el.classList.remove('hidden'));
                 document.querySelectorAll('.ventas, .clientes, .reportes').forEach(el => el.classList.add('hidden'));
             } else if (module === "ventas") {
                 sidebarTitle.innerHTML = '<span>Módulo de Ventas</span>';
                 document.querySelectorAll('.ventas, .clientes, .reportes').forEach(el => el.classList.remove('hidden'));
-                document.querySelectorAll('.cuentas, .libros').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.cuentas, .libros, .asientos').forEach(el => el.classList.add('hidden'));
             }
         }
-    
+
         document.addEventListener("DOMContentLoaded", function () {
             const currentPath = window.location.pathname;
             const ventasPaths = ['ventas', 'clientes', 'reportes_ventas'];
             const contablePaths = ['cuentas', 'libro_diario', 'libro_mayor', 'libro_caja', 'registro_ventas'];
-    
+            
             if (ventasPaths.some(path => currentPath.includes(path))) {
                 toggleVisibility("ventas");
             } else if (contablePaths.some(path => currentPath.includes(path))) {
                 toggleVisibility("contable");
-            } else if (currentPath.includes('productos') || currentPath.includes('clientes')) {
-                toggleVisibility("ventas");
             }
+
+            // Ajustar el comportamiento del menú lateral
+            $(".xp-menubar").on('click', function () {
+                $('#sidebar').toggleClass('active');
+                $('#content-wrapper').toggleClass('active');
+                $('.body-overlay').toggleClass('active');
+            });
+
+            // Cerrar el menú lateral al hacer clic en el overlay
+            $('.body-overlay').on('click', function () {
+                $('#sidebar').removeClass('active');
+                $('#content-wrapper').removeClass('active');
+                $(this).removeClass('active');
+            });
         });
     </script>
+
 </body>
 
 </html>

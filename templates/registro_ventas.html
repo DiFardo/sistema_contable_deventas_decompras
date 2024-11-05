@@ -3,11 +3,12 @@
 {% block titulo %}Registro de Ventas e Ingresos{% endblock %}
 
 {% block link %}
-<!-- Material Icons for icons -->
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<!-- Font Awesome for icons -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
 <link href="{{ url_for('static', filename='css/tabla_cuentas.css') }}" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 {% endblock %}
 
 {% block contenido %}
@@ -17,32 +18,25 @@
     vertical-align: middle;
     font-weight: bold;
   }
-
   td.centered {
     text-align: center;
     vertical-align: middle;
   }
-
-  /* Estilos para encabezados con colores específicos */
   .bg-orange {
     background-color: #FF9933;
     color: white;
   }
-
   .bg-cyan {
     background-color: #00CCCC;
     color: white;
   }
-
   .bg-green {
     background-color: #99CC99;
     color: black;
   }
-
   .w-correlativo {
     width: 10%;
   }
-
   @media print {
     body {
       visibility: hidden;
@@ -56,7 +50,6 @@
       top: 0;
       left: 0;
     }
-    /* Establecer orientación horizontal */
     @page {
       size: landscape;
     }
@@ -88,20 +81,18 @@
     <!-- Filtros: Fecha exacta y RUC en una sola fila alineados correctamente con centrado vertical -->
     <div class="row mb-3 align-items-center">
       <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
-          <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
-              <strong>PERIODO:</strong>
-          </label>
-          <input type="month" class="form-control" id="filtro-fecha" 
-                 max="" 
-                 value="{{ request.args.get('periodo', '') }}">
+        <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
+          <strong>PERIODO:</strong>
+        </label>
+        <input type="month" class="form-control" id="filtro-fecha" max="" value="{{ request.args.get('periodo', '') }}">
       </div>
       <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
-          <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
-              <strong>RUC:</strong>
-          </label>
-          <input type="text" class="form-control" value="20612188930" readonly>
+        <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
+          <strong>RUC:</strong>
+        </label>
+        <input type="text" class="form-control" value="20612188930" readonly>
       </div>
-  </div>
+    </div>
 
     <div class="table-wrapper">
       <div class="table-title">
@@ -109,8 +100,7 @@
           <!-- Input Group para Filtro de Búsqueda a la izquierda -->
           <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-start">
             <div class="input-group">
-              <input type="text" id="search-input" class="form-control"
-                placeholder="Buscar en la tabla..." aria-label="Buscar">
+              <input type="text" id="search-input" class="form-control" placeholder="Buscar en la tabla..." aria-label="Buscar">
               <button class="btn btn-outline-secondary" type="button">
                 <i class="material-icons">search</i>
               </button>
@@ -130,7 +120,7 @@
       </div>
 
       <!-- Estructura de la tabla del Registro de Ventas e Ingresos -->
-      <table class="table table-bordered table-striped table-hover">
+      <table class="table table-bordered table-striped table-hover" id="tabla-cuentas">
         <thead>
           <tr>
             <th rowspan="2" class="w-correlativo">NÚMERO CORRELATIVO</th>
@@ -176,45 +166,71 @@
           </tr>
         </tfoot>
       </table>
+
+      <!-- Controles de paginación y selector de número de registros -->
+      <div class="d-flex justify-content-between align-items-center mt-3">
+        <!-- Selector de número de registros -->
+        <div class="d-flex me-3">
+          <label for="records-per-page" class="me-2">Registros por página:</label>
+          <input type="number" id="records-per-page" class="form-control" value="6" min="1" max="100" style="width: 80px;">
+        </div>
+        <!-- Paginación -->
+        <nav aria-label="Page navigation example align-items-center">
+          <ul class="pagination" id="pagination" class="pagination">
+            <li class="page-item">
+              <a class="page-link" href="#" aria-label="Previous" id="prev-page">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="#" aria-label="Next" id="next-page">
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
     </div>
   </div>
+</div>
 
-  <!-- Scripts al final de la página para mejorar la carga -->
-  <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/tabla_cuentas.js') }}"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Scripts al final de la página para mejorar la carga -->
+<script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/paginacion_libros.js') }}"></script>
+<script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/tabla_cuentas.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-  <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      const maxDate = `${year}-${month}`;
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const maxDate = `${year}-${month}`;
 
-      // Establecer el valor máximo para el campo mes
-      const filtroFecha = document.getElementById("filtro-fecha");
-      filtroFecha.max = maxDate;
+    // Establecer el valor máximo para el campo mes
+    const filtroFecha = document.getElementById("filtro-fecha");
+    filtroFecha.max = maxDate;
 
-      // Obtener el parámetro 'periodo' de la URL
-      const urlParams = new URLSearchParams(window.location.search);
-      const periodo = urlParams.get('periodo');
+    // Obtener el parámetro 'periodo' de la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const periodo = urlParams.get('periodo');
 
-      // Si hay un valor de periodo en la URL, establecerlo como valor del filtro
-      if (periodo) {
-          filtroFecha.value = periodo;
-      }
+    // Si hay un valor de periodo en la URL, establecerlo como valor del filtro
+    if (periodo) {
+        filtroFecha.value = periodo;
+    }
 
-      // Redirige cuando se selecciona un nuevo período
-      filtroFecha.addEventListener('change', function() {
-          const nuevoPeriodo = filtroFecha.value;
-          if (nuevoPeriodo) {
-              window.location.href = `/registro_ventas?periodo=${nuevoPeriodo}`;
-          }
-      });
+    // Redirige cuando se selecciona un nuevo período
+    filtroFecha.addEventListener('change', function() {
+        const nuevoPeriodo = filtroFecha.value;
+        if (nuevoPeriodo) {
+            window.location.href = `/registro_ventas?periodo=${nuevoPeriodo}`;
+        }
     });
+  });
 
-    function exportarRegistroVentas() {
+  function exportarRegistroVentas() {
     const filtroFecha = document.getElementById("filtro-fecha").value;
     if (!filtroFecha) {
       alert("Por favor, seleccione un período antes de exportar.");
@@ -222,8 +238,6 @@
     }
     // Redireccionar a la ruta de exportación con el período como parámetro
     window.location.href = `/exportar-registro-ventas?periodo=${filtroFecha}`;
-    }
-
-  </script>
-</div>
+  }
+</script>
 {% endblock %}

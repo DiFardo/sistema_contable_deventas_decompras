@@ -114,6 +114,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // Validación en tiempo real
     inputCodigo.addEventListener('input', validarCodigoCuentaPadreYNivel);
     selectCuentaPadre.addEventListener('change', validarCodigoCuentaPadreYNivel);
+    formDescripcion.addEventListener('input', function () {
+        limpiarError(formDescripcion, errorDescripcion);
+    });
 
     function validarCodigoCuentaPadreYNivel() {
         var cuentaPadreCodigo = selectCuentaPadre.options[selectCuentaPadre.selectedIndex].text.split(" - ")[0].trim();
@@ -149,6 +152,16 @@ document.addEventListener('DOMContentLoaded', function () {
         } else if (esValido) {
             limpiarError(inputCodigo, errorCodigo);
         }
+        
+        // Verificar si la descripción está vacía
+        if (formDescripcion.value.trim() === '') {
+            mostrarError(formDescripcion, errorDescripcion, 'La descripción es requerida.');
+            esValido = false;
+        } else {
+            limpiarError(formDescripcion, errorDescripcion);
+        }
+
+        return esValido; // Retornar la validez de la validación
     }
 
     function cargarDatosCuenta(button, editable) {
@@ -284,5 +297,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 icon.classList.toggle('fa-minus', !isVisible);
             }
         });
+    });
+
+    // Limpiar errores al cerrar el modal
+    editModal.addEventListener('hidden.bs.modal', function () {
+        limpiarCamposModal();
+        limpiarError(inputCodigo, errorCodigo);
+        limpiarError(formDescripcion, errorDescripcion);
+        limpiarError(selectCategoria, errorCategoria);
     });
 });
