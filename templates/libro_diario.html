@@ -16,6 +16,27 @@
     text-align: center;
     vertical-align: middle; /* Centra verticalmente el contenido */
   }
+  .text-right {
+    text-align: right;
+  }
+  
+  @media print {
+    body {
+      visibility: hidden;
+    }
+    .table-wrapper, .table {
+      visibility: visible;
+      width: 100%;
+    }
+    .table-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    @page {
+      size: landscape;
+    }
+  }
 </style>
 
 <div id="content">
@@ -42,19 +63,19 @@
 
     <!-- Filtros: Fecha exacta y RUC en una sola fila alineados correctamente con centrado vertical -->
     <div class="row mb-3 align-items-center">
-        <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
-          <label class="me-3 d-flex justify-content-center align-items-center custom-label">
-            <strong>PERÍODO:</strong>
-          </label>
-          <input type="date" class="form-control" id="filtro-fecha" max="{{ current_year }}-12-31" value="{{ current_year }}-01-01">
-        </div>
-        <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
-          <label class="me-3 d-flex justify-content-center align-items-center custom-label">
-            <strong>RUC:</strong>
-          </label>
-          <input type="text" class="form-control" value="20612188930" readonly>
-        </div>
+      <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
+        <label class="me-3 d-flex justify-content-center align-items-center custom-label">
+          <strong>FECHA:</strong>
+        </label>
+        <input type="date" class="form-control" id="filtro-fecha" max="{{ current_year }}-12-31" value="{{ request.args.get('fecha', '') }}">
       </div>
+      <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
+        <label class="me-3 d-flex justify-content-center align-items-center custom-label">
+          <strong>RUC:</strong>
+        </label>
+        <input type="text" class="form-control" value="20612188930" readonly>
+      </div>
+    </div>
       
     <div class="table-wrapper">
       <div class="table-title">
@@ -73,9 +94,9 @@
             <button class="btn btn-primary me-2" onclick="window.print()" style="background-color: #ff5733;">
                 <i class="material-icons">print</i> <span>Imprimir</span>
               </button>
-            <button class="btn btn-success" onclick="exportTableToCSV('libro_diario.csv')">
-              <i class="material-icons">file_download</i> <span>Exportar</span>
-            </button>
+              <button class="btn btn-success" onclick="exportarLibroDiario()">
+                <i class="material-icons">file_download</i> <span>Exportar</span>
+              </button>
           </div>
         </div>
       </div>
@@ -106,16 +127,16 @@
           {% for movimiento in movimientos %}
           <tr>
             {% if movimiento.debe is none and movimiento.haber is none %}
-              <td>-</td>
-              <td>-</td>
-              <td>-</td>
-              <td>-</td>
-              <td>-</td>
-              <td>-</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
               <td>{{ movimiento.codigo_cuenta or "-" }}</td>
               <td>{{ movimiento.denominacion or "-" }}</td>
-              <td>-</td>
-              <td>-</td>
+              <td class="text-right"></td>
+              <td class="text-right"></td>
             {% else %}
               <td>{{ movimiento.numero_correlativo or "-" }}</td>
               <td>{{ movimiento.fecha or "-" }}</td>
@@ -125,17 +146,17 @@
               <td>{{ movimiento.numero_documento_sustentatorio or "-" }}</td>
               <td>{{ movimiento.codigo_cuenta or "-" }}</td>
               <td>{{ movimiento.denominacion or "-" }}</td>
-              <td>{{ movimiento.debe or "-" }}</td>
-              <td>{{ movimiento.haber or "-" }}</td>
+              <td class="text-right">{{ movimiento.debe or "-" }}</td>
+              <td class="text-right">{{ movimiento.haber or "-" }}</td>
             {% endif %}
           </tr>
           {% endfor %}
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="8" class="text-end"><strong>TOTALES</strong></td>
-            <td class="text-end">{{ total_debe }}</td>
-            <td class="text-end">{{ total_haber }}</td>
+            <td colspan="8">TOTALES</td>
+            <td class="text-right">{{ total_debe }}</td>
+            <td class="text-right">{{ total_haber }}</td>
           </tr>
         </tfoot>
         
@@ -173,41 +194,21 @@
   <script src="{{ url_for('static', filename='js/paginacion_libros.js') }}"></script>
 
   <script>
-    function exportTableToCSV(filename) {
-      var csv = [];
-      var rows = document.querySelectorAll("table tr");
-  
-      for (var i = 0; i < rows.length; i++) {
-        var row = [], cols = rows[i].querySelectorAll("td, th");
-  
-        for (var j = 0; j < cols.length; j++) 
-          row.push(cols[j].innerText);
-  
-        csv.push(row.join(","));        
+    function exportarLibroDiario() {
+      const filtroFecha = document.getElementById("filtro-fecha").value;
+      if (!filtroFecha) {
+        alert("Por favor, seleccione una fecha antes de exportar.");
+        return;
       }
-  
-      // Download CSV file
-      downloadCSV(csv.join("\n"), filename);
-    }
-  
-    function downloadCSV(csv, filename) {
-      var csvFile;
-      var downloadLink;
-  
-      csvFile = new Blob([csv], { type: "text/csv" });
-      downloadLink = document.createElement("a");
-      downloadLink.download = filename;
-      downloadLink.href = window.URL.createObjectURL(csvFile);
-      downloadLink.style.display = "none";
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
+      // Redireccionar a la ruta de exportación con la fecha como parámetro
+      window.location.href = `/exportar-libro-diario?fecha=${filtroFecha}`;
     }
   
     // Función para obtener la fecha de hoy en formato YYYY-MM-DD
     function getTodayDate() {
       const today = new Date();
       const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0'); // Mes empieza en 0, así que sumamos 1
+      const month = String(today.getMonth() + 1).padStart(2, '0');
       const day = String(today.getDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
     }
@@ -216,10 +217,18 @@
     document.addEventListener('DOMContentLoaded', function() {
       const filtroFecha = document.getElementById('filtro-fecha');
       const today = getTodayDate();
-      filtroFecha.value = today;  // Establecer valor como fecha de hoy
-      filtroFecha.max = `${today}`;  // Fecha máxima como hoy para no permitir fechas futuras
+      filtroFecha.max = today;
+  
+      // Redirige cuando se selecciona una nueva fecha
+      filtroFecha.addEventListener('change', function() {
+        const selectedDate = filtroFecha.value;
+        if (selectedDate) {
+          window.location.href = `/libro_diario?fecha=${selectedDate}`;
+        }
+      });
     });
   </script>
+  
 
 </div>
 {% endblock %}
