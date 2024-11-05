@@ -112,3 +112,130 @@ def actualizar_perfil_usuario(dni, nombres, apellidos):
         """, (nombres, apellidos, dni))
     conexion.commit()
     conexion.close()
+
+def obtener_datos_persona(dni):
+    conexion = obtener_conexion()
+    usuario = None
+    with conexion.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT u.dni, u.pass, u.token, 
+                   CONCAT(p.nombre, ' ', p.apellido) AS nombre_completo, 
+                   p.rol
+            FROM usuarios u
+            JOIN personas p ON u.dni = p.dni
+            WHERE u.dni = %s
+            """, (dni,))
+        usuario = cursor.fetchone()
+    conexion.close()
+    return usuario
+
+
+
+def obtener_todos_usuarios():
+    conexion = obtener_conexion()
+    usuarios = []
+    with conexion.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT u.dni, p.nombre, p.apellido, p.rol
+            FROM usuarios u
+            JOIN personas p ON u.dni = p.dni
+            """
+        )
+        resultados = cursor.fetchall()
+        for row in resultados:
+            usuario = {
+                'dni': row[0],
+                'nombre': row[1],
+                'apellido': row[2],
+                'rol': row[3]
+            }
+            usuarios.append(usuario)
+    conexion.close()
+    return usuarios
+
+def agregar_usuario(dni, nombre, apellido, rol, password):
+    import hashlib  # Asegúrate de importar hashlib si no lo has hecho
+    conexion = obtener_conexion()
+    try:
+        with conexion.cursor() as cursor:
+            # Verificar si el DNI ya existe en 'personas'
+            cursor.execute("SELECT id FROM personas WHERE dni = %s", (dni,))
+            if cursor.fetchone():
+                print("El DNI ya existe en la base de datos.")
+                return False
+
+            # Insertar en la tabla 'personas'
+            cursor.execute(
+                "INSERT INTO personas (nombre, apellido, dni, rol) VALUES (%s, %s, %s, %s)",
+                (nombre, apellido, dni, rol)
+            )
+            conexion.commit()
+
+            # Obtener el id de la nueva persona
+            cursor.execute("SELECT id FROM personas WHERE dni = %s", (dni,))
+            id_persona = cursor.fetchone()[0]
+
+            # Hash de la contraseña
+            h = hashlib.new("sha256")
+            h.update(password.encode('utf-8'))
+            hashed_password = h.hexdigest().lower()
+
+            # Insertar en la tabla 'usuarios'
+            cursor.execute(
+                "INSERT INTO usuarios (dni, pass, token, id_persona) VALUES (%s, %s, '', %s)",
+                (dni, hashed_password, id_persona)
+            )
+            conexion.commit()
+        return True
+    except Exception as e:
+        print(f"Error al agregar usuario: {e}")
+        conexion.rollback()
+        return False
+    finally:
+        conexion.close()
+
+def editar_usuario(dni, nombre, apellido, rol):
+    conexion = obtener_conexion()
+    try:
+        with conexion.cursor() as cursor:
+            # Actualizar en la tabla 'personas'
+            cursor.execute(
+                "UPDATE personas SET nombre = %s, apellido = %s, rol = %s WHERE dni = %s",
+                (nombre, apellido, rol, dni)
+            )
+            conexion.commit()
+        return True
+    except Exception as e:
+        print(f"Error al editar usuario: {e}")
+        conexion.rollback()
+        return False
+    finally:
+        conexion.close()
+
+
+def eliminar_usuario(dni):
+    conexion = obtener_conexion()
+    try:
+        with conexion.cursor() as cursor:
+            # Obtener el id_persona
+            cursor.execute("SELECT id_persona FROM usuarios WHERE dni = %s", (dni,))
+            result = cursor.fetchone()
+            if not result:
+                print("El usuario no existe.")
+                return False
+            id_persona = result[0]
+
+            # Eliminar de la tabla 'usuarios'
+            cursor.execute("DELETE FROM usuarios WHERE dni = %s", (dni,))
+            # Eliminar de la tabla 'personas'
+            cursor.execute("DELETE FROM personas WHERE id = %s", (id_persona,))
+            conexion.commit()
+        return True
+    except Exception as e:
+        print(f"Error al eliminar usuario: {e}")
+        conexion.rollback()
+        return False
+    finally:
+        conexion.close()

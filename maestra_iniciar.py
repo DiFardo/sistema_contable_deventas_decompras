@@ -383,6 +383,101 @@ def perfil_usuario():
     
     return render_template("perfil_usuario.html", usuario=usuario, perfil=perfil, descripcion_rol=descripcion_rol, breadcrumbs=breadcrumbs)
 
+
+
+
+
+
+
+
+####################################
+###### Mantenimiento personal ######
+####################################
+@app.route('/agregar_usuario', methods=['POST'])
+def agregar_usuario():
+    # Obtener datos del formulario
+    dni = request.form['dni']
+    nombre = request.form['nombre']
+    apellido = request.form['apellido']
+    rol = request.form['rol']
+    password = request.form['password']
+
+    # Llamar a la función para agregar usuario en el controlador
+    success = controlador_usuarios.agregar_usuario(dni, nombre, apellido, rol, password)
+
+    if success:
+        flash("Usuario agregado exitosamente.")
+    else:
+        flash("Hubo un error al agregar el usuario. Verifica que el DNI no exista ya en el sistema.")
+
+    return redirect(url_for('personal'))
+
+@app.route('/editar_usuario', methods=['POST'])
+def editar_usuario():
+    # Obtener datos del formulario
+    dni = request.form['dni']
+    nombre = request.form['nombre']
+    apellido = request.form['apellido']
+    rol = request.form['rol']
+
+    # Llamar a la función para editar usuario en el controlador
+    success = controlador_usuarios.editar_usuario(dni, nombre, apellido, rol)
+
+    if success:
+        flash("Usuario actualizado exitosamente.")
+    else:
+        flash("Hubo un error al actualizar el usuario.")
+
+    return redirect(url_for('personal'))
+
+
+@app.route('/eliminar_usuario', methods=['POST'])
+def eliminar_usuario():
+    # Obtener DNI del usuario a eliminar
+    dni = request.form['dni']
+
+    # Llamar a la función para eliminar usuario en el controlador
+    success = controlador_usuarios.eliminar_usuario(dni)
+
+    if success:
+        flash("Usuario eliminado exitosamente.")
+    else:
+        flash("Hubo un error al eliminar el usuario.")
+
+    return redirect(url_for('personal'))
+
+
+@app.route('/personal')
+def personal():
+    # Obtener el token y DNI del usuario desde las cookies
+    token = request.cookies.get('token')
+    dni = request.cookies.get('dni')
+    
+    # Validar si el usuario está autenticado
+    if not token or not validar_token():
+        return redirect("/login_user")
+    
+    # Obtener la información del usuario autenticado
+    usuario = controlador_usuarios.obtener_usuario(dni)
+    
+    # Obtener datos de todos los usuarios para la tabla
+    usuarios = controlador_usuarios.obtener_todos_usuarios()
+    
+    # Obtener la lista de roles desde el diccionario 'descripciones'
+    roles = list(descripciones.keys())
+    
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Gestión de Usuarios', 'url': '/personal'}
+    ]
+    
+    return render_template('personal.html', usuarios=usuarios, breadcrumbs=breadcrumbs, usuario=usuario, roles=roles)
+
+
+
+
+
+
 # Iniciar el servidor
 
 if __name__ == "__main__":
