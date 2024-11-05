@@ -93,7 +93,6 @@ FROM compras_contables c
 
 ORDER BY fecha, serie_comprobante, numero_comprobante;
 
-<<<<<<< Updated upstream
 -----------------------------------------------------------------------
 
 -- Trigger para la tabla ventas_contables
@@ -178,7 +177,6 @@ CREATE TRIGGER trigger_insertar_movimiento_compra
 AFTER INSERT ON compras_contables
 FOR EACH ROW
 EXECUTE FUNCTION insertar_movimiento_compra();
-=======
 -------------------------------------------------------------------------
 --LIBRO DIARIO:
 SELECT
@@ -203,4 +201,3 @@ SELECT
 FROM asientos_contables ac
 JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
 ORDER BY numero_correlativo, ac.id;
->>>>>>> Stashed changes
