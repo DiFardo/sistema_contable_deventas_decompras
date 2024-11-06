@@ -971,3 +971,156 @@ def generar_libro_mayor_excel(mes, año, cuenta):
             cursor.close()
             conexion.close()
 
+from openpyxl import load_workbook
+from openpyxl.styles import Font, Border, Side, Alignment
+from openpyxl.styles.numbers import FORMAT_NUMBER_COMMA_SEPARATED1, FORMAT_DATE_DDMMYY
+from io import BytesIO
+from flask import send_file, jsonify
+import psycopg2
+from psycopg2 import sql
+
+def generar_libro_caja_excel(mes, anio):
+    try:
+        mes = int(mes)
+        anio = int(anio)
+    except ValueError:
+        print("Error: mes o año no son enteros válidos")
+        return jsonify({'error': 'Mes o año no son enteros válidos'}), 400
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        consulta = """
+        SELECT
+            DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo,
+            TO_CHAR(ac.fecha, 'DD/MM/YYYY') AS fecha_operacion,
+            CASE
+                WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
+                WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la venta de mercadería'
+                ELSE 'Descripción no especificada'
+            END AS descripcion_operacion,
+            ac.codigo_cuenta AS codigo_cuenta_asociada,
+            ac.denominacion AS denominacion_cuenta_asociada,
+            COALESCE(ac.debe, 0) AS saldo_deudor,
+            COALESCE(ac.haber, 0) AS saldo_acreedor
+        FROM asientos_contables ac
+        JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
+        WHERE 
+            (ac.codigo_cuenta LIKE '12%' OR ac.codigo_cuenta LIKE '42%')
+            AND EXTRACT(MONTH FROM ac.fecha) = %s
+            AND EXTRACT(YEAR FROM ac.fecha) = %s
+        ORDER BY numero_correlativo, ac.id;
+        """
+        cursor.execute(consulta, (mes, anio))
+
+        resultados = cursor.fetchall()
+
+        # Cargar la plantilla de Excel
+        ruta_plantilla = 'plantillas/LibroCaja.xlsx'
+        workbook = load_workbook(ruta_plantilla)
+        hoja = workbook.active
+
+        # Escribir el periodo en la celda específica
+        periodo = f"{anio}-{str(mes).zfill(2)}"
+        hoja.cell(row=3, column=2, value=periodo)
+
+        # Configuración de bordes y fuente
+        borde = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+        fuente_estandar = Font(name='Arial', size=10)
+
+        fila_base = 12
+        alto_fila_base = hoja.row_dimensions[fila_base].height
+
+        fila_inicial = fila_base
+        total_deudor = 0
+        total_acreedor = 0
+
+        columnas_con_borde = list(range(1, 23))
+
+        for fila, registro in enumerate(resultados, start=fila_inicial):
+            hoja.row_dimensions[fila].height = alto_fila_base
+
+            celdas = [
+                (1, registro[0]),  # Correlativo
+                (2, registro[1]),  # Fecha de operación
+                (3, registro[2]),  # Descripción de operación
+                (4, registro[3]),  # Código cuenta asociada
+                (5, registro[4]),  # Denominación cuenta asociada
+                (6, registro[5]), # Saldo deudor
+                (7, registro[6])  # Saldo acreedor
+            ]
+
+            for col in columnas_con_borde:
+                celda = hoja.cell(row=fila, column=col)
+                celda.border = borde
+                celda.font = fuente_estandar
+
+            for col, valor in celdas:
+                celda = hoja.cell(row=fila, column=col, value=valor)
+                celda.font = fuente_estandar
+
+                if col in (6, 7):
+                    celda.alignment = Alignment(horizontal='right', vertical='center')
+                    celda.number_format = FORMAT_NUMBER_COMMA_SEPARATED1
+                elif col == 2:
+                    celda.number_format = FORMAT_DATE_DDMMYY
+                    celda.alignment = Alignment(horizontal='center', vertical='center')
+                else:
+                    celda.alignment = Alignment(horizontal='left', vertical='center')
+
+                if col == 6:
+                    total_deudor += valor
+                elif col == 7:
+                    total_acreedor += valor
+
+        # Escribir los totales en la fila de "Totales"
+        fila_totales = fila_inicial + len(resultados)
+        hoja.row_dimensions[fila_totales].height = alto_fila_base
+        celda_totales = hoja.cell(row=fila_totales, column=5, value="TOTALES")
+        celda_totales.border = borde
+        celda_totales.alignment = Alignment(horizontal='center', vertical='center')
+        celda_totales.font = Font(name='Arial', size=10, bold=True)
+
+        total_deudor_celda = hoja.cell(row=fila_totales, column=6, value=total_deudor)
+        total_deudor_celda.border = borde
+        total_deudor_celda.number_format = FORMAT_NUMBER_COMMA_SEPARATED1
+        total_deudor_celda.alignment = Alignment(horizontal='right', vertical='center')
+        total_deudor_celda.font = fuente_estandar
+
+        total_acreedor_celda = hoja.cell(row=fila_totales, column=7, value=total_acreedor)
+        total_acreedor_celda.border = borde
+        total_acreedor_celda.number_format = FORMAT_NUMBER_COMMA_SEPARATED1
+        total_acreedor_celda.alignment = Alignment(horizontal='right', vertical='center')
+        total_acreedor_celda.font = fuente_estandar
+
+        for col in columnas_con_borde:
+            hoja.cell(row=fila_totales, column=col).border = borde
+
+        # Guardar el archivo Excel en memoria
+        output = BytesIO()
+        workbook.save(output)
+        output.seek(0)
+
+        nombre_archivo = f'libro_caja_{anio}_{mes}.xlsx'
+
+        # Enviar el archivo como respuesta
+        return send_file(
+            output,
+            download_name=nombre_archivo,
+            as_attachment=True,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+
+    except Exception as e:
+        print(f"Error al generar el libro de caja: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if conexion:
+            cursor.close()
+            conexion.close()

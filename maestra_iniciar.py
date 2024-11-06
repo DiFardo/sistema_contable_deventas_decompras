@@ -390,7 +390,16 @@ def registro_compras_datos():
         total_total_comprobante=total_total_comprobante
     )
 
-
+@app.route('/exportar-libro-caja-bancos', methods=['GET'])
+def exportar_libro_caja_bancos():
+    periodo = request.args.get('periodo')
+    if not periodo:
+        return jsonify({'error': 'El parámetro "periodo" es requerido.'}), 400
+    try:
+        anio, mes = map(int, periodo.split('-'))
+    except ValueError:
+        return jsonify({'error': 'El formato del período es incorrecto. Debe ser "YYYY-MM".'}), 400
+    return controlador_plantillas.generar_libro_caja_excel(mes, anio)
 
 @app.route('/exportar-libro-diario', methods=['GET'])
 def exportar_libro_diario():
