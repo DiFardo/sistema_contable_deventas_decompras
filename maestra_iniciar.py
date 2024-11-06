@@ -243,11 +243,8 @@ def libro_caja():
         {'name': 'Libro Caja y Bancos', 'url': '/libro_caja'}
     ]
 
-    movimientos = controlador_plantillas.obtener_libro_caja()  # Llamada a la función para obtener los movimientos de caja
-
-    # Cálculo de totales para las columnas de saldo deudor y saldo acreedor
-    total_deudor = sum(movimiento['saldo_deudor'] or 0 for movimiento in movimientos)
-    total_acreedor = sum(movimiento['saldo_acreedor'] or 0 for movimiento in movimientos)
+    # Obtener movimientos y totales directamente
+    movimientos, total_deudor, total_acreedor = controlador_plantillas.obtener_libro_caja()
 
     return render_template(
         "libro_caja.html",
@@ -257,6 +254,7 @@ def libro_caja():
         total_deudor=total_deudor,
         total_acreedor=total_acreedor
     )
+
 
 
 @app.route("/registro_ventas", methods=["GET"])
@@ -344,6 +342,8 @@ def registro_compras_datos():
         total_igv=total_igv,
         total_total_comprobante=total_total_comprobante
     )
+
+
 
 @app.route('/exportar-libro-diario', methods=['GET'])
 def exportar_libro_diario():

@@ -25,6 +25,21 @@
     text-align: right;
   }
 
+  /* Estilos para centrar el spinner dentro de la tabla */
+  .spinner-wrapper {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+  }
+
+  /* Cambiar el color del spinner */
+  .spinner-border {
+    color: #e73209 !important;
+  }
+
   @media print {
     body {
       visibility: hidden;
@@ -46,6 +61,13 @@
 
 <div id="content">
   <div class="main-content">
+    <!-- Spinner para pantalla de carga -->
+    <div class="spinner-wrapper" id="spinner-wrapper">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+    </div>
+
     <!-- Breadcrumb dinámico -->
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb">
@@ -132,65 +154,190 @@
           </tr>
         </thead>
         <tbody id="tabla-cuerpo">
-          {% for movimiento in movimientos %}
-          <tr>
-            <td>{{ movimiento.fecha }}</td>
-            <td class="w-correlativo">{{ movimiento.numero_correlativo }}</td>
-            <td>{{ movimiento.glosa }}</td>
-            <td class="text-right">{{ movimiento.deudor if movimiento.deudor is not none else '-' }}</td>
-            <td class="text-right">{{ movimiento.acreedor if movimiento.acreedor is not none else '-' }}</td>
-          </tr>
-          {% endfor %}
+          <!-- Aquí se cargarán las filas dinámicamente -->
         </tbody>
         <tfoot>
           <tr>
             <td colspan="3">TOTALES</td>
-            <td class="text-right">{{ total_debe }}</td>
-            <td class="text-right">{{ total_haber }}</td>
+            <td class="text-right" id="total-debe">-</td>
+            <td class="text-right" id="total-haber">-</td>
           </tr>
         </tfoot>
       </table>
+
+      <!-- Controles de paginación y selector de número de registros -->
+      <div class="d-flex justify-content-between align-items-center mt-3">
+        <div class="d-flex me-3">
+          <label for="records-per-page" class="me-2">Registros por página:</label>
+          <input type="number" id="records-per-page" class="form-control" value="5" min="1" max="100" style="width: 80px;">
+        </div>
+        <nav aria-label="Page navigation example align-items-center">
+          <ul class="pagination" id="pagination">
+            <li class="page-item">
+              <a class="page-link" href="#" aria-label="Previous" id="prev-page">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="#" aria-label="Next" id="next-page">
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
     </div>
   </div>
 
   <!-- Scripts al final de la página para mejorar la carga -->
   <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/tabla_cuentas.js') }}"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const filtroPeriodo = document.getElementById('filtro-periodo');
-      const filtroCuenta = document.getElementById('filtro-cuenta');
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      filtroPeriodo.max = `${year}-${month}`;
-      
-      filtroPeriodo.addEventListener('change', actualizarURL);
-      filtroCuenta.addEventListener('change', actualizarURL);
+    let currentPage = 1;
+    let rowsPerPage = parseInt(document.getElementById("records-per-page").value);
+    const spinnerWrapper = document.getElementById("spinner-wrapper");
 
-      function actualizarURL() {
-        const selectedPeriodo = filtroPeriodo.value;
-        const selectedCuenta = filtroCuenta.value;
-        let url = `?periodo=${selectedPeriodo}`;
-        if (selectedCuenta) {
-          url += `&cuenta=${selectedCuenta}`;
+    document.addEventListener("DOMContentLoaded", function () {
+        const filtroPeriodo = document.getElementById("filtro-periodo");
+        const filtroCuenta = document.getElementById("filtro-cuenta");
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        filtroPeriodo.max = `${year}-${month}`;
+
+        filtroPeriodo.addEventListener("change", cargarTabla);
+        filtroCuenta.addEventListener("change", cargarTabla);
+
+        if (filtroPeriodo.value && filtroCuenta.value) {
+            cargarTabla();
         }
-        window.location.href = url;
-      }
     });
 
-    function exportarLibroMayor() {
-    const periodo = document.getElementById('filtro-periodo').value;
-    const cuenta = document.getElementById('filtro-cuenta').value;
-      if (periodo && cuenta) {
-          window.location.href = `/exportar-libro-mayor?periodo=${periodo}&cuenta=${cuenta}`;
-      } else {
-          alert("Por favor, seleccione un período y una cuenta antes de exportar.");
-      }
+    function cargarTabla() {
+        const periodo = document.getElementById("filtro-periodo").value;
+        const cuenta = document.getElementById("filtro-cuenta").value;
+        if (!periodo || !cuenta) return;
+
+        spinnerWrapper.style.display = "block";
+        $.ajax({
+            url: "/libro_mayor_datos",
+            type: "GET",
+            data: { periodo, cuenta },
+            success: function (data) {
+                let filas = "";
+                data.movimientos.forEach(function (movimiento) {
+                    const fechaFormatted = new Date(movimiento.fecha).toLocaleDateString();
+                    const deudorFormatted = movimiento.deudor ? movimiento.deudor.toLocaleString('es-PE', { minimumFractionDigits: 2 }) : "-";
+                    const acreedorFormatted = movimiento.acreedor ? movimiento.acreedor.toLocaleString('es-PE', { minimumFractionDigits: 2 }) : "-";
+
+                    filas += `
+                        <tr>
+                            <td>${fechaFormatted}</td>
+                            <td class="w-correlativo">${movimiento.numero_correlativo}</td>
+                            <td>${movimiento.glosa}</td>
+                            <td class="text-right">${deudorFormatted}</td>
+                            <td class="text-right">${acreedorFormatted}</td>
+                        </tr>
+                    `;
+                });
+
+                $("#tabla-cuerpo").html(filas);
+                $("#total-debe").text(data.total_debe.toLocaleString('es-PE', { minimumFractionDigits: 2 }) || "-");
+                $("#total-haber").text(data.total_haber.toLocaleString('es-PE', { minimumFractionDigits: 2 }) || "-");
+
+                totalPages = Math.ceil(data.movimientos.length / rowsPerPage);
+                if (totalPages === 0) totalPages = 1;
+                showPage(currentPage);
+            },
+            complete: function () {
+                spinnerWrapper.style.display = "none";
+            },
+            error: function (error) {
+                console.error("Error al cargar los datos:", error);
+                spinnerWrapper.style.display = "none";
+            }
+        });
     }
-  </script>
+
+    function showPage(page) {
+        const rows = document.querySelectorAll("#tabla-cuerpo tr");
+        const start = (page - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+
+        rows.forEach((row, index) => {
+            row.style.display = index >= start && index < end ? "" : "none";
+        });
+
+        updatePagination();
+    }
+
+    function updatePagination() {
+        const pagination = document.getElementById("pagination");
+        pagination.innerHTML = `
+            <li class="page-item ${currentPage === 1 ? "disabled" : ""}">
+              <a class="page-link" href="#" aria-label="Previous" id="prev-page">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+        `;
+
+        const maxPagesToShow = 5;
+        const startPage = Math.max(currentPage - 2, 1);
+        const endPage = Math.min(startPage + maxPagesToShow - 1, totalPages);
+
+        for (let i = startPage; i <= endPage; i++) {
+            pagination.innerHTML += `
+                <li class="page-item ${i === currentPage ? "active" : ""}">
+                    <a class="page-link" href="#" data-page="${i}">${i}</a>
+                </li>
+            `;
+        }
+
+        pagination.innerHTML += `
+            <li class="page-item ${currentPage === totalPages ? "disabled" : ""}">
+                <a class="page-link" href="#" aria-label="Next" id="next-page">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        `;
+
+        document.getElementById("prev-page").addEventListener("click", function (e) {
+            e.preventDefault();
+            if (currentPage > 1) {
+                currentPage--;
+                showPage(currentPage);
+            }
+        });
+
+        document.getElementById("next-page").addEventListener("click", function (e) {
+            e.preventDefault();
+            if (currentPage < totalPages) {
+                currentPage++;
+                showPage(currentPage);
+            }
+        });
+
+        document.querySelectorAll(".page-link[data-page]").forEach(link => {
+            link.addEventListener("click", function (e) {
+                e.preventDefault();
+                currentPage = parseInt(this.getAttribute("data-page"));
+                showPage(currentPage);
+            });
+        });
+    }
+
+    function exportarLibroMayor() {
+        const periodo = document.getElementById("filtro-periodo").value;
+        const cuenta = document.getElementById("filtro-cuenta").value;
+        if (periodo && cuenta) {
+            window.location.href = `/exportar-libro-mayor?periodo=${periodo}&cuenta=${cuenta}`;
+        } else {
+            alert("Por favor, seleccione un período y una cuenta antes de exportar.");
+        }
+    }
+</script>
+
 </div>
 {% endblock %}

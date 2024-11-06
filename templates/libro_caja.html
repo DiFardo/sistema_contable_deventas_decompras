@@ -40,17 +40,17 @@
       </div>
     </div>
 
-    <!-- Filtros: Fecha exacta y RUC en una sola fila alineados correctamente con centrado vertical -->
     <div class="row mb-3 align-items-center">
       <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
         <label class="me-3 d-flex justify-content-center align-items-center"><strong>PERÍODO:</strong></label>
-        <input type="date" class="form-control" id="filtro-fecha" max="{{ current_year }}-12-31" value="{{ current_year }}-01-01">
+        <input type="month" class="form-control" id="filtro-periodo" max="{{ current_year }}-12" value="{{ request.args.get('periodo', '') }}">
       </div>
       <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
         <label class="me-3 d-flex justify-content-center align-items-center"><strong>RUC:</strong></label>
         <input type="text" class="form-control" value="20612188930" readonly>
       </div>
     </div>
+    
 
     <div class="table-wrapper">
       <div class="table-title">
@@ -146,24 +146,18 @@
   <script src="{{ url_for('static', filename='js/paginacion_libros.js') }}"></script>
 
   <script>
-    function exportTableToCSV(filename) {
-      var csv = [];
-      var rows = document.querySelectorAll("table tr");
-  
-      for (var i = 0; i < rows.length; i++) {
-        var row = [], cols = rows[i].querySelectorAll("td, th");
-        for (var j = 0; j < cols.length; j++) 
-          row.push(cols[j].innerText);
-        csv.push(row.join(","));
-      }
-      var csvFile = new Blob([csv.join("\n")], { type: "text/csv" });
-      var downloadLink = document.createElement("a");
-      downloadLink.download = filename;
-      downloadLink.href = window.URL.createObjectURL(csvFile);
-      downloadLink.style.display = "none";
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-    }
+document.addEventListener("DOMContentLoaded", function () {
+    const filtroPeriodo = document.getElementById("filtro-periodo");
+
+    filtroPeriodo.addEventListener("change", function () {
+        const periodo = filtroPeriodo.value;
+        if (periodo) {
+            // Recarga la página con el nuevo período como parámetro
+            window.location.href = `/libro_caja?periodo=${periodo}`;
+        }
+    });
+});
+
   </script>
 </div>
 {% endblock %}

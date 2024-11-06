@@ -741,30 +741,43 @@ def obtener_libro_diario_por_fecha(fecha):
 def obtener_libro_caja():
     conexion = obtener_conexion()
     movimientos_caja = []
+    total_deudor = 0
+    total_acreedor = 0
 
     with conexion.cursor(cursor_factory=DictCursor) as cursor:
         cursor.execute("""
             SELECT
-                DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo, -- Correlativo único del registro
-                ac.fecha AS fecha_operacion, -- Fecha de la operación
+                DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo,
+                ac.fecha AS fecha_operacion,
                 CASE
-                    WHEN m.tipo_movimiento = 'Compras' THEN 'Por la venta de mercadería'
-                    WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la compra de insumos'
+                    WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
+                    WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la venta de mercadería'
                     ELSE 'Descripción no especificada'
-                END AS descripcion_operacion, -- Descripción de la operación
-                ac.codigo_cuenta AS codigo_cuenta_asociada, -- Código de la cuenta contable asociada
-                ac.denominacion AS denominacion_cuenta_asociada, -- Denominación de la cuenta contable
-                ac.debe AS saldo_deudor, -- Monto en el debe (movimiento deudor)
-                ac.haber AS saldo_acreedor -- Monto en el haber (movimiento acreedor)
+                END AS descripcion_operacion,
+                ac.codigo_cuenta AS codigo_cuenta_asociada,
+                ac.denominacion AS denominacion_cuenta_asociada,
+                COALESCE(ac.debe, 0) AS saldo_deudor,  -- Usa COALESCE para reemplazar NULL por 0
+                COALESCE(ac.haber, 0) AS saldo_acreedor  -- Usa COALESCE para reemplazar NULL por 0
             FROM asientos_contables ac
             JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
+            WHERE 
+                ac.codigo_cuenta LIKE '12%'  
+                OR ac.codigo_cuenta LIKE '42%'
             ORDER BY numero_correlativo, ac.id;
         """)
-        
+
         movimientos_caja = cursor.fetchall()
 
+        # Sumar totales considerando que ya no habrá None
+        for movimiento in movimientos_caja:
+            total_deudor += movimiento["saldo_deudor"]
+            total_acreedor += movimiento["saldo_acreedor"]
+
     conexion.close()
-    return movimientos_caja
+    return movimientos_caja, total_deudor, total_acreedor
+
+
+
 
 def obtener_cuentas_distintas():
     conexion = obtener_conexion()
@@ -815,9 +828,11 @@ def obtener_libro_mayor(mes, año, cuenta):
         """, (mes, año, cuenta))
         
         movimientos = cursor.fetchall()
+        print("Movimientos encontrados:", movimientos)  # Mensaje de depuración para ver el resultado de la consulta.
 
     conexion.close()
     return movimientos
+
 
 def generar_libro_mayor_excel(mes, año, cuenta):
     try:
@@ -945,3 +960,4 @@ def generar_libro_mayor_excel(mes, año, cuenta):
         if conexion:
             cursor.close()
             conexion.close()
+
