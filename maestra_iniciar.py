@@ -99,7 +99,17 @@ def eliminar_imagen_perfil():
 
 # Inicializa JWTManager
 jwt = JWTManager(app)
+from functools import wraps
 
+# Decorador para verificar el login en las rutas protegidas
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not validar_token():  # Llama a la función que valida el token
+            flash("Debe iniciar sesión para acceder a esta página.")
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 def validar_token():
     token = request.cookies.get('token')
@@ -112,16 +122,19 @@ def validar_token():
 
 @app.route("/")
 @app.route("/login_user")
+@login_required
 def login():
     token = request.cookies.get('token')
-    if not token:
-        return render_template("login_user.html")
-    if validar_token():
+    if token and validar_token():
+        # Redirige al usuario a la página principal si tiene un token válido
         return redirect("/index")
+    # Si no hay token o el token no es válido, muestra la página de inicio de sesión
     return render_template("login_user.html")
 
 
+
 @app.route("/index")
+@login_required
 def index():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
@@ -131,9 +144,7 @@ def index():
         usuario = list(usuario)  
         usuario[6] = "perfil_defecto.png" 
 
-    breadcrumbs = [
-        {'name': 'Inicio', 'url': '/index'}
-    ]
+    breadcrumbs = [{'name': 'Inicio', 'url': '/index'}]
     return render_template("index.html", breadcrumbs=breadcrumbs, usuario=usuario)
 
 @app.route("/actualizar_perfil", methods=["POST"])
@@ -151,6 +162,7 @@ def actualizar_perfil():
 
 
 @app.route("/libro_diario", methods=["GET"])
+@login_required
 def libro_diario():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
@@ -176,6 +188,7 @@ def libro_diario():
     )
 
 @app.route("/libro_diario_datos")
+@login_required
 def libro_diario_datos():
     fecha = request.args.get("fecha")
     movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha)
