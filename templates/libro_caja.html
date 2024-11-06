@@ -42,11 +42,15 @@
 
     <div class="row mb-3 align-items-center">
       <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
-        <label class="me-3 d-flex justify-content-center align-items-center"><strong>PERÍODO:</strong></label>
-        <input type="month" class="form-control" id="filtro-periodo" max="{{ current_year }}-12" value="{{ request.args.get('periodo', '') }}">
+        <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
+          <strong>PERIODO:</strong>
+        </label>
+        <input type="month" class="form-control" id="filtro-periodo" max="" value="{{ request.args.get('periodo', '') }}">
       </div>
       <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
-        <label class="me-3 d-flex justify-content-center align-items-center"><strong>RUC:</strong></label>
+        <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
+          <strong>RUC:</strong>
+        </label>
         <input type="text" class="form-control" value="20612188930" readonly>
       </div>
     </div>
@@ -146,18 +150,22 @@
   <script src="{{ url_for('static', filename='js/paginacion_libros.js') }}"></script>
 
   <script>
-document.addEventListener("DOMContentLoaded", function () {
-    const filtroPeriodo = document.getElementById("filtro-periodo");
+    document.addEventListener("DOMContentLoaded", function () {
+        const filtroPeriodo = document.getElementById("filtro-periodo");
+        
+        // Establece el límite máximo en el mes y año actual
+        const today = new Date();
+        const maxPeriod = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+        filtroPeriodo.max = maxPeriod;
 
-    filtroPeriodo.addEventListener("change", function () {
-        const periodo = filtroPeriodo.value;
-        if (periodo) {
-            // Recarga la página con el nuevo período como parámetro
-            window.location.href = `/libro_caja?periodo=${periodo}`;
-        }
+        filtroPeriodo.addEventListener("change", function () {
+            const periodo = filtroPeriodo.value;
+            if (periodo) {
+                // Recarga la página con el nuevo período como parámetro
+                window.location.href = `/libro_caja?periodo=${periodo}`;
+            }
+        });
     });
-});
-
   </script>
 </div>
 {% endblock %}

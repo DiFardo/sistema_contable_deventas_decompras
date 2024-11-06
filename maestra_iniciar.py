@@ -251,19 +251,15 @@ def libro_mayor_datos():
     periodo = request.args.get('periodo', '')
     cuenta = request.args.get('cuenta', '')
 
-    # Verifica que se proporcione un período y una cuenta
     if not periodo or not cuenta:
         return jsonify({"movimientos": [], "total_debe": 0, "total_haber": 0})
 
-    # Extrae año y mes del período
     año, mes = periodo.split('-')
     movimientos = controlador_plantillas.obtener_libro_mayor(mes, año, cuenta)
 
-    # Calcula los totales de debe y haber
     total_deudor = sum(movimiento['deudor'] or 0 for movimiento in movimientos)
     total_acreedor = sum(movimiento['acreedor'] or 0 for movimiento in movimientos)
 
-    # Formatea los movimientos para la respuesta JSON
     filas = []
     for movimiento in movimientos:
         filas.append({
@@ -280,30 +276,46 @@ def libro_mayor_datos():
         "total_haber": total_acreedor
     })
 
-@app.route("/libro_caja")
+@app.route("/libro_caja", methods=["GET"])
 def libro_caja():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
     usuario = controlador_usuarios.obtener_usuario(dni)
+    periodo = request.args.get("periodo", None)
+    mes = año = None
+
+    # Extraer mes y año si el periodo está presente
+    if periodo:
+        try:
+            año, mes = periodo.split("-")
+            # Verificar que mes y año son válidos
+            if not (mes.isdigit() and año.isdigit()):
+                raise ValueError("Invalid month or year format")
+            print("Periodo extraído correctamente:", "Mes:", mes, "Año:", año)  # Mensaje de depuración
+        except ValueError:
+            mes = año = None
+            print("Formato de periodo incorrecto")  # Mensaje de depuración
+    
+    # Llamar a la función obtener_libro_caja solo si mes y año están definidos
+    if mes and año:
+        movimientos, total_deudor, total_acreedor = controlador_plantillas.obtener_libro_caja(mes, año)
+    else:
+        movimientos, total_deudor, total_acreedor = [], 0, 0
 
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Libro Caja y Bancos', 'url': '/libro_caja'}
     ]
 
-    # Obtener movimientos y totales directamente
-    movimientos, total_deudor, total_acreedor = controlador_plantillas.obtener_libro_caja()
-
+    # Renderizar la plantilla con los datos obtenidos
     return render_template(
         "libro_caja.html",
         movimientos=movimientos,
-        breadcrumbs=breadcrumbs,
-        usuario=usuario,
         total_deudor=total_deudor,
-        total_acreedor=total_acreedor
+        total_acreedor=total_acreedor,
+        breadcrumbs=breadcrumbs,
+        usuario=usuario
     )
-
-
 
 @app.route("/registro_ventas", methods=["GET"])
 def registro_ventas():
