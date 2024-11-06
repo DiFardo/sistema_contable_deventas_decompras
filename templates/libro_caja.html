@@ -150,18 +150,22 @@
   <script src="{{ url_for('static', filename='js/paginacion_libros.js') }}"></script>
 
   <script>
-document.addEventListener("DOMContentLoaded", function () {
-    const filtroPeriodo = document.getElementById("filtro-periodo");
+    document.addEventListener("DOMContentLoaded", function () {
+        const filtroPeriodo = document.getElementById("filtro-periodo");
+        
+        // Establece el límite máximo en el mes y año actual
+        const today = new Date();
+        const maxPeriod = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+        filtroPeriodo.max = maxPeriod;
 
-    filtroPeriodo.addEventListener("change", function () {
-        const periodo = filtroPeriodo.value;
-        if (periodo) {
-            // Recarga la página con el nuevo período como parámetro
-            window.location.href = `/libro_caja?periodo=${periodo}`;
-        }
+        filtroPeriodo.addEventListener("change", function () {
+            const periodo = filtroPeriodo.value;
+            if (periodo) {
+                // Recarga la página con el nuevo período como parámetro
+                window.location.href = `/libro_caja?periodo=${periodo}`;
+            }
+        });
     });
-});
-
   </script>
 </div>
 {% endblock %}
