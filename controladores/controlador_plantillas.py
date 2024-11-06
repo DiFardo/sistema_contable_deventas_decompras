@@ -730,8 +730,6 @@ def obtener_libro_diario_por_fecha(fecha):
     conexion.close()
     return movimientos, total_debe, total_haber
 
-
-
 def obtener_libro_caja():
     conexion = obtener_conexion()
     movimientos_caja = []
@@ -759,3 +757,56 @@ def obtener_libro_caja():
 
     conexion.close()
     return movimientos_caja
+
+def obtener_cuentas_distintas():
+    conexion = obtener_conexion()
+    cuentas = []
+
+    with conexion.cursor(cursor_factory=DictCursor) as cursor:
+        cursor.execute("""
+            SELECT DISTINCT ac.codigo_cuenta
+            FROM asientos_contables ac
+            JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
+            WHERE EXTRACT(MONTH FROM ac.fecha) = 11
+              AND EXTRACT(YEAR FROM ac.fecha) = 2024
+              AND (ac.debe IS NOT NULL AND ac.debe != 0 OR ac.haber IS NOT NULL AND ac.haber != 0)
+            ORDER BY ac.codigo_cuenta;
+        """)
+        
+        cuentas = cursor.fetchall()
+
+    conexion.close()
+    return cuentas
+
+def obtener_libro_mayor(mes, año, cuenta):
+    conexion = obtener_conexion()
+    movimientos = []
+
+    with conexion.cursor(cursor_factory=DictCursor) as cursor:
+        cursor.execute("""
+            SELECT fecha, numero_correlativo, glosa, debe as deudor, haber as acreedor
+            FROM (
+                SELECT
+                    DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo,
+                    ac.fecha,
+                    CASE
+                        WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la venta de mercadería'
+                        WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
+                        ELSE ''
+                    END AS glosa,
+                    ac.debe,
+                    ac.haber
+                FROM asientos_contables ac
+                JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
+                WHERE EXTRACT(MONTH FROM ac.fecha) = %s
+                AND EXTRACT(YEAR FROM ac.fecha) = %s
+                AND ac.codigo_cuenta = %s
+                AND (ac.debe IS NOT NULL AND ac.debe != 0 OR ac.haber IS NOT NULL AND ac.haber != 0)
+                ORDER BY numero_correlativo, ac.id
+            ) AS subquery;
+        """, (mes, año, cuenta))
+        
+        movimientos = cursor.fetchall()
+
+    conexion.close()
+    return movimientos

@@ -201,3 +201,41 @@ SELECT
 FROM asientos_contables ac
 JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
 ORDER BY numero_correlativo, ac.id;
+
+--------------------------------------------------
+
+SELECT
+    DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo,
+    ac.fecha,
+    CASE
+        WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la venta de mercadería'
+        WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
+        ELSE ''
+    END AS glosa,
+    CASE
+        WHEN m.tipo_movimiento = 'Compras' THEN 8
+        WHEN m.tipo_movimiento = 'Ventas' THEN 14
+        ELSE NULL
+    END AS codigo_del_libro,
+    DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo_documento,
+    ac.numero_documento AS numero_documento_sustentatorio,
+    ac.codigo_cuenta,
+    ac.denominacion,
+    ac.debe,
+    ac.haber
+FROM asientos_contables ac
+JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
+WHERE EXTRACT(MONTH FROM ac.fecha) = %s
+  AND EXTRACT(YEAR FROM ac.fecha) = %s
+  AND (ac.debe IS NOT NULL AND ac.debe != 0 OR ac.haber IS NOT NULL AND ac.haber != 0)
+ORDER BY numero_correlativo, ac.id;
+
+----------------------------------------------
+
+SELECT DISTINCT ac.codigo_cuenta
+FROM asientos_contables ac
+JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
+WHERE EXTRACT(MONTH FROM ac.fecha) = %s
+  AND EXTRACT(YEAR FROM ac.fecha) = %s
+  AND (ac.debe IS NOT NULL AND ac.debe != 0 OR ac.haber IS NOT NULL AND ac.haber != 0)
+ORDER BY ac.codigo_cuenta;
