@@ -14,7 +14,7 @@
 <style>
   th {
     text-align: center;
-    vertical-align: middle; /* Centra verticalmente el contenido */
+    vertical-align: middle;
   }
 </style>
 
@@ -40,22 +40,25 @@
       </div>
     </div>
 
-    <!-- Filtros: Fecha exacta y RUC en una sola fila alineados correctamente con centrado vertical -->
     <div class="row mb-3 align-items-center">
       <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
-        <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;"><strong>PERÍODO:</strong></label> 
-        <input type="date" class="form-control" id="filtro-fecha" max="{{ current_year }}-12-31" value="{{ current_year }}-01-01">
+        <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
+          <strong>PERIODO:</strong>
+        </label>
+        <input type="month" class="form-control" id="filtro-periodo" max="" value="{{ request.args.get('periodo', '') }}">
       </div>
       <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
-        <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;"><strong>RUC:</strong></label>
+        <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
+          <strong>RUC:</strong>
+        </label>
         <input type="text" class="form-control" value="20612188930" readonly>
       </div>
     </div>
+    
 
     <div class="table-wrapper">
       <div class="table-title">
         <div class="row justify-content-between align-items-center">
-          <!-- Input Group para Filtro de Búsqueda a la izquierda -->
           <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-start">
             <div class="input-group">
               <input type="text" id="search-input" class="form-control" placeholder="Buscar en la tabla..." aria-label="Buscar">
@@ -64,13 +67,10 @@
               </button>
             </div>
           </div>
-
-          <!-- Botones Alineados a la Derecha para Imprimir y Exportar -->
           <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-end">
             <button class="btn btn-primary me-2" onclick="window.print()" style="background-color: #ff5733;">
                 <i class="material-icons">print</i> <span>Imprimir</span>
-              </button>
-              
+            </button>
             <button class="btn btn-success" onclick="exportTableToCSV('libro_caja_bancos.csv')">
               <i class="material-icons">file_download</i> <span>Exportar</span>
             </button>
@@ -82,13 +82,9 @@
       <table class="table table-bordered table-striped table-hover">
         <thead>
           <tr>
-            <th rowspan="2">NÚMERO CORRELATIVO</th>
-            <th rowspan="2">FECHA DE LA OPERACIÓN</th>
-            <th rowspan="2">DESCRIPCIÓN DE LA OPERACIÓN</th>
-            <th colspan="2">CUENTA CONTABLE</th>
-            <th colspan="2">SALDOS Y MOVIMIENTOS</th>
-          </tr>
-          <tr>
+            <th>NÚMERO CORRELATIVO</th>
+            <th>FECHA DE LA OPERACIÓN</th>
+            <th>DESCRIPCIÓN DE LA OPERACIÓN</th>
             <th>CÓDIGO</th>
             <th>DENOMINACIÓN</th>
             <th>DEUDOR</th>
@@ -96,82 +92,79 @@
           </tr>
         </thead>
         <tbody id="tabla-cuerpo">
-          <!-- Aquí van las filas dinámicas de datos -->
+          {% set last_correlativo = None %}
           {% for movimiento in movimientos %}
           <tr>
-            <td>{{ movimiento.numero_correlativo }}</td>
-            <td>{{ movimiento.fecha_operacion }}</td>
-            <td>{{ movimiento.descripcion_operacion }}</td>
-            <td>{{ movimiento.codigo_cuenta }}</td>
-            <td>{{ movimiento.denominacion_cuenta }}</td>
-            <td>{{ movimiento.deudor }}</td>
-            <td>{{ movimiento.acreedor }}</td>
+            {% if movimiento.numero_correlativo != last_correlativo %}
+              <td>{{ movimiento.numero_correlativo }}</td>
+              {% set last_correlativo = movimiento.numero_correlativo %}
+            {% else %}
+              <td>-</td>
+            {% endif %}
+            <td>{{ movimiento.fecha_operacion or "-" }}</td>
+            <td>{{ movimiento.descripcion_operacion or "-" }}</td>
+            <td>{{ movimiento.codigo_cuenta_asociada or "-" }}</td>
+            <td>{{ movimiento.denominacion_cuenta_asociada or "-" }}</td>
+            <td>{{ movimiento.saldo_deudor if movimiento.saldo_deudor is not none else "-" }}</td>
+            <td>{{ movimiento.saldo_acreedor if movimiento.saldo_acreedor is not none else "-" }}</td>
           </tr>
           {% endfor %}
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="5">TOTALES</td>
-            <td>{{ total_deudor }}</td>
-            <td>{{ total_acreedor }}</td>
+            <td colspan="5" class="text-end"><strong>TOTALES</strong></td>
+            <td class="text-end">{{ total_deudor }}</td>
+            <td class="text-end">{{ total_acreedor }}</td>
           </tr>
         </tfoot>
       </table>
+
+      <!-- Controles de paginación y selector de número de registros -->
+      <div class="d-flex justify-content-between align-items-center mt-3">
+        <div class="d-flex me-3">
+          <label for="records-per-page" class="me-2">Registros por página:</label>
+          <input type="number" id="records-per-page" class="form-control" value="6" min="1" max="100" style="width: 80px;">
+        </div>
+        <nav aria-label="Page navigation example align-items-center">
+          <ul class="pagination" id="pagination">
+            <li class="page-item">
+              <a class="page-link" href="#" aria-label="Previous" id="prev-page">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="#" aria-label="Next" id="next-page">
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
     </div>
   </div>
 
   <!-- Scripts al final de la página para mejorar la carga -->
   <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/tabla_cuentas.js') }}"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='js/paginacion_libros.js') }}"></script>
 
   <script>
-    function exportTableToCSV(filename) {
-      var csv = [];
-      var rows = document.querySelectorAll("table tr");
-  
-      for (var i = 0; i < rows.length; i++) {
-        var row = [], cols = rows[i].querySelectorAll("td, th");
-  
-        for (var j = 0; j < cols.length; j++) 
-          row.push(cols[j].innerText);
-  
-        csv.push(row.join(","));        
-      }
-  
-      // Download CSV file
-      downloadCSV(csv.join("\n"), filename);
-    }
-  
-    function downloadCSV(csv, filename) {
-      var csvFile;
-      var downloadLink;
-  
-      csvFile = new Blob([csv], { type: "text/csv" });
-      downloadLink = document.createElement("a");
-      downloadLink.download = filename;
-      downloadLink.href = window.URL.createObjectURL(csvFile);
-      downloadLink.style.display = "none";
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-    }
-  
-    // Función para obtener la fecha de hoy en formato YYYY-MM-DD
-    function getTodayDate() {
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0'); // Mes empieza en 0, así que sumamos 1
-      const day = String(today.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    }
-  
-    // Establece la fecha de hoy como valor predeterminado en el filtro de fecha
-    document.addEventListener('DOMContentLoaded', function() {
-      const filtroFecha = document.getElementById('filtro-fecha');
-      const today = getTodayDate();
-      filtroFecha.value = today;  // Establecer valor como fecha de hoy
-      filtroFecha.max = `${today}`;  // Fecha máxima como hoy para no permitir fechas futuras
+    document.addEventListener("DOMContentLoaded", function () {
+        const filtroPeriodo = document.getElementById("filtro-periodo");
+        
+        // Establece el límite máximo en el mes y año actual
+        const today = new Date();
+        const maxPeriod = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+        filtroPeriodo.max = maxPeriod;
+
+        filtroPeriodo.addEventListener("change", function () {
+            const periodo = filtroPeriodo.value;
+            if (periodo) {
+                // Recarga la página con el nuevo período como parámetro
+                window.location.href = `/libro_caja?periodo=${periodo}`;
+            }
+        });
     });
   </script>
 </div>

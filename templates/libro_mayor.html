@@ -13,535 +13,331 @@
 {% endblock %}
 
 {% block contenido %}
+<style>
+  th {
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .w-correlativo {
+    width: 10%;
+  }
+
+  .text-right {
+    text-align: right;
+  }
+
+  /* Estilos para centrar el spinner dentro de la tabla */
+  .spinner-wrapper {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+  }
+
+  /* Cambiar el color del spinner */
+  .spinner-border {
+    color: #e73209 !important;
+  }
+
+  @media print {
+    body {
+      visibility: hidden;
+    }
+    .table-wrapper, .table {
+      visibility: visible;
+      width: 100%;
+    }
+    .table-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    @page {
+      size: landscape;
+    }
+  }
+</style>
 
 <div id="content">
-    <div class="main-content">
-        <!-- Breadcrumb dinámico -->
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                {% for crumb in breadcrumbs %}
-                {% if loop.last %}
-                <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
-                {% else %}
-                <li class="breadcrumb-item"><a href="{{ crumb.url }}">{{ crumb.name }}</a></li>
-                {% endif %}
-                {% endfor %}
-            </ol>
-        </nav>
-
-        <!-- Encabezado con título adicional -->
-        <div class="row mb-3">
-            <div class="col-12">
-                <h2 class="text-left">Libro Mayor - Detalle de las operaciones</h2>
-            </div>
-        </div>
-
-        <!-- Filtros: Fecha exacta y RUC en una sola fila alineados correctamente con centrado vertical -->
-        <div class="row mb-3 align-items-center">
-            <div class="col-lg-3 col-md-6 col-sm-12 d-flex">
-                <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
-                    <strong>PERÍODO:</strong>
-                </label>
-                <input type="month" class="form-control" id="filtro-fecha" max="{{ current_year }}-12"
-                    value="{{ current_year }}-01">
-            </div>
-            <div class="col-lg-3 col-md-6 col-sm-12 d-flex">
-                <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
-                    <strong>RUC:</strong>
-                </label>
-                <input type="text" class="form-control" value="20612188930" readonly>
-            </div>
-            <div class="col-lg-6 col-md-12 col-sm-12 d-flex">
-                <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
-                    <strong>DENOMINACION O RAZON SOCIAL:</strong>
-                </label>
-                <input type="text" class="form-control" value="DECO ELERA S.A.C." readonly>
-            </div>
-        </div>
-
-        <div class="table-wrapper">
-            <div class="table-title">
-                <div class="row justify-content-between align-items-center">
-                    <!-- Input Group para Filtro de Búsqueda a la izquierda -->
-                    <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-start">
-                        <div class="input-group">
-                            <input type="text" id="search-input" class="form-control"
-                                placeholder="Buscar en la tabla..." aria-label="Buscar">
-                            <button class="btn btn-outline-secondary" type="button">
-                                <i class="material-icons">search</i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Botones Alineados a la Derecha para Imprimir y Exportar -->
-                    <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-end">
-                        <button class="btn btn-primary me-2" style="background-color: orange;"
-                            onclick="generarReporte()">
-                            <i class="material-icons">print</i>
-                        </button>
-                        <button class="btn btn-primary me-2" style="background-color: blue;"
-                            onclick="exportTableToCSV('libro_mayor.csv')">
-                            <i class="fas fa-file-csv"></i>
-                        </button>
-                        <button class="btn btn-primary me-2" style="background-color: green;"
-                            onclick="exportTableToExcel()">
-                            <i class="fas fa-file-excel"></i>
-                        </button>
-                        <button class="btn btn-primary me-2" style="background-color: red;"
-                            onclick="exportTableToPDF()">
-                            <i class="material-icons">picture_as_pdf</i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Estructura de la tabla del Libro Mayor -->
-            <table class="table table-bordered table-striped table-hover">
-                <thead>
-                    <tr>
-                        <th rowspan="2">CUENTAS</th>
-                        <th rowspan="2">FECHA DE LA OPERACIÓN</th>
-                        <th rowspan="2">NÚMERO CORRELATIVO DEL LIBRO DIARIO</th>
-                        <th rowspan="2">DESCRIPCIÓN DE LA OPERACIÓN</th>
-                        <th colspan="2">SALDOS Y MOVIMIENTOS</th>
-                    </tr>
-                    <tr>
-                        <th>DEUDOR</th>
-                        <th>ACREEDOR</th>
-                    </tr>
-                </thead>
-                <tbody id="tabla-cuerpo">
-                    <!-- Datos de prueba del Libro Mayor -->
-                    <tr>
-                        <td>1001 - Caja</td>
-                        <td>2024-10-01</td>
-                        <td>00001</td>
-                        <td>Ingreso de efectivo</td>
-                        <td style="text-align: right">5000.00</td>
-                        <td style="text-align: right">0.00</td>
-                    </tr>
-                    <tr>
-                        <td>1001 - Caja</td>
-                        <td>2024-10-05</td>
-                        <td>00002</td>
-                        <td>Ingreso de efectivo</td>
-                        <td style="text-align: right">0.00</td>
-                        <td style="text-align: right">1500.00</td>
-                    </tr>
-                    <tr>
-                        <td>1001 - Caja</td>
-                        <td>2024-10-10</td>
-                        <td>00003</td>
-                        <td>Ingreso de efectivo</td>
-                        <td style="text-align: right">2000.00</td>
-                        <td style="text-align: right">0.00</td>
-                    </tr>
-                    <tr>
-                        <td>1001 - Caja</td>
-                        <td>2024-10-15</td>
-                        <td>00004</td>
-                        <td>Ingreso de efectivo</td>
-                        <td style="text-align: right">0.00</td>
-                        <td style="text-align: right">300.00</td>
-                    </tr>
-                    <tr>
-                        <td>1001 - Caja</td>
-                        <td>2024-10-20</td>
-                        <td>00005</td>
-                        <td>Ingreso de efectivo</td>
-                        <td style="text-align: right">1000.00</td>
-                        <td style="text-align: right">0.00</td>
-                    </tr>
-                    <tr>
-                        <td>1001 - Caja</td>
-                        <td>2024-10-25</td>
-                        <td>00006</td>
-                        <td>Ingreso de efectivo</td>
-                        <td style="text-align: right">0.00</td>
-                        <td style="text-align: right">700.00</td>
-                    </tr>
-                    <tr>
-                        <td>1001 - Caja</td>
-                        <td>2024-01-05</td>
-                        <td>00007</td>
-                        <td>Ingreso de efectivo</td>
-                        <td style="text-align: right">3000.00</td>
-                        <td style="text-align: right">0.00</td>
-                    </tr>
-                    <tr>
-                        <td>1001 - Caja</td>
-                        <td>2024-01-10</td>
-                        <td>00008</td>
-                        <td>Pago de proveedor</td>
-                        <td style="text-align: right">0.00</td>
-                        <td style="text-align: right">1500.00</td>
-                    </tr>
-                    <tr>
-                        <td>1001 - Caja</td>
-                        <td>2024-02-03</td>
-                        <td>00009</td>
-                        <td>Venta de productos</td>
-                        <td style="text-align: right">4000.00</td>
-                        <td style="text-align: right">0.00</td>
-                    </tr>
-                    <tr>
-                        <td>1001 - Caja</td>
-                        <td>2024-02-18</td>
-                        <td>00010</td>
-                        <td>Pago de impuestos</td>
-                        <td style="text-align: right">0.00</td>
-                        <td style="text-align: right">2000.00</td>
-                    </tr>
-                    <tr>
-                        <td>1001 - Caja</td>
-                        <td>2024-03-08</td>
-                        <td>00011</td>
-                        <td>Ingreso por servicios</td>
-                        <td style="text-align: right">5000.00</td>
-                        <td style="text-align: right">0.00</td>
-                    </tr>
-                    <tr>
-                        <td>1001 - Caja</td>
-                        <td>2024-03-22</td>
-                        <td>00012</td>
-                        <td>Pago de sueldos</td>
-                        <td style="text-align: right">0.00</td>
-                        <td style="text-align: right">3500.00</td>
-                    </tr>
-                    <tr>
-                        <td>1001 - Caja</td>
-                        <td>2024-04-02</td>
-                        <td>00013</td>
-                        <td>Venta de productos</td>
-                        <td style="text-align: right">6000.00</td>
-                        <td style="text-align: right">0.00</td>
-                    </tr>
-                    <tr>
-                        <td>1001 - Caja</td>
-                        <td>2024-04-15</td>
-                        <td>00014</td>
-                        <td>Pago de alquiler</td>
-                        <td style="text-align: right">0.00</td>
-                        <td style="text-align: right">2500.00</td>
-                    </tr>
-                    <tr>
-                        <td>1001 - Caja</td>
-                        <td>2024-05-10</td>
-                        <td>00015</td>
-                        <td>Ingreso de efectivo</td>
-                        <td style="text-align: right">4500.00</td>
-                        <td style="text-align: right">0.00</td>
-                    </tr>
-                    <tr>
-                        <td>1001 - Caja</td>
-                        <td>2024-05-25</td>
-                        <td>00016</td>
-                        <td>Pago de proveedores</td>
-                        <td style="text-align: right">0.00</td>
-                        <td style="text-align: right">4000.00</td>
-                    </tr>
-                    <tr>
-                        <td>1001 - Caja</td>
-                        <td>2024-06-05</td>
-                        <td>00017</td>
-                        <td>Ingreso por venta</td>
-                        <td style="text-align: right">3500.00</td>
-                        <td style="text-align: right">0.00</td>
-                    </tr>
-                    <tr>
-                        <td>1001 - Caja</td>
-                        <td>2024-06-20</td>
-                        <td>00018</td>
-                        <td>Pago de impuestos</td>
-                        <td style="text-align: right">0.00</td>
-                        <td style="text-align: right">1500.00</td>
-                    </tr>
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="4">TOTALES</td>
-                        <td style="text-align: right">8000.00</td>
-                        <td style="text-align: right">2500.00</td>
-                    </tr>
-                </tfoot>
-
-                <!-- <tbody id="tabla-cuerpo">
-                    ### Aquí van las filas dinámicas de datos
-                    {% for movimiento in movimientos %}
-                    <tr>
-                        <td>{{ movimiento.fecha_operacion }}</td>
-                        <td>{{ movimiento.numero_correlativo_libro }}</td>
-                        <td>{{ movimiento.descripcion_glosa }}</td>
-                        <td style="text-align: right">{{ movimiento.debe }}</td>
-                        <td style="text-align: right">{{ movimiento.haber }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="4">TOTALES</td>
-                        <td>{{ total_debe }}</td>
-                        <td>{{ total_haber }}</td>
-                    </tr>
-                </tfoot> -->
-            </table>
-
-        </div>
+  <div class="main-content">
+    <!-- Spinner para pantalla de carga -->
+    <div class="spinner-wrapper" id="spinner-wrapper">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
     </div>
 
-    <!-- Scripts al final de la página para mejorar la carga -->
-    <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/tabla_cuentas.js') }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Breadcrumb dinámico -->
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        {% for crumb in breadcrumbs %}
+        {% if loop.last %}
+        <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
+        {% else %}
+        <li class="breadcrumb-item"><a href="{{ crumb.url }}">{{ crumb.name }}</a></li>
+        {% endif %}
+        {% endfor %}
+      </ol>
+    </nav>
 
-    <script>
-        function exportTableToExcel(filename = 'libro_mayor.xlsx') {
-            var table = document.querySelector('table');
-            var wb = XLSX.utils.table_to_book(table, { sheet: "Libro Mayor" });
-            XLSX.writeFile(wb, filename);
-        }
-    </script>
+    <!-- Encabezado con título adicional -->
+    <div class="row mb-3">
+      <div class="col-12">
+        <h2 class="text-left">Libro Mayor - Detalle de las operaciones</h2>
+      </div>
+    </div>
 
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-          const searchInput = document.getElementById('search-input');
-          const searchButton = document.querySelector('.btn-outline-secondary');
-          const totalRow = document.querySelector('tfoot tr');
+    <!-- Filtros de Período (Mes y Año), RUC y Cuenta -->
+    <div class="row mb-3 align-items-center">
+      <div class="col-lg-4 col-md-6 col-sm-12 d-flex">
+        <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
+          <strong>PERIODO:</strong>
+        </label>
+        <input type="month" class="form-control" id="filtro-periodo" max="" value="{{ request.args.get('periodo', '') }}">
+      </div>
+      <div class="col-lg-4 col-md-6 col-sm-12 d-flex">
+        <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
+          <strong>RUC:</strong>
+        </label>
+        <input type="text" class="form-control" value="20612188930" readonly>
+      </div>
+      <div class="col-lg-4 col-md-6 col-sm-12 d-flex">
+        <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
+          <strong>CUENTA:</strong>
+        </label>
+        <select class="form-control" id="filtro-cuenta">
+          <option value="">Seleccionar cuenta</option>
+          {% for cuenta in cuentas %}
+          <option value="{{ cuenta.codigo_cuenta }}" {% if request.args.get('cuenta') == cuenta.codigo_cuenta %}selected{% endif %}>
+            {{ cuenta.codigo_cuenta }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
 
-          // Función para convertir texto a número
-          function textToNumber(text) {
-              return parseFloat(text.replace(/,/g, '').replace(/\s/g, '')) || 0;
-          }
-
-          // Función para filtrar filas y actualizar totales
-          function filterAndUpdate() {
-              const searchValue = searchInput.value.trim();
-              const rows = document.querySelectorAll('#tabla-cuerpo tr');
-              let totalDeudor = 0, totalAcreedor = 0;
-              
-              rows.forEach(row => {
-                  const correlativo = row.querySelector('td:nth-child(3)').textContent.trim();
-                  const isMatch = correlativo.includes(searchValue);
-
-                  // Mostrar u ocultar fila según el filtro
-                  if (isMatch) {
-                      row.style.display = '';
-                      // Sumar deudor y acreedor de filas visibles
-                      totalDeudor += textToNumber(row.querySelector('td:nth-child(5)').textContent);
-                      totalAcreedor += textToNumber(row.querySelector('td:nth-child(6)').textContent);
-                  } else {
-                      row.style.display = 'none';
-                  }
-              });
-
-              // Actualizar la fila de totales con los valores calculados
-              totalRow.querySelector('td:nth-child(5)').textContent = totalDeudor.toFixed(2);
-              totalRow.querySelector('td:nth-child(6)').textContent = totalAcreedor.toFixed(2);
-          }
-
-          // Agregar eventos
-          searchButton.addEventListener('click', filterAndUpdate);
-          searchInput.addEventListener('keydown', (e) => {
-              if (e.key === 'Enter') {
-                  e.preventDefault();
-                  filterAndUpdate();
-              }
-          });
-          searchInput.addEventListener('input', () => {
-              if (searchInput.value.trim() === '') {
-                  // Mostrar todas las filas y recalcular los totales
-                  document.querySelectorAll('#tabla-cuerpo tr').forEach(row => row.style.display = '');
-                  filterAndUpdate(); 
-              }
-          });
-
-          // Inicializa los totales al cargar la página
-          filterAndUpdate();
-      });
-    </script>
-
-<script>
-    async function exportTableToPDF() {
-        const { jsPDF } = window.jspdf;
-
-        // Crear un contenedor temporal para la tabla y encabezado
-        const tempContainer = document.createElement('div');
-        tempContainer.style.width = '100%';
-        tempContainer.style.padding = '10px';
-        tempContainer.style.fontFamily = 'Arial, sans-serif';
-
-        // Encabezado del reporte
-        const encabezadoHTML = `
-            <div style="text-align: center; margin-bottom: 20px;">
-                <h2>Reporte de Libro Mayor</h2>
-                <p><strong>Período:</strong> ${document.getElementById('filtro-fecha').value}</p>
-                <p><strong>RUC:</strong> 20612188930</p>
-                <p><strong>Denominación o Razón Social:</strong> DECO ELERA S.A.C.</p>
+    <div class="table-wrapper">
+      <div class="table-title">
+        <div class="row justify-content-between align-items-center">
+          <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-start">
+            <div class="input-group">
+              <input type="text" id="search-input" class="form-control" placeholder="Buscar en la tabla..." aria-label="Buscar">
+              <button class="btn btn-outline-secondary" type="button">
+                <i class="material-icons">search</i>
+              </button>
             </div>
+          </div>
+          <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-end">
+            <button class="btn btn-primary me-2" onclick="window.print()" style="background-color: #ff5733;">
+              <i class="material-icons">print</i> <span>Imprimir</span>
+            </button>
+            <button class="btn btn-success" onclick="exportarLibroMayor()">
+              <i class="material-icons">file_download</i> <span>Exportar</span>
+            </button>
+          </div>
+        </div>
+
+      <!-- Estructura de la tabla del Libro Mayor -->
+      <table class="table table-bordered table-striped table-hover">
+        <thead>
+          <tr>
+            <th rowspan="2">FECHA OPERACIÓN</th>
+            <th class="w-correlativo" rowspan="2">NÚMERO CORRELATIVO DEL LIBRO DIARIO</th>
+            <th rowspan="2">DESCRIPCIÓN DE LA OPERACIÓN</th>
+            <th colspan="2">SALDOS Y MOVIMIENTOS</th>
+          </tr>
+          <tr>
+            <th>DEUDOR</th>
+            <th>ACREEDOR</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-cuerpo">
+          <!-- Aquí se cargarán las filas dinámicamente -->
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3">TOTALES</td>
+            <td class="text-right" id="total-debe">-</td>
+            <td class="text-right" id="total-haber">-</td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <!-- Controles de paginación y selector de número de registros -->
+      <div class="d-flex justify-content-between align-items-center mt-3">
+        <div class="d-flex me-3">
+          <label for="records-per-page" class="me-2">Registros por página:</label>
+          <input type="number" id="records-per-page" class="form-control" value="5" min="1" max="100" style="width: 80px;">
+        </div>
+        <nav aria-label="Page navigation example align-items-center">
+          <ul class="pagination" id="pagination">
+            <li class="page-item">
+              <a class="page-link" href="#" aria-label="Previous" id="prev-page">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="#" aria-label="Next" id="next-page">
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+
+  <!-- Scripts al final de la página para mejorar la carga -->
+  <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    let currentPage = 1;
+    let rowsPerPage = parseInt(document.getElementById("records-per-page").value);
+    const spinnerWrapper = document.getElementById("spinner-wrapper");
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const filtroPeriodo = document.getElementById("filtro-periodo");
+        const filtroCuenta = document.getElementById("filtro-cuenta");
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        filtroPeriodo.max = `${year}-${month}`;
+
+        filtroPeriodo.addEventListener("change", cargarTabla);
+        filtroCuenta.addEventListener("change", cargarTabla);
+
+        if (filtroPeriodo.value && filtroCuenta.value) {
+            cargarTabla();
+        }
+    });
+
+    function cargarTabla() {
+        const periodo = document.getElementById("filtro-periodo").value;
+        const cuenta = document.getElementById("filtro-cuenta").value;
+        if (!periodo || !cuenta) return;
+
+        spinnerWrapper.style.display = "block";
+        $.ajax({
+            url: "/libro_mayor_datos",
+            type: "GET",
+            data: { periodo, cuenta },
+            success: function (data) {
+                let filas = "";
+                data.movimientos.forEach(function (movimiento) {
+                    const fechaFormatted = new Date(movimiento.fecha).toLocaleDateString();
+                    const deudorFormatted = movimiento.deudor ? movimiento.deudor.toLocaleString('es-PE', { minimumFractionDigits: 2 }) : "-";
+                    const acreedorFormatted = movimiento.acreedor ? movimiento.acreedor.toLocaleString('es-PE', { minimumFractionDigits: 2 }) : "-";
+
+                    filas += `
+                        <tr>
+                            <td>${fechaFormatted}</td>
+                            <td class="w-correlativo">${movimiento.numero_correlativo}</td>
+                            <td>${movimiento.glosa}</td>
+                            <td class="text-right">${deudorFormatted}</td>
+                            <td class="text-right">${acreedorFormatted}</td>
+                        </tr>
+                    `;
+                });
+
+                $("#tabla-cuerpo").html(filas);
+                $("#total-debe").text(data.total_debe.toLocaleString('es-PE', { minimumFractionDigits: 2 }) || "-");
+                $("#total-haber").text(data.total_haber.toLocaleString('es-PE', { minimumFractionDigits: 2 }) || "-");
+
+                totalPages = Math.ceil(data.movimientos.length / rowsPerPage);
+                if (totalPages === 0) totalPages = 1;
+                showPage(currentPage);
+            },
+            complete: function () {
+                spinnerWrapper.style.display = "none";
+            },
+            error: function (error) {
+                console.error("Error al cargar los datos:", error);
+                spinnerWrapper.style.display = "none";
+            }
+        });
+    }
+
+    function showPage(page) {
+        const rows = document.querySelectorAll("#tabla-cuerpo tr");
+        const start = (page - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+
+        rows.forEach((row, index) => {
+            row.style.display = index >= start && index < end ? "" : "none";
+        });
+
+        updatePagination();
+    }
+
+    function updatePagination() {
+        const pagination = document.getElementById("pagination");
+        pagination.innerHTML = `
+            <li class="page-item ${currentPage === 1 ? "disabled" : ""}">
+              <a class="page-link" href="#" aria-label="Previous" id="prev-page">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
         `;
 
-        // Agregar el encabezado y la tabla al contenedor temporal
-        tempContainer.innerHTML = encabezadoHTML + document.querySelector('table').outerHTML;
+        const maxPagesToShow = 5;
+        const startPage = Math.max(currentPage - 2, 1);
+        const endPage = Math.min(startPage + maxPagesToShow - 1, totalPages);
 
-        // Agregar el contenedor temporal al body (oculto)
-        document.body.appendChild(tempContainer);
+        for (let i = startPage; i <= endPage; i++) {
+            pagination.innerHTML += `
+                <li class="page-item ${i === currentPage ? "active" : ""}">
+                    <a class="page-link" href="#" data-page="${i}">${i}</a>
+                </li>
+            `;
+        }
 
-        // Capturar el contenedor temporal como imagen usando html2canvas
-        html2canvas(tempContainer, {
-            scale: 2, // Escalar para una mejor resolución
-            useCORS: true, // Permitir CORS para imágenes externas
-            logging: false // Desactivar logs
-        }).then(canvas => {
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF('p', 'mm', 'a4'); // 'p' para orientación vertical
+        pagination.innerHTML += `
+            <li class="page-item ${currentPage === totalPages ? "disabled" : ""}">
+                <a class="page-link" href="#" aria-label="Next" id="next-page">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        `;
 
-            // Calcular las dimensiones de la imagen para adaptarse a la página A4
-            const pageWidth = pdf.internal.pageSize.getWidth();
-            const pageHeight = pdf.internal.pageSize.getHeight();
-            const imgWidth = pageWidth - 20; // Dejar margen de 10mm en ambos lados
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-            // Ajustar la imagen en la página A4
-            pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
-
-            // Guardar el archivo PDF con el nombre deseado
-            pdf.save('libro_mayor.pdf');
-
-            // Eliminar el contenedor temporal del body
-            document.body.removeChild(tempContainer);
-        }).catch(error => {
-            console.error('Error al generar el PDF:', error);
-            alert('Ocurrió un error al exportar a PDF. Por favor, inténtalo de nuevo.');
+        document.getElementById("prev-page").addEventListener("click", function (e) {
+            e.preventDefault();
+            if (currentPage > 1) {
+                currentPage--;
+                showPage(currentPage);
+            }
         });
+
+        document.getElementById("next-page").addEventListener("click", function (e) {
+            e.preventDefault();
+            if (currentPage < totalPages) {
+                currentPage++;
+                showPage(currentPage);
+            }
+        });
+
+        document.querySelectorAll(".page-link[data-page]").forEach(link => {
+            link.addEventListener("click", function (e) {
+                e.preventDefault();
+                currentPage = parseInt(this.getAttribute("data-page"));
+                showPage(currentPage);
+            });
+        });
+    }
+
+    function exportarLibroMayor() {
+        const periodo = document.getElementById("filtro-periodo").value;
+        const cuenta = document.getElementById("filtro-cuenta").value;
+        if (periodo && cuenta) {
+            window.location.href = `/exportar-libro-mayor?periodo=${periodo}&cuenta=${cuenta}`;
+        } else {
+            alert("Por favor, seleccione un período y una cuenta antes de exportar.");
+        }
     }
 </script>
 
-
-    <script>
-        function exportTableToCSV(filename) {
-            // Añade BOM al inicio para soporte de UTF-8
-            const bom = "\uFEFF";
-
-            let csv = Array.from(document.querySelectorAll("table tr"))
-                .map(row => Array.from(row.querySelectorAll("td, th"))
-                    .map(cell => cell.innerText).join(","))
-                .join("\n");
-
-            // Combina el BOM con el contenido CSV
-            let csvFile = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
-            let downloadLink = document.createElement("a");
-            downloadLink.href = URL.createObjectURL(csvFile);
-            downloadLink.download = filename;
-            downloadLink.click();
-        }
-    </script>
-
-    <script>
-        // Función para obtener el mes y año actuales en formato YYYY-MM
-        function getCurrentMonthYear() {
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0'); // Mes empieza en 0, así que sumamos 1
-            return `${year}-${month}`;
-        }
-
-        // Establece el mes y año actuales como valor predeterminado en el filtro de fecha
-        document.addEventListener('DOMContentLoaded', function () {
-            const filtroFecha = document.getElementById('filtro-fecha');
-            const currentMonthYear = getCurrentMonthYear();
-            filtroFecha.value = currentMonthYear; // Establecer valor como mes y año actuales
-            filtroFecha.max = currentMonthYear; // Fecha máxima como mes y año actuales
-        });
-    </script>
-
-    <!-- Iframe oculto para la impresión -->
-    <iframe id="reporteIframe" style="display: none;"></iframe>
-    <script>
-        function generarReporte() {
-            // Obtener los datos de período, RUC y razón social
-            const periodo = document.getElementById('filtro-fecha').value;
-            const ruc = document.querySelector('input[value="20612188930"]').value;
-            const razonSocial = document.querySelector('input[value="DECO ELERA S.A.C."]').value;
-
-            // Obtener el contenido de la tabla del Libro Mayor
-            const tablaHTML = document.querySelector('table').outerHTML;
-
-            // Obtener la fecha y hora actual de impresión
-            const fechaHoraImpresion = new Date();
-            const fechaImpresion = fechaHoraImpresion.toLocaleDateString();
-            const horaImpresion = fechaHoraImpresion.toLocaleTimeString();
-
-            // Contenido del reporte en HTML
-            const contenidoReporte = `
-            <html>
-            <head>
-                <title>Reporte - Libro Mayor</title>
-                <style>
-                    body { font-family: Arial, sans-serif; margin: 20px; }
-                    h1 { text-align: center; color: #343A49; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-                    th { background-color: #f2f2f2; }
-                </style>
-            </head>
-            <body>
-                <p><strong>Fecha y Hora de impresión:</strong> ${fechaImpresion} ${horaImpresion}</p>
-                <h1 style=>Reporte de Libro Mayor</h1>
-                <div class="datos-reporte">
-                    <p><strong>Período:</strong> ${periodo}</p>
-                    <p><strong>RUC:</strong> ${ruc}</p>
-                    <p><strong>Denominación o Razón Social:</strong> ${razonSocial}</p>
-                </div>
-                ${tablaHTML}
-            </body>
-            </html>`;
-
-            // Obtener el iframe oculto
-            const iframe = document.getElementById('reporteIframe');
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-
-            // Escribir el contenido del reporte en el iframe
-            iframeDoc.open();
-            iframeDoc.write(contenidoReporte);
-            iframeDoc.close();
-
-            // Imprimir el contenido del iframe
-            iframe.contentWindow.focus();
-            iframe.contentWindow.print();
-        }
-    </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const filtroFecha = document.getElementById('filtro-fecha');
-            const filasTabla = document.querySelectorAll('tbody tr'); // Filas del cuerpo de la tabla
-
-            // Función para filtrar las filas según el mes seleccionado
-            function filtrarPorMes() {
-                const selectedMonth = filtroFecha.value; // Formato: YYYY-MM
-
-                // Si no hay mes seleccionado, muestra todas las filas
-                if (!selectedMonth) {
-                    filasTabla.forEach(fila => fila.style.display = '');
-                    return;
-                }
-
-                // Filtrar por el mes seleccionado
-                filasTabla.forEach(fila => {
-                    const fechaOperacion = fila.cells[1].innerText.slice(0, 7); // Obtener YYYY-MM de la fecha
-                    fila.style.display = (fechaOperacion === selectedMonth) ? '' : 'none'; // Mostrar u ocultar
-                });
-            }
-
-            // Mostrar todas las filas al cargar la página
-            filasTabla.forEach(fila => fila.style.display = '');
-
-            // Llama a la función al cambiar el valor del input
-            filtroFecha.addEventListener('change', filtrarPorMes);
-        });
-    </script>
 </div>
 {% endblock %}
