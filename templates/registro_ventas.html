@@ -328,5 +328,16 @@
       cargarDatos(filtroFecha.value);
     }
   });
+
+  function exportarRegistroVentas() {
+    const filtroFecha = document.getElementById("filtro-fecha").value;
+    if (!filtroFecha) {
+      alert("Por favor, seleccione un período antes de exportar.");
+      return;
+    }
+    // Redireccionar a la ruta de exportación con el período como parámetro
+    window.location.href = `/exportar-registro-ventas?periodo=${filtroFecha}`;
+    }
+
 </script>
 {% endblock %}

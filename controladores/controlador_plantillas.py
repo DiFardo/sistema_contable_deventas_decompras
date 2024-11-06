@@ -43,6 +43,9 @@ def generar_registro_venta_excel(mes, anio):
         ruta_plantilla = 'plantillas/RegistroVentas.xlsx'
         workbook = load_workbook(ruta_plantilla)
         hoja = workbook.active
+        
+        periodo = f"{anio}-{str(mes).zfill(2)}"
+        hoja.cell(row=3, column=2, value=periodo)
 
         borde = Border(
             left=Side(style='thin'),
@@ -196,6 +199,9 @@ def generar_registro_compra_excel(mes, anio):
         ruta_plantilla = 'plantillas/RegistroCompras.xlsx'
         workbook = load_workbook(ruta_plantilla)
         hoja = workbook.active
+
+        periodo = f"{anio}-{str(mes).zfill(2)}"
+        hoja.cell(row=3, column=2, value=periodo)
 
         borde = Border(
             left=Side(style='thin'),
@@ -351,6 +357,8 @@ def generar_libro_diario_excel(fecha):
 
         borde = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
         fuente_estandar = Font(name='Arial', size=10)
+
+        hoja.cell(row=3, column=2, value=fecha)
 
         fila_base = 11
         alto_fila_base = hoja.row_dimensions[fila_base].height
@@ -730,8 +738,6 @@ def obtener_libro_diario_por_fecha(fecha):
     conexion.close()
     return movimientos, total_debe, total_haber
 
-
-
 def obtener_libro_caja():
     conexion = obtener_conexion()
     movimientos_caja = []
@@ -759,3 +765,183 @@ def obtener_libro_caja():
 
     conexion.close()
     return movimientos_caja
+
+def obtener_cuentas_distintas():
+    conexion = obtener_conexion()
+    cuentas = []
+
+    with conexion.cursor(cursor_factory=DictCursor) as cursor:
+        cursor.execute("""
+            SELECT DISTINCT ac.codigo_cuenta
+            FROM asientos_contables ac
+            JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
+            WHERE EXTRACT(MONTH FROM ac.fecha) = 11
+              AND EXTRACT(YEAR FROM ac.fecha) = 2024
+              AND (ac.debe IS NOT NULL AND ac.debe != 0 OR ac.haber IS NOT NULL AND ac.haber != 0)
+            ORDER BY ac.codigo_cuenta;
+        """)
+        
+        cuentas = cursor.fetchall()
+
+    conexion.close()
+    return cuentas
+
+def obtener_libro_mayor(mes, año, cuenta):
+    conexion = obtener_conexion()
+    movimientos = []
+
+    with conexion.cursor(cursor_factory=DictCursor) as cursor:
+        cursor.execute("""
+            SELECT fecha, numero_correlativo, glosa, debe as deudor, haber as acreedor
+            FROM (
+                SELECT
+                    DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo,
+                    ac.fecha,
+                    CASE
+                        WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la venta de mercadería'
+                        WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
+                        ELSE ''
+                    END AS glosa,
+                    ac.debe,
+                    ac.haber
+                FROM asientos_contables ac
+                JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
+                WHERE EXTRACT(MONTH FROM ac.fecha) = %s
+                AND EXTRACT(YEAR FROM ac.fecha) = %s
+                AND ac.codigo_cuenta = %s
+                AND (ac.debe IS NOT NULL AND ac.debe != 0 OR ac.haber IS NOT NULL AND ac.haber != 0)
+                ORDER BY numero_correlativo, ac.id
+            ) AS subquery;
+        """, (mes, año, cuenta))
+        
+        movimientos = cursor.fetchall()
+
+    conexion.close()
+    return movimientos
+
+def generar_libro_mayor_excel(mes, año, cuenta):
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        consulta = """
+            SELECT fecha, numero_correlativo, glosa, debe as deudor, haber as acreedor
+            FROM (
+                SELECT
+                    DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo,
+                    ac.fecha,
+                    CASE
+                        WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la venta de mercadería'
+                        WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
+                        ELSE ''
+                    END AS glosa,
+                    ac.debe,
+                    ac.haber
+                FROM asientos_contables ac
+                JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
+                WHERE EXTRACT(MONTH FROM ac.fecha) = %s
+                AND EXTRACT(YEAR FROM ac.fecha) = %s
+                AND ac.codigo_cuenta = %s
+                AND (ac.debe IS NOT NULL AND ac.debe != 0 OR ac.haber IS NOT NULL AND ac.haber != 0)
+                ORDER BY numero_correlativo, ac.id
+            ) AS subquery;
+        """
+        cursor.execute(consulta, (mes, año, cuenta))
+        resultados = cursor.fetchall()
+
+        # Cargar plantilla y configurar hoja de trabajo
+        ruta_plantilla = 'plantillas/LibroMayor.xlsx'
+        workbook = load_workbook(ruta_plantilla)
+        hoja = workbook.active
+
+        # Agregar el período en la celda B3
+        periodo = f"{año}-{mes.zfill(2)}"  # Formato de período YYYY-MM
+        hoja.cell(row=3, column=2, value=periodo)
+
+        # Agregar el código de la cuenta en la celda C6
+        hoja.cell(row=6, column=3, value=cuenta)
+
+        borde = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+        fuente_estandar = Font(name='Arial', size=10)
+
+        fila_base = 11
+        alto_fila_base = hoja.row_dimensions[fila_base].height
+        fila_inicial = fila_base
+        total_deudor = 0
+        total_acreedor = 0
+
+        # Columnas con bordes aplicados
+        columnas_con_borde = list(range(1, 6))
+
+        # Llenar filas con los datos obtenidos
+        for fila, registro in enumerate(resultados, start=fila_inicial):
+            hoja.row_dimensions[fila].height = alto_fila_base
+            celdas = [
+                (1, registro[0]),  # Fecha
+                (2, registro[1]),  # Número Correlativo
+                (3, registro[2]),  # Glosa
+                (4, registro[3]),  # Deudor
+                (5, registro[4])   # Acreedor
+            ]
+
+            # Aplicar estilos y bordes
+            for col in columnas_con_borde:
+                celda = hoja.cell(row=fila, column=col)
+                celda.border = borde
+                celda.font = fuente_estandar
+
+            for col, valor in celdas:
+                celda = hoja.cell(row=fila, column=col, value=valor)
+                celda.font = fuente_estandar
+
+                if col in (4, 5):  # Columnas Deudor y Acreedor
+                    celda.alignment = Alignment(horizontal='right', vertical='center')
+                    celda.number_format = FORMAT_NUMBER_COMMA_SEPARATED1
+                elif col == 1:  # Fecha
+                    celda.number_format = FORMAT_DATE_DDMMYY
+                    celda.alignment = Alignment(horizontal='center', vertical='center')
+                else:
+                    celda.alignment = Alignment(horizontal='left', vertical='center')
+
+                if col == 4:
+                    total_deudor += valor or 0
+                elif col == 5:
+                    total_acreedor += valor or 0
+
+        # Agregar fila de totales
+        fila_totales = fila_inicial + len(resultados)
+        hoja.row_dimensions[fila_totales].height = alto_fila_base
+        hoja.cell(row=fila_totales, column=3, value="TOTALES").border = borde
+        hoja.cell(row=fila_totales, column=3).alignment = Alignment(horizontal='center', vertical='center')
+        hoja.cell(row=fila_totales, column=3).font = Font(name='Arial', size=10, bold=True)
+
+        hoja.cell(row=fila_totales, column=4, value=total_deudor).border = borde
+        hoja.cell(row=fila_totales, column=4).number_format = FORMAT_NUMBER_COMMA_SEPARATED1
+        hoja.cell(row=fila_totales, column=4).alignment = Alignment(horizontal='right', vertical='center')
+        hoja.cell(row=fila_totales, column=4).font = fuente_estandar
+
+        hoja.cell(row=fila_totales, column=5, value=total_acreedor).border = borde
+        hoja.cell(row=fila_totales, column=5).number_format = FORMAT_NUMBER_COMMA_SEPARATED1
+        hoja.cell(row=fila_totales, column=5).alignment = Alignment(horizontal='right', vertical='center')
+        hoja.cell(row=fila_totales, column=5).font = fuente_estandar
+
+        # Guardar el archivo en memoria para su descarga
+        output = BytesIO()
+        workbook.save(output)
+        output.seek(0)
+
+        nombre_archivo = f'libro_mayor_{año}_{mes}_{cuenta}.xlsx'
+        return send_file(
+            output,
+            download_name=nombre_archivo,
+            as_attachment=True,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+
+    except Exception as e:
+        print(f"Error al generar el libro mayor: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if conexion:
+            cursor.close()
+            conexion.close()

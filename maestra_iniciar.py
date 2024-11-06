@@ -201,14 +201,36 @@ def libro_mayor():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
     usuario = controlador_usuarios.obtener_usuario(dni)
+    cuentas = controlador_plantillas.obtener_cuentas_distintas()
+    periodo = request.args.get('periodo', '')
+    cuenta = request.args.get('cuenta', '')
+
+    movimientos = []
+    total_deudor = 0
+    total_acreedor = 0
+
+    if periodo and cuenta:
+        año, mes = periodo.split('-')
+        movimientos = controlador_plantillas.obtener_libro_mayor(mes, año, cuenta)
+        
+        for movimiento in movimientos:
+            total_deudor += movimiento['deudor'] or 0
+            total_acreedor += movimiento['acreedor'] or 0
 
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Libro Mayor', 'url': '/libro_mayor'}
     ]
-    movimientos = []
 
-    return render_template("libro_mayor.html", movimientos=movimientos, breadcrumbs=breadcrumbs, usuario=usuario)
+    return render_template(
+        "libro_mayor.html", 
+        movimientos=movimientos, 
+        breadcrumbs=breadcrumbs, 
+        usuario=usuario, 
+        cuentas=cuentas,
+        total_debe=total_deudor,
+        total_haber=total_acreedor
+    )
 
 @app.route("/libro_caja")
 def libro_caja():
@@ -322,7 +344,6 @@ def registro_compras_datos():
         total_igv=total_igv,
         total_total_comprobante=total_total_comprobante
     )
-
 
 @app.route('/exportar-libro-diario', methods=['GET'])
 def exportar_libro_diario():
@@ -528,6 +549,19 @@ def exportar_registro_compras():
     except ValueError:
         return jsonify({'error': 'El formato del período es incorrecto. Debe ser "YYYY-MM".'}), 400
     return controlador_plantillas.generar_registro_compra_excel(mes, anio)
+
+@app.route('/exportar-libro-mayor', methods=['GET'])
+def exportar_libro_mayor():
+    periodo = request.args.get('periodo')
+    cuenta = request.args.get('cuenta')
+    if not periodo or not cuenta:
+        return jsonify({'error': 'Los parámetros "periodo" y "cuenta" son requeridos.'}), 400
+    try:
+        año, mes = periodo.split('-')
+    except ValueError:
+        return jsonify({'error': 'El formato del período es incorrecto. Debe ser "YYYY-MM".'}), 400
+
+    return controlador_plantillas.generar_libro_mayor_excel(mes, año, cuenta)
 
 @app.route('/notificaciones', methods=['GET'])
 def obtener_notificaciones_endpoint():
