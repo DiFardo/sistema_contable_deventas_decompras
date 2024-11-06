@@ -149,6 +149,7 @@ def actualizar_perfil():
     return redirect(url_for('perfil_usuario'))
 
 
+
 @app.route("/libro_diario", methods=["GET"])
 def libro_diario():
     token = request.cookies.get('token')
@@ -231,6 +232,40 @@ def libro_mayor():
         total_debe=total_deudor,
         total_haber=total_acreedor
     )
+
+@app.route("/libro_mayor_datos", methods=["GET"])
+def libro_mayor_datos():
+    periodo = request.args.get('periodo', '')
+    cuenta = request.args.get('cuenta', '')
+
+    # Verifica que se proporcione un período y una cuenta
+    if not periodo or not cuenta:
+        return jsonify({"movimientos": [], "total_debe": 0, "total_haber": 0})
+
+    # Extrae año y mes del período
+    año, mes = periodo.split('-')
+    movimientos = controlador_plantillas.obtener_libro_mayor(mes, año, cuenta)
+
+    # Calcula los totales de debe y haber
+    total_deudor = sum(movimiento['deudor'] or 0 for movimiento in movimientos)
+    total_acreedor = sum(movimiento['acreedor'] or 0 for movimiento in movimientos)
+
+    # Formatea los movimientos para la respuesta JSON
+    filas = []
+    for movimiento in movimientos:
+        filas.append({
+            "fecha": movimiento["fecha"],
+            "numero_correlativo": movimiento["numero_correlativo"],
+            "glosa": movimiento["glosa"],
+            "deudor": movimiento["deudor"],
+            "acreedor": movimiento["acreedor"]
+        })
+
+    return jsonify({
+        "movimientos": filas,
+        "total_debe": total_deudor,
+        "total_haber": total_acreedor
+    })
 
 @app.route("/libro_caja")
 def libro_caja():
