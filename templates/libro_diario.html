@@ -352,6 +352,18 @@
             cargarTabla(filtroFecha.value);
         }
     });
+
+    function exportarLibroDiario() {
+        const fecha = document.getElementById("filtro-fecha").value;
+        if (!fecha) {
+            alert("Por favor, seleccione una fecha para exportar el Libro Diario.");
+            return;
+        }
+
+        // Redirecciona a la ruta con el parámetro de fecha
+        const url = `/exportar-libro-diario?fecha=${encodeURIComponent(fecha)}`;
+        window.location.href = url;
+    }
   </script>
 </div>
 {% endblock %}

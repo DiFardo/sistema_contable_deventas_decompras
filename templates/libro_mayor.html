@@ -24,6 +24,24 @@
   .text-right {
     text-align: right;
   }
+
+  @media print {
+    body {
+      visibility: hidden;
+    }
+    .table-wrapper, .table {
+      visibility: visible;
+      width: 100%;
+    }
+    .table-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    @page {
+      size: landscape;
+    }
+  }
 </style>
 
 <div id="content">
@@ -92,7 +110,7 @@
             <button class="btn btn-primary me-2" onclick="window.print()" style="background-color: #ff5733;">
               <i class="material-icons">print</i> <span>Imprimir</span>
             </button>
-            <button class="btn btn-success" onclick="exportTableToCSV('libro_mayor.csv')">
+            <button class="btn btn-success" onclick="exportarLibroMayor()">
               <i class="material-icons">file_download</i> <span>Exportar</span>
             </button>
           </div>
@@ -163,6 +181,16 @@
         window.location.href = url;
       }
     });
+
+    function exportarLibroMayor() {
+    const periodo = document.getElementById('filtro-periodo').value;
+    const cuenta = document.getElementById('filtro-cuenta').value;
+      if (periodo && cuenta) {
+          window.location.href = `/exportar-libro-mayor?periodo=${periodo}&cuenta=${cuenta}`;
+      } else {
+          alert("Por favor, seleccione un período y una cuenta antes de exportar.");
+      }
+    }
   </script>
 </div>
 {% endblock %}

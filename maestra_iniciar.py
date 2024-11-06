@@ -345,7 +345,6 @@ def registro_compras_datos():
         total_total_comprobante=total_total_comprobante
     )
 
-
 @app.route('/exportar-libro-diario', methods=['GET'])
 def exportar_libro_diario():
     fecha = request.args.get('fecha')
@@ -550,6 +549,19 @@ def exportar_registro_compras():
     except ValueError:
         return jsonify({'error': 'El formato del período es incorrecto. Debe ser "YYYY-MM".'}), 400
     return controlador_plantillas.generar_registro_compra_excel(mes, anio)
+
+@app.route('/exportar-libro-mayor', methods=['GET'])
+def exportar_libro_mayor():
+    periodo = request.args.get('periodo')
+    cuenta = request.args.get('cuenta')
+    if not periodo or not cuenta:
+        return jsonify({'error': 'Los parámetros "periodo" y "cuenta" son requeridos.'}), 400
+    try:
+        año, mes = periodo.split('-')
+    except ValueError:
+        return jsonify({'error': 'El formato del período es incorrecto. Debe ser "YYYY-MM".'}), 400
+
+    return controlador_plantillas.generar_libro_mayor_excel(mes, año, cuenta)
 
 @app.route('/notificaciones', methods=['GET'])
 def obtener_notificaciones_endpoint():
