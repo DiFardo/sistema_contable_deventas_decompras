@@ -74,31 +74,23 @@
                 <li class="nav-item cuentas hidden">
                     <a href="{{ url_for('cuentas') }}">
                         <i class="material-icons">folder</i>
-                        <span>Cuentas Contables</span>
+                        <span>Cuentas contables</span>
                     </a>
                 </li>
 
                 <li class="nav-item libros hidden">
                     <a href="#librosContablesSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
                         <i class="material-icons">library_books</i>
-                        <span>Libros Contables</span>
+                        <span>Libros contables</span>
                     </a>
                     <ul class="collapse list-unstyled" id="librosContablesSubmenu">
-                        <li><a href="{{ url_for('libro_diario') }}"><i class="material-icons">book</i> Libro Diario</a></li>
-                        <li><a href="{{ url_for('libro_mayor') }}"><i class="material-icons">book_online</i> Libro Mayor</a></li>
-                        <li><a href="{{ url_for('libro_caja') }}"><i class="material-icons">account_balance_wallet</i> Caja y Bancos</a></li>
-                        <li><a href="{{ url_for('registro_ventas') }}"><i class="material-icons">receipt_long</i> Registro de Ventas</a></li>
-                        <li><a href="{{ url_for('registro_compras') }}"><i class="material-icons">receipt_long</i> Registro de Compras</a></li>
+                        <li><a href="{{ url_for('libro_diario') }}"><i class="material-icons">book</i> Libro diario</a></li>
+                        <li><a href="{{ url_for('libro_mayor') }}"><i class="material-icons">book_online</i> Libro mayor</a></li>
+                        <li><a href="{{ url_for('libro_caja') }}"><i class="material-icons">account_balance_wallet</i> Caja y bancos</a></li>
+                        <li><a href="{{ url_for('registro_ventas') }}"><i class="material-icons">receipt_long</i> Registro de ventas</a></li>
+                        <li><a href="{{ url_for('registro_compras') }}"><i class="material-icons">receipt_long</i> Registro de compras</a></li>
                     </ul>
                 </li>
-
-                <li class="nav-item asientos hidden">
-                    <a href="{{ url_for('asientos_contables') }}">
-                        <i class="material-icons">assignment</i>
-                        <span>Asientos Contables</span>
-                    </a>
-                </li>
-
                 <!-- Opciones del Módulo de Ventas -->
                 <li class="nav-item ventas hidden">
                     <a href="#">
@@ -115,7 +107,7 @@
                 <li class="nav-item reportes hidden">
                     <a href="#">
                         <i class="material-icons">bar_chart</i>
-                        <span>Reportes de Ventas</span>
+                        <span>Reportes de ventas</span>
                     </a>
                 </li>
             </ul>
@@ -201,19 +193,19 @@
 
             if (module === "contable") {
                 sidebarTitle.innerHTML = '<span>Módulo Contable</span>';
-                document.querySelectorAll('.cuentas, .libros, .asientos').forEach(el => el.classList.remove('hidden'));
+                document.querySelectorAll('.cuentas, .libros').forEach(el => el.classList.remove('hidden'));
                 document.querySelectorAll('.ventas, .clientes, .reportes').forEach(el => el.classList.add('hidden'));
             } else if (module === "ventas") {
                 sidebarTitle.innerHTML = '<span>Módulo de Ventas</span>';
                 document.querySelectorAll('.ventas, .clientes, .reportes').forEach(el => el.classList.remove('hidden'));
-                document.querySelectorAll('.cuentas, .libros, .asientos').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.cuentas, .libros').forEach(el => el.classList.add('hidden'));
             }
         }
 
         document.addEventListener("DOMContentLoaded", function () {
             const currentPath = window.location.pathname;
             const ventasPaths = ['productos', 'clientes', 'reportes_ventas'];
-            const contablePaths = ['cuentas', 'libro_diario', 'libro_mayor', 'libro_caja', 'registro_ventas', 'registro_compras', 'asientos_contables'];
+            const contablePaths = ['cuentas', 'libro_diario', 'libro_mayor', 'libro_caja', 'registro_ventas', 'registro_compras'];
 
             if (ventasPaths.some(path => currentPath.includes(path))) {
                 toggleVisibility("ventas");

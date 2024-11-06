@@ -9,6 +9,7 @@ import controladores.controlador_plantillas as controlador_plantillas
 from bd_conexion import obtener_conexion  # Asegúrate de que la conexión a la base de datos esté configurada correctamente
 from controladores.controlador_cuentas import obtener_todas_cuentas, obtener_cuentas_por_categoria_endpoint, añadir_cuenta,obtener_todas_notificaciones,marcar_notificaciones_leidas,eliminar_notificacion,contar_notificaciones_no_leidas
 from werkzeug.utils import secure_filename
+import datetime
 
 # Directorio donde se guardarán las imágenes de perfil
 UPLOAD_FOLDER = 'static/img/perfiles'
@@ -148,31 +149,52 @@ def actualizar_perfil():
     return redirect(url_for('perfil_usuario'))
 
 
-
-@app.route("/libro_diario")
+@app.route("/libro_diario", methods=["GET"])
 def libro_diario():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
     usuario = controlador_usuarios.obtener_usuario(dni)
-
+    fecha = request.args.get("fecha", None)
+    
+    movimientos, total_debe, total_haber = (
+        controlador_plantillas.obtener_libro_diario_por_fecha(fecha) if fecha else ([], 0, 0)
+    )
+    
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
-        {'name': 'Libro Diario', 'url': '/libro_diario'}
+        {'name': 'Libro diario', 'url': '/libro_diario'}
     ]
-
-    movimientos = controlador_plantillas.obtener_libro_diario()
-
-    total_debe = sum(movimiento['debe'] or 0 for movimiento in movimientos)
-    total_haber = sum(movimiento['haber'] or 0 for movimiento in movimientos)
-
+    
     return render_template(
         "libro_diario.html",
         movimientos=movimientos,
-        breadcrumbs=breadcrumbs,
-        usuario=usuario,
         total_debe=total_debe,
-        total_haber=total_haber
+        total_haber=total_haber,
+        breadcrumbs=breadcrumbs,
+        usuario=usuario
     )
+
+@app.route("/libro_diario_datos")
+def libro_diario_datos():
+    fecha = request.args.get("fecha")
+    movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha)
+    
+    filas = []
+    for movimiento in movimientos:
+        filas.append({
+            "numero_correlativo": movimiento["numero_correlativo"],
+            "fecha": movimiento["fecha"],
+            "glosa": movimiento["glosa"],
+            "codigo_del_libro": movimiento["codigo_del_libro"],
+            "numero_correlativo_documento": movimiento["numero_correlativo_documento"],
+            "numero_documento_sustentatorio": movimiento["numero_documento_sustentatorio"],
+            "codigo_cuenta": movimiento["codigo_cuenta"],
+            "denominacion": movimiento["denominacion"],
+            "debe": movimiento["debe"],
+            "haber": movimiento["haber"]
+        })
+
+    return jsonify(filas=filas, total_debe=total_debe, total_haber=total_haber)
 
 @app.route("/libro_mayor")
 def libro_mayor():
@@ -240,6 +262,78 @@ def registro_ventas():
         breadcrumbs=breadcrumbs,
         usuario=usuario
     )
+
+@app.route("/registro_ventas_datos", methods=["GET"])
+def registro_ventas_datos():
+    mes = request.args.get("month")
+    anio = request.args.get("year")
+    registros, total_base_imponible, total_igv, total_total_comprobante = controlador_plantillas.obtener_registro_ventas_por_fecha(mes, anio)
+    
+    filas = [
+        {
+            "correlativo": reg["correlativo"],
+            "fecha_emision": reg["fecha_emision"],
+            "tipo_comprobante": reg["tipo_comprobante"],
+            "serie_comprobante": reg["serie_comprobante"],
+            "numero_comprobante": reg["numero_comprobante"],
+            "tipo_documento": reg["tipo_documento"],
+            "numero_documento": reg["numero_documento"],
+            "usuario": reg["usuario"],
+            "base_imponible": reg["base_imponible"],
+            "igv": reg["igv"],
+            "total_comprobante": reg["total_comprobante"]
+        }
+        for reg in registros
+    ]
+
+    return jsonify(
+        registros=filas,
+        total_base_imponible=total_base_imponible,
+        total_igv=total_igv,
+        total_total_comprobante=total_total_comprobante
+    )
+
+@app.route("/registro_compras_datos", methods=["GET"])
+def registro_compras_datos():
+    mes = request.args.get("month")
+    anio = request.args.get("year")
+    registros, total_base_imponible, total_igv, total_total_comprobante = controlador_plantillas.obtener_registro_compras_por_fecha(mes, anio)
+    
+    filas = [
+        {
+            "correlativo": reg["correlativo"],
+            "fecha_emision": reg["fecha_emision"],
+            "tipo_comprobante": reg["tipo_comprobante"],
+            "serie_comprobante": reg["serie_comprobante"],
+            "numero_comprobante": reg["numero_comprobante"],
+            "tipo_documento": reg["tipo_documento"],
+            "numero_documento": reg["numero_documento"],
+            "nombre_proveedor": reg["nombre_proveedor"],
+            "base_imponible": reg["base_imponible"],
+            "igv": reg["igv"],
+            "total_comprobante": reg["total_comprobante"]
+        }
+        for reg in registros
+    ]
+
+    return jsonify(
+        registros=filas,
+        total_base_imponible=total_base_imponible,
+        total_igv=total_igv,
+        total_total_comprobante=total_total_comprobante
+    )
+
+
+@app.route('/exportar-libro-diario', methods=['GET'])
+def exportar_libro_diario():
+    fecha = request.args.get('fecha')
+    if not fecha:
+        return jsonify({'error': 'El parámetro "fecha" es requerido.'}), 400
+    try:
+        datetime.datetime.strptime(fecha, '%Y-%m-%d')
+    except ValueError:
+        return jsonify({'error': 'El formato de la fecha es incorrecto. Debe ser "YYYY-MM-DD".'}), 400
+    return controlador_plantillas.generar_libro_diario_excel(fecha)
 
 @app.route("/asientos_contables")
 def asientos_contables():

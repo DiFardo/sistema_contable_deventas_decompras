@@ -16,10 +16,53 @@
     text-align: center;
     vertical-align: middle; /* Centra verticalmente el contenido */
   }
+  .text-right {
+    text-align: right;
+  }
+
+  /* Estilos para centrar el spinner dentro de la tabla */
+  .spinner-wrapper {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+  }
+
+  /* Cambiar el color del spinner */
+  .spinner-border {
+    color: #e73209 !important; /* Color rojo para el spinner, con !important para prioridad */
+  }
+  
+  @media print {
+    body {
+      visibility: hidden;
+    }
+    .table-wrapper, .table {
+      visibility: visible;
+      width: 100%;
+    }
+    .table-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    @page {
+      size: landscape;
+    }
+  }
 </style>
 
 <div id="content">
   <div class="main-content">
+    <!-- Spinner para pantalla de carga -->
+    <div class="spinner-wrapper" id="spinner-wrapper">
+      <div class="spinner-border" role="status"> <!-- Eliminé "text-primary" para evitar conflictos de color -->
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+    </div>
+
     <!-- Breadcrumb dinámico -->
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb">
@@ -42,19 +85,19 @@
 
     <!-- Filtros: Fecha exacta y RUC en una sola fila alineados correctamente con centrado vertical -->
     <div class="row mb-3 align-items-center">
-        <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
-          <label class="me-3 d-flex justify-content-center align-items-center custom-label">
-            <strong>PERÍODO:</strong>
-          </label>
-          <input type="date" class="form-control" id="filtro-fecha" max="{{ current_year }}-12-31" value="{{ current_year }}-01-01">
-        </div>
-        <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
-          <label class="me-3 d-flex justify-content-center align-items-center custom-label">
-            <strong>RUC:</strong>
-          </label>
-          <input type="text" class="form-control" value="20612188930" readonly>
-        </div>
+      <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
+        <label class="me-3 d-flex justify-content-center align-items-center custom-label">
+          <strong>FECHA:</strong>
+        </label>
+        <input type="date" class="form-control" id="filtro-fecha" max="" value="{{ request.args.get('fecha', '') }}">
       </div>
+      <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
+        <label class="me-3 d-flex justify-content-center align-items-center custom-label">
+          <strong>RUC:</strong>
+        </label>
+        <input type="text" class="form-control" value="20612188930" readonly>
+      </div>
+    </div>
       
     <div class="table-wrapper">
       <div class="table-title">
@@ -73,9 +116,9 @@
             <button class="btn btn-primary me-2" onclick="window.print()" style="background-color: #ff5733;">
                 <i class="material-icons">print</i> <span>Imprimir</span>
               </button>
-            <button class="btn btn-success" onclick="exportTableToCSV('libro_diario.csv')">
-              <i class="material-icons">file_download</i> <span>Exportar</span>
-            </button>
+              <button class="btn btn-success" onclick="exportarLibroDiario()">
+                <i class="material-icons">file_download</i> <span>Exportar</span>
+              </button>
           </div>
         </div>
       </div>
@@ -103,49 +146,22 @@
         </thead>
         <tbody id="tabla-cuerpo">
           <!-- Aquí van las filas dinámicas de datos -->
-          {% for movimiento in movimientos %}
-          <tr>
-            {% if movimiento.debe is none and movimiento.haber is none %}
-              <td>-</td>
-              <td>-</td>
-              <td>-</td>
-              <td>-</td>
-              <td>-</td>
-              <td>-</td>
-              <td>{{ movimiento.codigo_cuenta or "-" }}</td>
-              <td>{{ movimiento.denominacion or "-" }}</td>
-              <td>-</td>
-              <td>-</td>
-            {% else %}
-              <td>{{ movimiento.numero_correlativo or "-" }}</td>
-              <td>{{ movimiento.fecha or "-" }}</td>
-              <td>{{ movimiento.glosa or "-" }}</td>
-              <td>{{ movimiento.codigo_del_libro or "-" }}</td>
-              <td>{{ movimiento.numero_correlativo_documento or "-" }}</td>
-              <td>{{ movimiento.numero_documento_sustentatorio or "-" }}</td>
-              <td>{{ movimiento.codigo_cuenta or "-" }}</td>
-              <td>{{ movimiento.denominacion or "-" }}</td>
-              <td>{{ movimiento.debe or "-" }}</td>
-              <td>{{ movimiento.haber or "-" }}</td>
-            {% endif %}
-          </tr>
-          {% endfor %}
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="8" class="text-end"><strong>TOTALES</strong></td>
-            <td class="text-end">{{ total_debe }}</td>
-            <td class="text-end">{{ total_haber }}</td>
+              <td colspan="7"></td> <!-- Deja en blanco las primeras columnas hasta "Denominación" -->
+              <td><strong>TOTALES</strong></td> <!-- Coloca el texto "TOTALES" en la columna de "Denominación" -->
+              <td class="text-right" id="total-debe">-</td> <!-- Total de "Debe" -->
+              <td class="text-right" id="total-haber">-</td> <!-- Total de "Haber" -->
           </tr>
-        </tfoot>
-        
+      </tfoot>
       </table>
 
       <!-- Controles de paginación y selector de número de registros -->
       <div class="d-flex justify-content-between align-items-center mt-3">
         <div class="d-flex me-3">
           <label for="records-per-page" class="me-2">Registros por página:</label>
-          <input type="number" id="records-per-page" class="form-control" value="9" min="1" max="100" style="width: 80px;">
+          <input type="number" id="records-per-page" class="form-control" value="6" min="1" max="100" style="width: 80px;">
         </div>
         <nav aria-label="Page navigation example align-items-center">
           <ul class="pagination" id="pagination" class="pagination">
@@ -171,55 +187,171 @@
   <script src="{{ url_for('static', filename='js/tabla_cuentas.js') }}"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', filename='js/paginacion_libros.js') }}"></script>
-
   <script>
-    function exportTableToCSV(filename) {
-      var csv = [];
-      var rows = document.querySelectorAll("table tr");
-  
-      for (var i = 0; i < rows.length; i++) {
-        var row = [], cols = rows[i].querySelectorAll("td, th");
-  
-        for (var j = 0; j < cols.length; j++) 
-          row.push(cols[j].innerText);
-  
-        csv.push(row.join(","));        
-      }
-  
-      // Download CSV file
-      downloadCSV(csv.join("\n"), filename);
-    }
-  
-    function downloadCSV(csv, filename) {
-      var csvFile;
-      var downloadLink;
-  
-      csvFile = new Blob([csv], { type: "text/csv" });
-      downloadLink = document.createElement("a");
-      downloadLink.download = filename;
-      downloadLink.href = window.URL.createObjectURL(csvFile);
-      downloadLink.style.display = "none";
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-    }
-  
-    // Función para obtener la fecha de hoy en formato YYYY-MM-DD
+    let currentPage = 1;
+    let rowsPerPage = parseInt(document.getElementById("records-per-page").value);
+    const spinnerWrapper = document.getElementById("spinner-wrapper"); // Referencia al spinner
+
     function getTodayDate() {
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0'); // Mes empieza en 0, así que sumamos 1
-      const day = String(today.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     }
-  
-    // Establece la fecha de hoy como valor predeterminado en el filtro de fecha
-    document.addEventListener('DOMContentLoaded', function() {
-      const filtroFecha = document.getElementById('filtro-fecha');
-      const today = getTodayDate();
-      filtroFecha.value = today;  // Establecer valor como fecha de hoy
-      filtroFecha.max = `${today}`;  // Fecha máxima como hoy para no permitir fechas futuras
+
+    function cargarTabla(fecha) {
+        spinnerWrapper.style.display = "block"; // Mostrar el spinner
+        $.ajax({
+            url: "/libro_diario_datos",
+            type: "GET",
+            data: { fecha: fecha },
+            success: function (data) {
+                let filas = "";
+                data.filas.forEach(function (movimiento) {
+                    filas += `
+                        <tr>
+                            ${movimiento.debe === null && movimiento.haber === null ? `
+                                <td></td><td></td><td></td><td></td><td></td><td></td>
+                                <td>${movimiento.codigo_cuenta || "-"}</td>
+                                <td>${movimiento.denominacion || "-"}</td>
+                                <td class="text-right"></td>
+                                <td class="text-right"></td>
+                            ` : `
+                                <td>${movimiento.numero_correlativo || "-"}</td>
+                                <td>${movimiento.fecha || "-"}</td>
+                                <td>${movimiento.glosa || "-"}</td>
+                                <td>${movimiento.codigo_del_libro || "-"}</td>
+                                <td>${movimiento.numero_correlativo_documento || "-"}</td>
+                                <td>${movimiento.numero_documento_sustentatorio || "-"}</td>
+                                <td>${movimiento.codigo_cuenta || "-"}</td>
+                                <td>${movimiento.denominacion || "-"}</td>
+                                <td class="text-right">${movimiento.debe || "-"}</td>
+                                <td class="text-right">${movimiento.haber || "-"}</td>
+                            `}
+                        </tr>
+                    `;
+                });
+
+                $("#tabla-cuerpo").html(filas);
+
+                totalPages = Math.ceil(data.filas.length / rowsPerPage);
+                showPage(currentPage);
+                document.getElementById("total-debe").textContent = data.total_debe || "-";
+                document.getElementById("total-haber").textContent = data.total_haber || "-";
+            },
+            error: function (error) {
+                console.error("Error al cargar los datos:", error);
+            },
+            complete: function () {
+                spinnerWrapper.style.display = "none"; // Ocultar el spinner al finalizar la carga
+            }
+        });
+    }
+
+    function showPage(page) {
+        const rows = document.querySelectorAll("#tabla-cuerpo tr");
+        const start = (page - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+
+        rows.forEach((row, index) => {
+            row.style.display = index >= start && index < end ? "" : "none";
+        });
+
+        updatePagination();
+    }
+
+    function updatePagination() {
+        const pagination = document.getElementById("pagination");
+        pagination.innerHTML = `
+            <li class="page-item ${currentPage === 1 ? "disabled" : ""}">
+                <a class="page-link" href="#" aria-label="Previous" id="prev-page">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+        `;
+
+        const maxPagesToShow = 5;
+        const startPage = Math.max(currentPage - 2, 1);
+        const endPage = Math.min(startPage + maxPagesToShow - 1, totalPages);
+
+        if (startPage > 1) {
+            pagination.innerHTML += `<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>`;
+            if (startPage > 2) {
+                pagination.innerHTML += `<li class="page-item disabled"><a class="page-link" href="#">...</a></li>`;
+            }
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            const activeClass = i === currentPage ? "active" : "";
+            pagination.innerHTML += `
+                <li class="page-item ${activeClass}">
+                    <a class="page-link" href="#" data-page="${i}">${i}</a>
+                </li>
+            `;
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                pagination.innerHTML += `<li class="page-item disabled"><a class="page-link" href="#">...</a></li>`;
+            }
+            pagination.innerHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`;
+        }
+
+        pagination.innerHTML += `
+            <li class="page-item ${currentPage === totalPages ? "disabled" : ""}">
+                <a class="page-link" href="#" aria-label="Next" id="next-page">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        `;
+
+        document.getElementById("prev-page").addEventListener("click", function(e) {
+            e.preventDefault();
+            if (currentPage > 1) {
+                currentPage--;
+                showPage(currentPage);
+            }
+        });
+
+        document.getElementById("next-page").addEventListener("click", function(e) {
+            e.preventDefault();
+            if (currentPage < totalPages) {
+                currentPage++;
+                showPage(currentPage);
+            }
+        });
+
+        document.querySelectorAll(".page-link[data-page]").forEach(link => {
+            link.addEventListener("click", function(e) {
+                e.preventDefault();
+                currentPage = parseInt(e.target.getAttribute("data-page"));
+                showPage(currentPage);
+            });
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const filtroFecha = document.getElementById("filtro-fecha");
+        filtroFecha.max = getTodayDate();
+
+        const recordsInput = document.getElementById("records-per-page");
+
+        filtroFecha.addEventListener("change", function () {
+            currentPage = 1;
+            cargarTabla(filtroFecha.value);
+        });
+
+        recordsInput.addEventListener("input", function () {
+            rowsPerPage = parseInt(this.value);
+            currentPage = 1;
+            showPage(currentPage);
+        });
+
+        if (filtroFecha.value) {
+            cargarTabla(filtroFecha.value);
+        }
     });
   </script>
-
 </div>
 {% endblock %}
