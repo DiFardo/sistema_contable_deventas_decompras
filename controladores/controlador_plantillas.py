@@ -5,6 +5,7 @@ from openpyxl.styles import Border, Side, Alignment, Font
 from openpyxl.styles.numbers import FORMAT_DATE_DDMMYY, FORMAT_NUMBER_COMMA_SEPARATED1
 from psycopg2.extras import DictCursor
 from bd_conexion import obtener_conexion
+from psycopg2 import sql
 
 def generar_registro_venta_excel(mes, anio):
     try:
@@ -738,46 +739,55 @@ def obtener_libro_diario_por_fecha(fecha):
     conexion.close()
     return movimientos, total_debe, total_haber
 
-def obtener_libro_caja():
+def obtener_libro_caja(mes, año):
+    try:
+        mes = int(mes)
+        año = int(año)
+    except ValueError:
+        print("Error: mes o año no son enteros válidos")
+        return [], 0, 0
+
     conexion = obtener_conexion()
     movimientos_caja = []
     total_deudor = 0
     total_acreedor = 0
 
     with conexion.cursor(cursor_factory=DictCursor) as cursor:
-        cursor.execute("""
-            SELECT
-                DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo,
-                ac.fecha AS fecha_operacion,
-                CASE
-                    WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
-                    WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la venta de mercadería'
-                    ELSE 'Descripción no especificada'
-                END AS descripcion_operacion,
-                ac.codigo_cuenta AS codigo_cuenta_asociada,
-                ac.denominacion AS denominacion_cuenta_asociada,
-                COALESCE(ac.debe, 0) AS saldo_deudor,  -- Usa COALESCE para reemplazar NULL por 0
-                COALESCE(ac.haber, 0) AS saldo_acreedor  -- Usa COALESCE para reemplazar NULL por 0
-            FROM asientos_contables ac
-            JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
-            WHERE 
-                ac.codigo_cuenta LIKE '12%'  
-                OR ac.codigo_cuenta LIKE '42%'
-            ORDER BY numero_correlativo, ac.id;
-        """)
+        try:
+            query = sql.SQL("""
+                SELECT
+                    DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo,
+                    TO_CHAR(ac.fecha, 'DD/MM/YYYY') AS fecha_operacion,
+                    CASE
+                        WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
+                        WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la venta de mercadería'
+                        ELSE 'Descripción no especificada'
+                    END AS descripcion_operacion,
+                    ac.codigo_cuenta AS codigo_cuenta_asociada,
+                    ac.denominacion AS denominacion_cuenta_asociada,
+                    COALESCE(ac.debe, 0) AS saldo_deudor,
+                    COALESCE(ac.haber, 0) AS saldo_acreedor
+                FROM asientos_contables ac
+                JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
+                WHERE 
+                    (ac.codigo_cuenta LIKE '12%' OR ac.codigo_cuenta LIKE '42%')
+                    AND EXTRACT(MONTH FROM ac.fecha) = {mes}
+                    AND EXTRACT(YEAR FROM ac.fecha) = {año}
+                ORDER BY numero_correlativo, ac.id;
+            """).format(mes=sql.Literal(mes), año=sql.Literal(año))
 
-        movimientos_caja = cursor.fetchall()
+            cursor.execute(query)
+            movimientos_caja = cursor.fetchall()
 
-        # Sumar totales considerando que ya no habrá None
-        for movimiento in movimientos_caja:
-            total_deudor += movimiento["saldo_deudor"]
-            total_acreedor += movimiento["saldo_acreedor"]
+            for movimiento in movimientos_caja:
+                total_deudor += movimiento["saldo_deudor"]
+                total_acreedor += movimiento["saldo_acreedor"]
+        except Exception as e:
+            print("Error en la consulta SQL con `psycopg2.sql`:", e)
+            movimientos_caja, total_deudor, total_acreedor = [], 0, 0
 
     conexion.close()
     return movimientos_caja, total_deudor, total_acreedor
-
-
-
 
 def obtener_cuentas_distintas():
     conexion = obtener_conexion()
