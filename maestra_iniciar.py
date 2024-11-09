@@ -122,16 +122,13 @@ def validar_token():
 
 @app.route("/")
 @app.route("/login_user")
-@login_required
 def login():
     token = request.cookies.get('token')
-    if token and validar_token():
-        # Redirige al usuario a la página principal si tiene un token válido
+    if not token:
+        return render_template("login_user.html")
+    if validar_token():
         return redirect("/index")
-    # Si no hay token o el token no es válido, muestra la página de inicio de sesión
     return render_template("login_user.html")
-
-
 
 @app.route("/index")
 @login_required
@@ -251,15 +248,19 @@ def libro_mayor_datos():
     periodo = request.args.get('periodo', '')
     cuenta = request.args.get('cuenta', '')
 
+    # Verifica que se proporcione un período y una cuenta
     if not periodo or not cuenta:
         return jsonify({"movimientos": [], "total_debe": 0, "total_haber": 0})
 
+    # Extrae año y mes del período
     año, mes = periodo.split('-')
     movimientos = controlador_plantillas.obtener_libro_mayor(mes, año, cuenta)
 
+    # Calcula los totales de debe y haber
     total_deudor = sum(movimiento['deudor'] or 0 for movimiento in movimientos)
     total_acreedor = sum(movimiento['acreedor'] or 0 for movimiento in movimientos)
 
+    # Formatea los movimientos para la respuesta JSON
     filas = []
     for movimiento in movimientos:
         filas.append({
@@ -316,6 +317,17 @@ def libro_caja():
         breadcrumbs=breadcrumbs,
         usuario=usuario
     )
+
+    return render_template(
+        "libro_caja.html",
+        movimientos=movimientos,
+        breadcrumbs=breadcrumbs,
+        usuario=usuario,
+        total_deudor=total_deudor,
+        total_acreedor=total_acreedor
+    )
+
+
 
 @app.route("/registro_ventas", methods=["GET"])
 def registro_ventas():
