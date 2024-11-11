@@ -28,12 +28,6 @@
         height: 200px; 
     }
 
-    .card-body-modulo-compras {
-        background: url("{{ url_for('static', filename='img/illustrations/cuentas.webp') }}") no-repeat center center;
-        background-size: cover;
-        height: 200px; /* Ajusta el tamaño según sea necesario */
-    }
-
     .card-body-modulo-contable {
         background: url("{{ url_for('static', filename='img/illustrations/asientos.webp') }}") no-repeat center center;
         background-size: cover;
@@ -41,7 +35,7 @@
     }
 
     .card-header-modulo, .card-header-modulo-ventas, 
-    .card-header-modulo-compras, .card-header-modulo-contable {
+    .card-header-modulo-contable {
         color: white;
     }
 </style>
@@ -66,7 +60,7 @@
             </div>
         </div>
 
-        <!-- Módulo de Ventas y Compras -->
+        <!-- Módulos del sistema -->
         <div class="row mb-4">
             <div class="col-12">
                 <div class="module-header">
@@ -75,37 +69,23 @@
             </div>
         </div>
 
-        <!-- Tarjeta de Ventas -->
-        <div class="row mt-4">
+        <!-- Tarjetas centradas -->
+        <div class="row mt-4 justify-content-center">
+            <!-- Tarjeta de Ventas -->
             <div class="col-lg-4 mb-4">
                 <a href="{{ url_for('productos') }}" class="text-decoration-none">
                     <div class="card card-modulo">
                         <div class="card-header card-header-modulo-ventas">
-                            <h6 class="card-title-centered">Módulo de ventas</h6>
+                            <h6 class="card-title-centered">Módulo de ventas y compras</h6>
                         </div>
                         <div class="card-body card-body-modulo card-body-modulo-ventas">
                             <!-- La imagen de fondo se mostrará aquí -->
                         </div>
                         <div class="card-footer card-footer-modulo">
-                            <p>Gestión de productos en el sistema de ventas</p>
+                            <p>Sistema transaccional de venta de productos y compra de insumos</p>
                         </div>
                     </div>
                 </a>                
-            </div>
-
-            <!-- Tarjeta de Compras -->
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="card card-modulo">
-                    <div class="card-header card-header-modulo-compras">
-                        <h6 class="card-title-centered">Módulo de Compras</h6>
-                    </div>
-                    <div class="card-body card-body-modulo card-body-modulo-compras">
-                        <!-- La imagen de fondo se mostrará aquí -->
-                    </div>
-                    <div class="card-footer card-footer-modulo">
-                        <p>Compras recientes</p>
-                    </div>
-                </div>
             </div>
 
             <!-- Tarjeta del Módulo Contable -->
@@ -113,7 +93,7 @@
                 <a href="{{ url_for('cuentas') }}" class="text-decoration-none">
                     <div class="card card-modulo">
                         <div class="card-header card-header-modulo-contable">
-                            <h6 class="card-title-centered">Módulo Contable</h6>
+                            <h6 class="card-title-centered">Módulo contable</h6>
                         </div>
                         <div class="card-body card-body-modulo card-body-modulo-contable">
                             <!-- La imagen de fondo se mostrará aquí -->
