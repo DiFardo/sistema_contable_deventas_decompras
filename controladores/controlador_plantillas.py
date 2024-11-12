@@ -971,14 +971,6 @@ def generar_libro_mayor_excel(mes, año, cuenta):
             cursor.close()
             conexion.close()
 
-from openpyxl import load_workbook
-from openpyxl.styles import Font, Border, Side, Alignment
-from openpyxl.styles.numbers import FORMAT_NUMBER_COMMA_SEPARATED1, FORMAT_DATE_DDMMYY
-from io import BytesIO
-from flask import send_file, jsonify
-import psycopg2
-from psycopg2 import sql
-
 def generar_libro_caja_excel(mes, anio):
     try:
         mes = int(mes)
