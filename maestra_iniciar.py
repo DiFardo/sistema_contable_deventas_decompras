@@ -99,7 +99,17 @@ def eliminar_imagen_perfil():
 
 # Inicializa JWTManager
 jwt = JWTManager(app)
+from functools import wraps
 
+# Decorador para verificar el login en las rutas protegidas
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not validar_token():  # Llama a la función que valida el token
+            flash("Debe iniciar sesión para acceder a esta página.")
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 def validar_token():
     token = request.cookies.get('token')
@@ -120,8 +130,8 @@ def login():
         return redirect("/index")
     return render_template("login_user.html")
 
-
 @app.route("/index")
+@login_required
 def index():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
@@ -131,9 +141,7 @@ def index():
         usuario = list(usuario)  
         usuario[6] = "perfil_defecto.png" 
 
-    breadcrumbs = [
-        {'name': 'Inicio', 'url': '/index'}
-    ]
+    breadcrumbs = [{'name': 'Inicio', 'url': '/index'}]
     return render_template("index.html", breadcrumbs=breadcrumbs, usuario=usuario)
 
 @app.route("/actualizar_perfil", methods=["POST"])
@@ -151,6 +159,7 @@ def actualizar_perfil():
 
 
 @app.route("/libro_diario", methods=["GET"])
+@login_required
 def libro_diario():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
@@ -176,6 +185,7 @@ def libro_diario():
     )
 
 @app.route("/libro_diario_datos")
+@login_required
 def libro_diario_datos():
     fecha = request.args.get("fecha")
     movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha)
@@ -238,15 +248,19 @@ def libro_mayor_datos():
     periodo = request.args.get('periodo', '')
     cuenta = request.args.get('cuenta', '')
 
+    # Verifica que se proporcione un período y una cuenta
     if not periodo or not cuenta:
         return jsonify({"movimientos": [], "total_debe": 0, "total_haber": 0})
 
+    # Extrae año y mes del período
     año, mes = periodo.split('-')
     movimientos = controlador_plantillas.obtener_libro_mayor(mes, año, cuenta)
 
+    # Calcula los totales de debe y haber
     total_deudor = sum(movimiento['deudor'] or 0 for movimiento in movimientos)
     total_acreedor = sum(movimiento['acreedor'] or 0 for movimiento in movimientos)
 
+    # Formatea los movimientos para la respuesta JSON
     filas = []
     for movimiento in movimientos:
         filas.append({
@@ -303,6 +317,17 @@ def libro_caja():
         breadcrumbs=breadcrumbs,
         usuario=usuario
     )
+
+    return render_template(
+        "libro_caja.html",
+        movimientos=movimientos,
+        breadcrumbs=breadcrumbs,
+        usuario=usuario,
+        total_deudor=total_deudor,
+        total_acreedor=total_acreedor
+    )
+
+
 
 @app.route("/registro_ventas", methods=["GET"])
 def registro_ventas():

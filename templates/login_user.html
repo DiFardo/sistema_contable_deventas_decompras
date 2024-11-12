@@ -12,6 +12,68 @@
   <script src="https://kit.fontawesome.com/42d5adcbca.js" crossorigin="anonymous"></script>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
   <link id="pagestyle" href="{{ url_for('static', filename='css/material-dashboard.css') }}" rel="stylesheet" />
+
+  <style>
+    /* Estilos adicionales */
+    .is-invalid {
+        border: 2px solid red;
+    }
+
+    .error-tooltip {
+        display: none;
+        position: absolute;
+        background-color: red;
+        color: white;
+        padding: 5px;
+        border-radius: 5px;
+        font-size: 12px;
+        z-index: 10;
+        transform: translate(10px, -30px); /* Ajuste de posición */
+        white-space: nowrap;
+    }
+
+    /* Estilos de la pantalla de carga */
+    #loading-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #0f313a;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        flex-direction: column;
+    }
+
+    .spinner {
+        width: 100px;
+        height: 100px;
+        border: 10px solid rgba(255, 255, 255, 0.2);
+        border-top: 10px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    p {
+        font-size: 20px;
+        font-weight: bold;
+        color: white;
+        margin-top: 10px;
+        animation: blink 1.5s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+  </style>
 </head>
 
 <body class="bg-gray-200 ">
@@ -37,12 +99,10 @@
               <div class="card-body">
                 <h4 class="font-weight-bolder text-center" style="margin-bottom: 30px;">Iniciar sesión</h4>
                 <form role="form" class="text-start" action="{{ url_for('procesar_login') }}" method="post">
-                  <div class="input-group input-group-outline my-3">
-                    <label class="form-label"></label>
+                  <div class="input-group input-group-outline my-3 position-relative">
                     <input type="text" class="form-control" name="dni" id="dni" placeholder="DNI" required>
                   </div>
-                  <div class="input-group input-group-outline mb-3">
-                    <label class="form-label"></label>
+                  <div class="input-group input-group-outline mb-3 position-relative">
                     <input type="password" class="form-control" name="password" id="password" placeholder="Contraseña" required>
                   </div>
                   <div class="form-check form-check-info text-start ps-0">
@@ -61,65 +121,72 @@
     </div>
   </main>
 
-<!-- Pantalla de carga animada -->
-<div id="loading-screen" style="display: none;">
-  <div class="spinner"></div>
-  <p>Cargando...</p>
-</div>
+  <!-- Pantalla de carga animada -->
+  <div id="loading-screen" style="display: none;">
+    <div class="spinner"></div>
+    <p>Cargando...</p>
+  </div>
 
-<!-- Estilos de la pantalla de carga -->
-<style>
-  #loading-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: #0f313a; /* Fondo rojo */
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-      flex-direction: column;
-  }
+  <!-- Core JS Files -->
+  <script>
+    // Expresiones regulares para la validación
+    const dniRegex = /^\d+$/; // Solo números
+    const passwordRegex = /^[a-zA-Z0-9]+$/; // Solo letras y números
 
-  .spinner {
-      width: 100px; /* Aumentar el ancho de la rueda */
-      height: 100px; /* Aumentar la altura de la rueda */
-      border: 10px solid rgba(255, 255, 255, 0.2); /* Aumentar el grosor de la parte más clara */
-      border-top: 10px solid white; /* Aumentar el grosor de la parte destacada */
-      border-radius: 50%;
-      animation: spin 1s linear infinite; /* Animación continua */
-  }
+    // Función para mostrar el mensaje de error y resaltar el campo
+    function mostrarError(input, mensaje) {
+        input.classList.add("is-invalid");
 
-  @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-  }
+        // Revisar si ya existe un tooltip de error y eliminarlo antes de crear uno nuevo
+        let existingTooltip = input.parentElement.querySelector(".error-tooltip");
+        if (existingTooltip) {
+            existingTooltip.remove();
+        }
 
-  p {
-      font-size: 20px; /* Tamaño de fuente del texto */
-      font-weight: bold;
-      color: white;
-      margin-top: 10px;
-      animation: blink 1.5s ease-in-out infinite;
-  }
+        // Crear tooltip de error
+        let errorTooltip = document.createElement("div");
+        errorTooltip.className = "error-tooltip";
+        errorTooltip.innerText = mensaje;
+        input.parentElement.appendChild(errorTooltip);
 
-  @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-  }
-</style>
+        errorTooltip.style.display = "block";
+    }
 
-<!-- Core JS Files -->
-<script>
-  // Mostrar la pantalla de carga cuando se envía el formulario
-  document.querySelector('form').addEventListener('submit', function(event) {
-      document.getElementById('loading-screen').style.display = 'flex';
-  });
-</script>
+    // Función para quitar el mensaje de error y el borde rojo
+    function quitarError(input) {
+        input.classList.remove("is-invalid");
+        let errorTooltip = input.parentElement.querySelector(".error-tooltip");
+        if (errorTooltip) {
+            errorTooltip.remove();
+        }
+    }
 
+    // Eventos de validación en tiempo real
+    document.getElementById("dni").addEventListener("input", function() {
+        if (this.value === "") {
+            quitarError(this);
+        } else if (!dniRegex.test(this.value)) {
+            mostrarError(this, "El DNI solo debe contener números.");
+        } else {
+            quitarError(this);
+        }
+    });
 
+    document.getElementById("password").addEventListener("input", function() {
+        if (this.value === "") {
+            quitarError(this);
+        } else if (!passwordRegex.test(this.value)) {
+            mostrarError(this, "La contraseña no debe contener signos especiales.");
+        } else {
+            quitarError(this);
+        }
+    });
+
+    // Mostrar la pantalla de carga cuando se envía el formulario
+    document.querySelector('form').addEventListener('submit', function(event) {
+        document.getElementById('loading-screen').style.display = 'flex';
+    });
+  </script>
 
   <!-- Core JS Files -->
   <script src="{{ url_for('static', filename='js/core/popper.min.js') }}"></script>
@@ -127,6 +194,5 @@
   <script src="{{ url_for('static', filename='js/plugins/perfect-scrollbar.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/plugins/smooth-scrollbar.min.js') }}"></script>
 
- 
 </body>
 </html>

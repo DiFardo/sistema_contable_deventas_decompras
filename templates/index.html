@@ -108,9 +108,17 @@
 
     </div>
 </div>
-
 <!-- Include JavaScript Files -->
 <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+      if (window.history.replaceState) {
+        // Reemplaza la última entrada de historial (login) para que no esté accesible
+        window.history.replaceState(null, null, window.location.href);
+      }
+    });
+  </script>
+  
 {% endblock %}
