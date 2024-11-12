@@ -16,6 +16,12 @@
     text-align: center;
     vertical-align: middle;
   }
+  .text-center {
+    text-align: center;
+  }
+  .text-right {
+    text-align: right;
+  }
 </style>
 
 <div id="content">
@@ -55,7 +61,6 @@
       </div>
     </div>
     
-
     <div class="table-wrapper">
       <div class="table-title">
         <div class="row justify-content-between align-items-center">
@@ -71,7 +76,7 @@
             <button class="btn btn-primary me-2" onclick="window.print()" style="background-color: #ff5733;">
                 <i class="material-icons">print</i> <span>Imprimir</span>
             </button>
-            <button class="btn btn-success" onclick="exportTableToCSV('libro_caja_bancos.csv')">
+            <button class="btn btn-success" onclick="exportarLibroCajaBancos()">
               <i class="material-icons">file_download</i> <span>Exportar</span>
             </button>
           </div>
@@ -83,12 +88,12 @@
         <thead>
           <tr>
             <th>NÚMERO CORRELATIVO</th>
-            <th>FECHA DE LA OPERACIÓN</th>
+            <th class="text-center">FECHA DE LA OPERACIÓN</th>
             <th>DESCRIPCIÓN DE LA OPERACIÓN</th>
             <th>CÓDIGO</th>
             <th>DENOMINACIÓN</th>
-            <th>DEUDOR</th>
-            <th>ACREEDOR</th>
+            <th class="text-right">DEUDOR</th>
+            <th class="text-right">ACREEDOR</th>
           </tr>
         </thead>
         <tbody id="tabla-cuerpo">
@@ -101,12 +106,12 @@
             {% else %}
               <td>-</td>
             {% endif %}
-            <td>{{ movimiento.fecha_operacion or "-" }}</td>
+            <td class="text-center">{{ movimiento.fecha_operacion or "-" }}</td>
             <td>{{ movimiento.descripcion_operacion or "-" }}</td>
             <td>{{ movimiento.codigo_cuenta_asociada or "-" }}</td>
             <td>{{ movimiento.denominacion_cuenta_asociada or "-" }}</td>
-            <td>{{ movimiento.saldo_deudor if movimiento.saldo_deudor is not none else "-" }}</td>
-            <td>{{ movimiento.saldo_acreedor if movimiento.saldo_acreedor is not none else "-" }}</td>
+            <td class="text-right">{{ movimiento.saldo_deudor if movimiento.saldo_deudor is not none else "-" }}</td>
+            <td class="text-right">{{ movimiento.saldo_acreedor if movimiento.saldo_acreedor is not none else "-" }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -166,6 +171,18 @@
             }
         });
     });
+
+    function exportarLibroCajaBancos() {
+        const periodo = document.getElementById("filtro-periodo").value;
+        if (!periodo) {
+            alert("Por favor, seleccione un periodo para exportar el Libro Caja y Bancos.");
+            return;
+        }
+
+        // Redirecciona a la ruta con el parámetro de periodo
+        const url = `/exportar-libro-caja-bancos?periodo=${encodeURIComponent(periodo)}`;
+        window.location.href = url;
+    }
   </script>
 </div>
 {% endblock %}
