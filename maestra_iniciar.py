@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, make_response, flash, g, jsonify, url_for
+from flask import Flask, render_template, request, redirect, make_response, flash, g, jsonify, url_for, send_file
 import os
 import hashlib
 from flask_jwt_extended import JWTManager, create_access_token
@@ -10,6 +10,7 @@ from bd_conexion import obtener_conexion  # Asegúrate de que la conexión a la 
 from controladores.controlador_cuentas import obtener_todas_cuentas, obtener_cuentas_por_categoria_endpoint, añadir_cuenta,obtener_todas_notificaciones,marcar_notificaciones_leidas,eliminar_notificacion,contar_notificaciones_no_leidas
 from werkzeug.utils import secure_filename
 import datetime
+from io import BytesIO
 
 # Directorio donde se guardarán las imágenes de perfil
 UPLOAD_FOLDER = 'static/img/perfiles'
@@ -248,19 +249,15 @@ def libro_mayor_datos():
     periodo = request.args.get('periodo', '')
     cuenta = request.args.get('cuenta', '')
 
-    # Verifica que se proporcione un período y una cuenta
     if not periodo or not cuenta:
         return jsonify({"movimientos": [], "total_debe": 0, "total_haber": 0})
 
-    # Extrae año y mes del período
     año, mes = periodo.split('-')
     movimientos = controlador_plantillas.obtener_libro_mayor(mes, año, cuenta)
 
-    # Calcula los totales de debe y haber
     total_deudor = sum(movimiento['deudor'] or 0 for movimiento in movimientos)
     total_acreedor = sum(movimiento['acreedor'] or 0 for movimiento in movimientos)
 
-    # Formatea los movimientos para la respuesta JSON
     filas = []
     for movimiento in movimientos:
         filas.append({
@@ -276,6 +273,24 @@ def libro_mayor_datos():
         "total_debe": total_deudor,
         "total_haber": total_acreedor
     })
+
+@app.route("/exportar-todas-las-cuentas", methods=["GET"])
+def exportar_todas_las_cuentas():
+    try:
+        periodo = request.args.get('periodo', '')
+        año, mes = periodo.split('-')
+        output = controlador_plantillas.generar_excel_todas_las_cuentas(mes, año)
+        
+        nombre_archivo = f'libro_mayor_todas_cuentas_{año}_{mes}.xlsx'
+        return send_file(
+            output,
+            download_name=nombre_archivo,
+            as_attachment=True,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+    except Exception as e:
+        print(f"Error al exportar todas las cuentas: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route("/libro_caja", methods=["GET"])
 def libro_caja():

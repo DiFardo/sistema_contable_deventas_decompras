@@ -101,7 +101,7 @@
           {% for movimiento in movimientos %}
           <tr>
             {% if movimiento.numero_correlativo != last_correlativo %}
-              <td>{{ movimiento.numero_correlativo }}</td>
+              <td class="text-center">{{ movimiento.numero_correlativo }}</td>
               {% set last_correlativo = movimiento.numero_correlativo %}
             {% else %}
               <td>-</td>
