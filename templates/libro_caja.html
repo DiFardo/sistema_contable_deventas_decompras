@@ -100,21 +100,33 @@
           {% set last_correlativo = None %}
           {% for movimiento in movimientos %}
           <tr>
-            {% if movimiento.numero_correlativo != last_correlativo %}
-              <td class="text-center">{{ movimiento.numero_correlativo }}</td>
-              {% set last_correlativo = movimiento.numero_correlativo %}
-            {% else %}
-              <td>-</td>
-            {% endif %}
-            <td class="text-center">{{ movimiento.fecha_operacion or "-" }}</td>
-            <td>{{ movimiento.descripcion_operacion or "-" }}</td>
-            <td>{{ movimiento.codigo_cuenta_asociada or "-" }}</td>
-            <td>{{ movimiento.denominacion_cuenta_asociada or "-" }}</td>
-            <td class="text-right">{{ movimiento.saldo_deudor if movimiento.saldo_deudor is not none else "-" }}</td>
-            <td class="text-right">{{ movimiento.saldo_acreedor if movimiento.saldo_acreedor is not none else "-" }}</td>
+              {% if movimiento.saldo_deudor is not none and movimiento.saldo_acreedor is not none and (movimiento.saldo_deudor != 0 or movimiento.saldo_acreedor != 0) %}
+                  <!-- Mostrar solo valores de Deudor y Acreedor -->
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td>{{ movimiento.codigo_cuenta_asociada or "-" }}</td>
+                  <td>{{ movimiento.denominacion_cuenta_asociada or "-" }}</td>
+                  <td class="text-right">{{ movimiento.saldo_deudor or "-" }}</td>
+                  <td class="text-right">{{ movimiento.saldo_acreedor or "-" }}</td>
+              {% else %}
+                  <!-- Mostrar todos los campos excepto Deudor y Acreedor -->
+                  {% if movimiento.numero_correlativo != last_correlativo %}
+                      <td class="text-center">{{ movimiento.numero_correlativo }}</td>
+                      {% set last_correlativo = movimiento.numero_correlativo %}
+                  {% else %}
+                      <td>-</td>
+                  {% endif %}
+                  <td class="text-center">{{ movimiento.fecha_operacion or "-" }}</td>
+                  <td>{{ movimiento.descripcion_operacion or "-" }}</td>
+                  <td>{{ movimiento.codigo_cuenta_asociada or "-" }}</td>
+                  <td>{{ movimiento.denominacion_cuenta_asociada or "-" }}</td>
+                  <td class="text-right"></td>
+                  <td class="text-right"></td>
+              {% endif %}
           </tr>
           {% endfor %}
-        </tbody>
+      </tbody>      
         <tfoot>
           <tr>
             <td colspan="5" class="text-end"><strong>TOTALES</strong></td>

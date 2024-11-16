@@ -137,8 +137,8 @@
             <button class="btn btn-success" onclick="exportarLibroMayor()">
               <i class="material-icons">file_download</i> <span>Exportar</span>
             </button>
-            <button class="btn btn-succes" onclick="exportarTodasLasCuentas()">
-              <i class="material-icons">file_download</i> <span>Exportar Todas</span>
+            <button class="btn btn-warning" onclick="exportarTodasLasCuentas()">
+              <i class="material-icons">file_download</i> <span>Exportar todas</span>
           </button>            
           </div>
         </div>
@@ -345,7 +345,11 @@
 
     function exportarTodasLasCuentas() {
         const periodo = document.getElementById('filtro-periodo').value;
-        window.location.href = `/exportar-todas-las-cuentas?periodo=${periodo}`;
+        if (periodo) {
+            window.location.href = `/exportar-todas-las-cuentas?periodo=${periodo}`;
+        } else {
+            alert("Por favor, seleccione un período antes de exportar.");
+        }
     }
 </script>
 

@@ -852,7 +852,6 @@ def obtener_libro_mayor(mes, año, cuenta):
     conexion.close()
     return movimientos
 
-
 def generar_libro_mayor_excel(mes, año, cuenta):
     try:
         conexion = obtener_conexion()
@@ -1121,68 +1120,112 @@ def generar_libro_caja_excel(mes, anio):
             conexion.close()
 
 def generar_excel_todas_las_cuentas(mes, año):
-    conexion = obtener_conexion()
-    cursor = conexion.cursor()
-    
-    cuentas = obtener_cuentas_distintas()  # Lista de cuentas únicas
-    ruta_plantilla = 'plantillas/LibroMayor.xlsx'
-    workbook = load_workbook(ruta_plantilla)
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
 
-    for cuenta in cuentas:
-        codigo_cuenta = cuenta['codigo_cuenta']
-        hoja = workbook.copy_worksheet(workbook.active)
-        hoja.title = f"Cuenta {codigo_cuenta}"
+        cuentas = obtener_cuentas_distintas()  # Lista de cuentas únicas
+        ruta_plantilla = 'plantillas/LibroMayor.xlsx'
+        workbook = load_workbook(ruta_plantilla)
+
+        borde = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+        fuente_estandar = Font(name='Arial', size=10)
+        alto_fila_base = workbook.active.row_dimensions[11].height  # Usamos la altura de la fila base de la plantilla
+        columnas_con_borde = list(range(1, 6))
+
+        for cuenta in cuentas:
+            codigo_cuenta = cuenta['codigo_cuenta']
+            hoja = workbook.copy_worksheet(workbook.active)
+            hoja.title = f"Cuenta {codigo_cuenta}"
+
+            periodo = f"{año}-{mes.zfill(2)}"
+            hoja.cell(row=3, column=2, value=periodo)
+            hoja.cell(row=6, column=3, value=codigo_cuenta)
+
+            consulta = """
+                SELECT fecha, numero_correlativo, glosa, debe as deudor, haber as acreedor
+                FROM (
+                    SELECT
+                        DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo,
+                        ac.fecha,
+                        CASE
+                            WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la venta de mercadería'
+                            WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
+                            ELSE ''
+                        END AS glosa,
+                        ac.debe,
+                        ac.haber
+                    FROM asientos_contables ac
+                    JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
+                    WHERE EXTRACT(MONTH FROM ac.fecha) = %s
+                    AND EXTRACT(YEAR FROM ac.fecha) = %s
+                    AND ac.codigo_cuenta = %s
+                    AND (ac.debe IS NOT NULL AND ac.debe != 0 OR ac.haber IS NOT NULL AND ac.haber != 0)
+                    ORDER BY numero_correlativo, ac.id
+                ) AS subquery;
+            """
+            cursor.execute(consulta, (mes, año, codigo_cuenta))
+            resultados = cursor.fetchall()
+
+            fila_inicial = 11
+            total_deudor = 0
+            total_acreedor = 0
+
+            for fila, registro in enumerate(resultados, start=fila_inicial):
+                hoja.row_dimensions[fila].height = alto_fila_base
+                celdas = [
+                    (1, registro[0]),  # Fecha
+                    (2, registro[1]),  # Número Correlativo
+                    (3, registro[2]),  # Glosa
+                    (4, registro[3]),  # Deudor
+                    (5, registro[4])   # Acreedor
+                ]
+
+                for col, valor in celdas:
+                    celda = hoja.cell(row=fila, column=col, value=valor)
+                    celda.border = borde
+                    celda.font = fuente_estandar
+
+                    if col in (4, 5):  # Columnas Deudor y Acreedor
+                        celda.alignment = Alignment(horizontal='right', vertical='center')
+                        celda.number_format = FORMAT_NUMBER_COMMA_SEPARATED1
+                    elif col == 1:  # Fecha
+                        celda.number_format = FORMAT_DATE_DDMMYY
+                        celda.alignment = Alignment(horizontal='center', vertical='center')
+                    elif col == 2:
+                        celda.alignment = Alignment(horizontal='center', vertical='center')
+                    else:
+                        celda.alignment = Alignment(horizontal='left', vertical='center')
+
+                    if col == 4:
+                        total_deudor += valor or 0
+                    elif col == 5:
+                        total_acreedor += valor or 0
+
+            fila_totales = fila_inicial + len(resultados)
+            hoja.row_dimensions[fila_totales].height = alto_fila_base
+            hoja.cell(row=fila_totales, column=3, value="TOTALES").border = borde
+            hoja.cell(row=fila_totales, column=3).alignment = Alignment(horizontal='center', vertical='center')
+            hoja.cell(row=fila_totales, column=3).font = Font(name='Arial', size=10, bold=True)
+
+            hoja.cell(row=fila_totales, column=4, value=total_deudor).border = borde
+            hoja.cell(row=fila_totales, column=4).number_format = FORMAT_NUMBER_COMMA_SEPARATED1
+            hoja.cell(row=fila_totales, column=4).alignment = Alignment(horizontal='right', vertical='center')
+            hoja.cell(row=fila_totales, column=4).font = fuente_estandar
+
+            hoja.cell(row=fila_totales, column=5, value=total_acreedor).border = borde
+            hoja.cell(row=fila_totales, column=5).number_format = FORMAT_NUMBER_COMMA_SEPARATED1
+            hoja.cell(row=fila_totales, column=5).alignment = Alignment(horizontal='right', vertical='center')
+            hoja.cell(row=fila_totales, column=5).font = fuente_estandar
+
+        workbook.remove(workbook.active)  # Eliminar la hoja base de la plantilla
+        output = BytesIO()
+        workbook.save(output)
+        output.seek(0)
         
-        hoja.cell(row=3, column=2, value=f"{año}-{mes.zfill(2)}")
-        hoja.cell(row=6, column=3, value=codigo_cuenta)
+        conexion.close()
+        return output
 
-        consulta = """
-            SELECT fecha, numero_correlativo, glosa, debe as deudor, haber as acreedor
-            FROM (
-                SELECT
-                    DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo,
-                    ac.fecha,
-                    CASE
-                        WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la venta de mercadería'
-                        WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
-                        ELSE ''
-                    END AS glosa,
-                    ac.debe,
-                    ac.haber
-                FROM asientos_contables ac
-                JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
-                WHERE EXTRACT(MONTH FROM ac.fecha) = %s
-                AND EXTRACT(YEAR FROM ac.fecha) = %s
-                AND ac.codigo_cuenta = %s
-                AND (ac.debe IS NOT NULL AND ac.debe != 0 OR ac.haber IS NOT NULL AND ac.haber != 0)
-                ORDER BY numero_correlativo, ac.id
-            ) AS subquery;
-        """
-        cursor.execute(consulta, (mes, año, codigo_cuenta))
-        resultados = cursor.fetchall()
-
-        total_deudor = 0
-        total_acreedor = 0
-        fila_inicial = 11
-
-        for fila, registro in enumerate(resultados, start=fila_inicial):
-            hoja.row_dimensions[fila].height = hoja.row_dimensions[fila_inicial].height
-            hoja.cell(row=fila, column=1, value=registro[0]).number_format = 'DD/MM/YY'
-            hoja.cell(row=fila, column=2, value=registro[1])
-            hoja.cell(row=fila, column=3, value=registro[2])
-            hoja.cell(row=fila, column=4, value=registro[3]).number_format = '#,##0.00'
-            hoja.cell(row=fila, column=5, value=registro[4]).number_format = '#,##0.00'
-            total_deudor += registro[3] or 0
-            total_acreedor += registro[4] or 0
-
-        hoja.cell(row=fila_inicial + len(resultados), column=3, value="TOTALES")
-        hoja.cell(row=fila_inicial + len(resultados), column=4, value=total_deudor).number_format = '#,##0.00'
-        hoja.cell(row=fila_inicial + len(resultados), column=5, value=total_acreedor).number_format = '#,##0.00'
-        
-    workbook.remove(workbook.active)  # Eliminar la hoja base de la plantilla
-    output = BytesIO()
-    workbook.save(output)
-    output.seek(0)
-    
-    conexion.close()
-    return output
+    except Exception as e:
+        print(f"Error al generar el libro mayor para todas las cuentas: {e}")
+        return None
