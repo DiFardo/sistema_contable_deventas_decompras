@@ -241,13 +241,13 @@
             data.registros.forEach(registro => {
               filas += `
                 <tr>
-                  <td class="w-correlativo">${registro.correlativo}</td>
+                  <td class="w-correlativo centered">${registro.correlativo}</td>
                   <td class="centered">${registro.fecha_emision}</td>
-                  <td>${registro.tipo_comprobante}</td>
-                  <td>${registro.serie_comprobante}</td>
+                  <td class="centered">${registro.tipo_comprobante}</td>
+                  <td class="centered">${registro.serie_comprobante}</td>
                   <td class="centered">${registro.numero_comprobante}</td>
-                  <td>${registro.tipo_documento}</td>
-                  <td>${registro.numero_documento}</td>
+                  <td class="centered">${registro.tipo_documento}</td>
+                  <td class="centered">${registro.numero_documento}</td>
                   <td>${registro.nombre_proveedor}</td>
                   <td class="text-end">${registro.base_imponible}</td>
                   <td class="text-end">${registro.igv}</td>
