@@ -46,6 +46,26 @@ jwt = JWTManager(app)
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+descripciones = {
+    "Coordinador general": "Responsable de supervisar y organizar el equipo para cumplir objetivos, asegurando una comunicación efectiva y la resolución de problemas. Facilita la toma de decisiones, gestiona riesgos y mantiene informadas a las partes interesadas sobre el progreso del proyecto.",
+    "Administrador de base de datos": "Responsable del diseño, implementación, seguridad y mantenimiento de la base de datos. Debe tener experiencia en la optimización del rendimiento de consultas y asegurar la integridad de los datos, con un enfoque en la resolución de problemas y la gestión eficiente de los datos.",
+    "Analista": "Encargado de recopilar y analizar los requisitos del sistema. Debe ser capaz de identificar las necesidades del cliente y traducirlas en especificaciones técnicas claras para el equipo. Fuerte capacidad de análisis y comunicación efectiva son clave.",
+    "Diseñador": "Encargado de la creación del diseño visual y de la experiencia del usuario (UI/UX). Debe ser capaz de crear interfaces atractivas y funcionales, asegurando que el sistema sea intuitivo y fácil de usar para los usuarios finales.",
+    "Arquitecto de software": "Responsable de diseñar la estructura técnica del sistema, seleccionando tecnologías y definiendo los componentes clave. Debe tener una visión amplia del sistema y asegurarse de que el software cumpla con los requisitos de escalabilidad, seguridad y eficiencia.",
+    "Programador": "Encargados de la codificación del sistema siguiendo las especificaciones del analista y el diseño del arquitecto. Deben tener experiencia en lenguajes de programación adecuados y ser capaces de trabajar en equipo, respetando plazos y estándares de calidad.",
+    "Supervisor de calidad": "Responsable de asegurar que el sistema cumpla con los estándares de calidad definidos. Debe gestionar las pruebas y asegurar que se mantengan altos niveles de rendimiento, usabilidad y seguridad, monitoreando el progreso y haciendo ajustes si es necesario.",
+    "Tester": "Encargados de realizar pruebas funcionales y de rendimiento del sistema para identificar errores y áreas de mejora. Deben tener habilidades técnicas para diseñar casos de prueba efectivos y capacidad para detectar problemas antes del despliegue del sistema.",
+    "Capacitador": "Responsable de desarrollar y ejecutar planes de capacitación para los usuarios finales. Debe ser capaz de crear manuales y ofrecer formación clara y efectiva, asegurándose de que los usuarios puedan manejar el sistema correctamente.",
+    "Asesor": "Ofrece asesoramiento especializado en áreas clave del proyecto, como estrategias de negocio, tecnología o gestión, y guía al equipo en la toma de decisiones críticas para el éxito del proyecto.",
+    "Administrador del negocio": "Administrador del negocio"
+}
+
+def obtener_descripcion_rol(rol):
+    print(f"Rol recibido: '{rol}'")
+    rol_normalizado = rol.strip().lower()
+    descripciones_normalizadas = {k.lower(): v for k, v in descripciones.items()}
+    return descripciones_normalizadas.get(rol_normalizado, "Rol no identificado")
+
 # Ruta para subir imagen de perfil
 @app.route("/subir_imagen_perfil", methods=["POST"])
 @jwt_required()
@@ -73,12 +93,6 @@ def subir_imagen_perfil():
 
     flash('Tipo de archivo no permitido. Selecciona una imagen válida (png, jpg, jpeg, gif).')
     return redirect(url_for('perfil_usuario'))
-
-def obtener_descripcion_rol(rol):
-    descripciones = {
-        # Tu diccionario de descripciones de roles
-    }
-    return descripciones.get(rol, "Rol no identificado")
 
 # Ruta para eliminar la imagen de perfil
 @app.route("/eliminar_imagen_perfil", methods=["POST"])
@@ -648,7 +662,6 @@ def perfil_usuario():
 
     # Obtener la descripción del rol
     descripcion_rol = obtener_descripcion_rol(perfil[3])
-
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Perfil del Usuario', 'url': '/perfil_usuario'}
