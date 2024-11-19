@@ -37,7 +37,7 @@ app.config['JWT_COOKIE_SAMESITE'] = 'Lax'  # Política SameSite para las cookies
 app.config['JWT_COOKIE_CSRF_PROTECT'] = False  # Desactivar protección CSRF para simplificar (puedes activarla si lo deseas)
 app.config['JWT_ACCESS_COOKIE_PATH'] = '/'  # Ruta de la cookie
 app.config['JWT_SESSION_COOKIE'] = True  # La cookie expirará cuando se cierre el navegador
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=10)
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=20)
 
 # Inicializa JWTManager
 jwt = JWTManager(app)
@@ -544,16 +544,6 @@ def ventas_contables():
         {'name': 'Ventas contables', 'url': '/ventas_contables'}
     ]
     return render_template("ventas/ventas_contables.html", ventas=ventas_data, breadcrumbs=breadcrumbs)
-
-@app.route("/boletas_ventas")
-@jwt_required()
-def boletas_ventas():
-    boletas_data = controlador_ventas.obtener_boletas()
-    breadcrumbs = [
-        {'name': 'Inicio', 'url': '/index'},
-        {'name': 'Boletas', 'url': '/boletas_ventas'}
-    ]
-    return render_template("ventas/boletas_ventas.html", boletas=boletas_data, breadcrumbs=breadcrumbs)
     
 # Endpoint para obtener cuentas por categoría
 @app.route("/cuentas/por_categoria", methods=["POST"])
@@ -746,6 +736,45 @@ def custom_invalid_token_response(err_str):
     """
     # Redirigir al login si el token es inválido
     return redirect(url_for('login'))
+
+def get_rutas():
+    with app.app_context():
+        return [
+            {"nombre": "Inicio", "url": url_for('index')},
+            {"nombre": "Login", "url": url_for('login')},
+            {"nombre": "Perfil de Usuario", "url": url_for('perfil_usuario')},
+            {"nombre": "Libro Diario", "url": url_for('libro_diario')},
+            {"nombre": "Libro Mayor", "url": url_for('libro_mayor')},
+            {"nombre": "Libro Caja y Bancos", "url": url_for('libro_caja')},
+            {"nombre": "Registro de Ventas", "url": url_for('registro_ventas')},
+            {"nombre": "Registro de Compras", "url": url_for('registro_compras')},
+            {"nombre": "Productos", "url": url_for('productos')},
+            {"nombre": "Cuentas Contables", "url": url_for('cuentas')},
+            # Agrega más rutas aquí
+        ]
+
+# Ruta para buscar
+@app.route("/buscar_rutas")
+def buscar_rutas():
+    term = request.args.get('term', '').lower()
+    rutas = get_rutas()  # Obtén las rutas dinámicamente
+    resultados = [ruta for ruta in rutas if term in ruta['nombre'].lower()]
+    return jsonify(resultados)
+
+@app.route('/buscar')
+def buscar():
+    term = request.args.get('term', '').lower()
+    rutas = get_rutas()
+    resultados = [ruta for ruta in rutas if term in ruta['nombre'].lower()]
+    return render_template('buscar.html', term=term, resultados=resultados)
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('page404.html'), 404
+
+@app.route('/prueba1')
+def prueba1():
+    return render_template('prueba1.html')
 
 # Iniciar el servidor
 if __name__ == "__main__":

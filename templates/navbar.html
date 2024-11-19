@@ -7,7 +7,6 @@
     <title>Sistema Contable</title>
 
     <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
     <link rel="stylesheet" href="/static/css/custom.css">
     <!-- Google fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -39,6 +38,7 @@
             border: 2px solid white;
             border-radius: 50%;
         }
+        
     </style>
 </head>
 
@@ -126,17 +126,18 @@
 
                         <div class="col-md-5 order-3 order-md-2">
                             <div class="xp-searchbar">
-                                <form id="searchForm">
+                                <form id="searchForm" action="/buscar" method="GET" class="form-inline position-relative">
                                     <div class="input-group">
-                                        <input type="search" class="form-control" placeholder="Buscar" id="searchInput">
+                                        <input type="search" name="term" class="form-control" placeholder="Buscar" id="searchInput" autocomplete="off">
                                         <div class="input-group-append">
-                                            <button class="btn" type="button" onclick="searchText()">Buscar</button>
+                                            <button class="btn" type="submit">Buscar</button>
                                         </div>
                                     </div>
+                                    <div id="searchDropdown" class="dropdown-menu" aria-labelledby="searchInput"></div>
                                 </form>
                             </div>
-                        </div>
-
+                        </div>                       
+                        
                         <div class="col-10 col-md-6 order-1 order-md-3">
                             <div class="xp-profilebar text-right">
                                 <nav class="navbar p-0">
@@ -181,12 +182,10 @@
         </div>
     </div>
 
-    <!-- Optional JavaScript -->
-    <script src="/static/js/jquery-3.3.1.min.js"></script>
-    <script src="/static/js/popper.min.js"></script>
-    <script src="/static/js/bootstrap.min.js"></script>
+
     <!-- Archivo JS para manejar notificaciones -->
     <script src="/static/js/notificaciones.js"></script>
+    <script src="/static/js/tu-script.js"></script>
     <script type="text/javascript">
         function toggleVisibility(module) {
             const sidebarTitle = document.getElementById('sidebar-title');
