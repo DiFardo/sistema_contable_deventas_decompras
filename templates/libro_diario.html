@@ -58,7 +58,7 @@
   <div class="main-content">
     <!-- Spinner para pantalla de carga -->
     <div class="spinner-wrapper" id="spinner-wrapper">
-      <div class="spinner-border" role="status"> <!-- Eliminé "text-primary" para evitar conflictos de color -->
+      <div class="spinner-border" role="status">
         <span class="visually-hidden">Cargando...</span>
       </div>
     </div>
@@ -83,7 +83,7 @@
       </div>
     </div>
 
-    <!-- Filtros: Fecha exacta y RUC en una sola fila alineados correctamente con centrado vertical -->
+    <!-- Filtros: Fecha exacta y campo de búsqueda -->
     <div class="row mb-3 align-items-center">
       <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
         <label class="me-3 d-flex justify-content-center align-items-center custom-label">
@@ -93,32 +93,23 @@
       </div>
       <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
         <label class="me-3 d-flex justify-content-center align-items-center custom-label">
-          <strong>RUC:</strong>
+          <strong>BUSCAR:</strong>
         </label>
-        <input type="text" class="form-control" value="20612188930" readonly>
+        <input type="text" class="form-control" id="search-input" placeholder="Buscar en la tabla..." aria-label="Buscar">
       </div>
     </div>
       
     <div class="table-wrapper">
       <div class="table-title">
         <div class="row justify-content-between align-items-center">
-          <!-- Input Group para Filtro de Búsqueda a la izquierda -->
-          <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-start">
-            <div class="input-group">
-              <input type="text" id="search-input" class="form-control" placeholder="Buscar en la tabla..." aria-label="Buscar">
-              <button class="btn btn-outline-secondary" type="button">
-                <i class="material-icons">search</i>
-              </button>
-            </div>
-          </div>
           <!-- Botones Alineados a la Derecha para Imprimir y Exportar -->
-          <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-end">
+          <div class="col-12 d-flex justify-content-end">
             <button class="btn btn-primary me-2" onclick="window.print()" style="background-color: #ff5733;">
-                <i class="material-icons">print</i> <span>Imprimir</span>
-              </button>
-              <button class="btn btn-success" onclick="exportarLibroDiario()">
-                <i class="material-icons">file_download</i> <span>Exportar</span>
-              </button>
+              <i class="material-icons">print</i> <span>Imprimir</span>
+            </button>
+            <button class="btn btn-success" onclick="exportarLibroDiario()">
+              <i class="material-icons">file_download</i> <span>Exportar</span>
+            </button>
           </div>
         </div>
       </div>

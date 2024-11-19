@@ -274,7 +274,7 @@ def libro_mayor_datos():
     return jsonify({
         "movimientos": filas,
         "total_debe": total_deudor,
-        "total_haber": total_acreedor
+        "total_haber": total_acreedor   
     })
 
 @app.route("/libro_caja", methods=["GET"])
