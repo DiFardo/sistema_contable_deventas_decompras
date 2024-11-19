@@ -191,6 +191,9 @@
       cargarDatos(filtroFecha.value);
     });
 
+    // Activar búsqueda dinámica
+    document.getElementById("search-input").addEventListener("input", filtrarTabla);
+
     function cargarDatos(periodo) {
       const [year, month] = periodo.split("-");
       spinnerWrapper.style.display = "block"; // Mostrar el spinner
@@ -316,6 +319,17 @@
       });
     }
 
+    function filtrarTabla() {
+      const searchTerm = document.getElementById("search-input").value.toLowerCase();
+      const rows = document.querySelectorAll("#tabla-cuerpo tr");
+
+      rows.forEach(row => {
+        const cells = row.querySelectorAll("td");
+        const rowText = Array.from(cells).map(cell => cell.textContent.toLowerCase()).join(" ");
+        row.style.display = rowText.includes(searchTerm) ? "" : "none";
+      });
+    }
+
     const recordsInput = document.getElementById("records-per-page");
     recordsInput.addEventListener("input", function() {
       rowsPerPage = parseInt(this.value);
@@ -336,7 +350,6 @@
     }
     // Redireccionar a la ruta de exportación con el período como parámetro
     window.location.href = `/exportar-registro-ventas?periodo=${filtroFecha}`;
-    }
-
+  }
 </script>
 {% endblock %}

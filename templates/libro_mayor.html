@@ -215,6 +215,9 @@
         filtroPeriodo.addEventListener("change", cargarTabla);
         filtroCuenta.addEventListener("change", cargarTabla);
 
+        // Activar búsqueda dinámica
+        document.getElementById("search-input").addEventListener("input", filtrarTabla);
+
         if (filtroPeriodo.value && filtroCuenta.value) {
             cargarTabla();
         }
@@ -239,7 +242,7 @@
 
                     filas += `
                         <tr>
-                            <td>${fechaFormatted}</td>
+                            <td class="centered">${fechaFormatted}</td>
                             <td class="w-correlativo centered">${movimiento.numero_correlativo}</td>
                             <td>${movimiento.glosa}</td>
                             <td class="text-right">${deudorFormatted}</td>
@@ -330,6 +333,17 @@
                 currentPage = parseInt(this.getAttribute("data-page"));
                 showPage(currentPage);
             });
+        });
+    }
+
+    function filtrarTabla() {
+        const searchTerm = document.getElementById("search-input").value.toLowerCase();
+        const rows = document.querySelectorAll("#tabla-cuerpo tr");
+
+        rows.forEach(row => {
+            const cells = row.querySelectorAll("td");
+            const rowText = Array.from(cells).map(cell => cell.textContent.toLowerCase()).join(" ");
+            row.style.display = rowText.includes(searchTerm) ? "" : "none";
         });
     }
 
