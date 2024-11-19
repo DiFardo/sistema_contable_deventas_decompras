@@ -1,16 +1,24 @@
-from flask import Flask, render_template, request, redirect, make_response, flash, g, jsonify, url_for, send_file
+from flask import Flask, render_template, request, redirect, make_response, flash, jsonify, url_for, send_file, g
 import os
 import hashlib
-from flask_jwt_extended import JWTManager, create_access_token
+from flask_jwt_extended import (
+    JWTManager, create_access_token, jwt_required,
+    get_jwt_identity, set_access_cookies, unset_jwt_cookies,
+    verify_jwt_in_request
+)
 import controladores.controlador_usuarios as controlador_usuarios
 import controladores.controlador_ventas as controlador_ventas
-import clases.clase_usuario as clase_usuario
 import controladores.controlador_plantillas as controlador_plantillas
-from bd_conexion import obtener_conexion  # Asegúrate de que la conexión a la base de datos esté configurada correctamente
-from controladores.controlador_cuentas import obtener_todas_cuentas, obtener_cuentas_por_categoria_endpoint, añadir_cuenta,obtener_todas_notificaciones,marcar_notificaciones_leidas,eliminar_notificacion,contar_notificaciones_no_leidas
+from bd_conexion import obtener_conexion
+from controladores.controlador_cuentas import (
+    obtener_todas_cuentas, obtener_cuentas_por_categoria_endpoint,
+    añadir_cuenta, obtener_todas_notificaciones, marcar_notificaciones_leidas,
+    eliminar_notificacion, contar_notificaciones_no_leidas
+)
 from werkzeug.utils import secure_filename
 import datetime
 from io import BytesIO
+from datetime import timedelta
 
 # Directorio donde se guardarán las imágenes de perfil
 UPLOAD_FOLDER = 'static/img/perfiles'
@@ -19,163 +27,133 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 app = Flask(__name__)
 app.debug = True
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Configuración de la clave secreta y JWT
 app.config['SECRET_KEY'] = 'super-secret'
-app.config['SESSION_COOKIE_SAMESITE'] = 'None'
-app.config['SESSION_COOKIE_SECURE'] = True
-#app.run(ssl_context=('cert.pem', 'key.pem'))
+app.config['JWT_SECRET_KEY'] = 'super-secret'  # Clave secreta para JWT
+app.config['JWT_TOKEN_LOCATION'] = ['cookies']  # Almacenaremos el JWT en cookies
+app.config['JWT_COOKIE_SECURE'] = True  # Las cookies solo se enviarán a través de HTTPS
+app.config['JWT_COOKIE_SAMESITE'] = 'Lax'  # Política SameSite para las cookies
+app.config['JWT_COOKIE_CSRF_PROTECT'] = False  # Desactivar protección CSRF para simplificar (puedes activarla si lo deseas)
+app.config['JWT_ACCESS_COOKIE_PATH'] = '/'  # Ruta de la cookie
+app.config['JWT_SESSION_COOKIE'] = True  # La cookie expirará cuando se cierre el navegador
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=10)
+
+# Inicializa JWTManager
+jwt = JWTManager(app)
 
 # Verificar si el archivo es una imagen permitida
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+# Ruta para subir imagen de perfil
 @app.route("/subir_imagen_perfil", methods=["POST"])
+@jwt_required()
 def subir_imagen_perfil():
-    # Verificar si el archivo ha sido enviado en la solicitud
     if 'imagen_perfil' not in request.files:
         flash('No se ha seleccionado ningún archivo.')
         return redirect(url_for('perfil_usuario'))
 
     file = request.files['imagen_perfil']
 
-    # Verificar si no se ha seleccionado ningún archivo
     if file.filename == '':
         flash('No se seleccionó ningún archivo.')
         return redirect(url_for('perfil_usuario'))
 
-    # Verificar si el archivo tiene un formato permitido
     if file and allowed_file(file.filename):
-        # Aseguramos que el nombre del archivo sea seguro
         filename = secure_filename(file.filename)
-        # Guardamos el archivo en el directorio de imágenes de perfiles
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
-        # Actualizar la tabla personas con la imagen
-        dni = request.cookies.get('dni')
+        # Obtener el DNI del usuario autenticado
+        dni = get_jwt_identity()
         controlador_usuarios.actualizar_imagen_perfil(dni, filename)
 
         flash('Imagen de perfil actualizada con éxito.')
         return redirect(url_for('perfil_usuario'))
 
-    # Si el tipo de archivo no es permitido
     flash('Tipo de archivo no permitido. Selecciona una imagen válida (png, jpg, jpeg, gif).')
     return redirect(url_for('perfil_usuario'))
 
 def obtener_descripcion_rol(rol):
     descripciones = {
-        "Coordinador general": "Responsable de supervisar y organizar el equipo para cumplir objetivos, asegurando una comunicación efectiva y la resolución de problemas. Facilita la toma de decisiones, gestiona riesgos y mantiene informadas a las partes interesadas sobre el progreso del proyecto.",
-        "Administrador de base de datos": "Responsable del diseño, implementación, seguridad y mantenimiento de la base de datos. Debe tener experiencia en la optimización del rendimiento de consultas y asegurar la integridad de los datos, con un enfoque en la resolución de problemas y la gestión eficiente de los datos.",
-        "Analista": "Encargado de recopilar y analizar los requisitos del sistema. Debe ser capaz de identificar las necesidades del cliente y traducirlas en especificaciones técnicas claras para el equipo. Fuerte capacidad de análisis y comunicación efectiva son clave.",
-        "Diseñador": "Encargado de la creación del diseño visual y de la experiencia del usuario (UI/UX). Debe ser capaz de crear interfaces atractivas y funcionales, asegurando que el sistema sea intuitivo y fácil de usar para los usuarios finales.",
-        "Arquitecto de software": "Responsable de diseñar la estructura técnica del sistema, seleccionando tecnologías y definiendo los componentes clave. Debe tener una visión amplia del sistema y asegurarse de que el software cumpla con los requisitos de escalabilidad, seguridad y eficiencia.",
-        "Programador": "Encargados de la codificación del sistema siguiendo las especificaciones del analista y el diseño del arquitecto. Deben tener experiencia en lenguajes de programación adecuados y ser capaces de trabajar en equipo, respetando plazos y estándares de calidad.",
-        "Supervisor de calidad": "Responsable de asegurar que el sistema cumpla con los estándares de calidad definidos. Debe gestionar las pruebas y asegurar que se mantengan altos niveles de rendimiento, usabilidad y seguridad, monitoreando el progreso y haciendo ajustes si es necesario.",
-        "Tester": "Encargados de realizar pruebas funcionales y de rendimiento del sistema para identificar errores y áreas de mejora. Deben tener habilidades técnicas para diseñar casos de prueba efectivos y capacidad para detectar problemas antes del despliegue del sistema.",
-        "Capacitador": "Responsable de desarrollar y ejecutar planes de capacitación para los usuarios finales. Debe ser capaz de crear manuales y ofrecer formación clara y efectiva, asegurándose de que los usuarios puedan manejar el sistema correctamente.",
-        "Asesor": "Ofrece asesoramiento especializado en áreas clave del proyecto, como estrategias de negocio, tecnología o gestión, y guía al equipo en la toma de decisiones críticas para el éxito del proyecto."
+        # Tu diccionario de descripciones de roles
     }
     return descripciones.get(rol, "Rol no identificado")
 
 # Ruta para eliminar la imagen de perfil
 @app.route("/eliminar_imagen_perfil", methods=["POST"])
+@jwt_required()
 def eliminar_imagen_perfil():
-    dni = request.cookies.get('dni')
-    
-    # Verificar si el usuario tiene una imagen
+    dni = get_jwt_identity()
+
     imagen_actual = controlador_usuarios.obtener_imagen_perfil(dni)
-    
+
     if not imagen_actual:
         flash('No tienes una imagen de perfil para eliminar.')
         return redirect(url_for('perfil_usuario'))
 
-    # Eliminar la imagen del servidor
     if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], imagen_actual)):
         os.remove(os.path.join(app.config['UPLOAD_FOLDER'], imagen_actual))
 
-    # Eliminar la referencia de la imagen en la base de datos
     controlador_usuarios.eliminar_imagen_perfil(dni)
 
     flash('Imagen de perfil eliminada con éxito.')
     return redirect(url_for('perfil_usuario'))
 
-
-# Inicializa JWTManager
-jwt = JWTManager(app)
-from functools import wraps
-
-# Decorador para verificar el login en las rutas protegidas
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not validar_token():  # Llama a la función que valida el token
-            flash("Debe iniciar sesión para acceder a esta página.")
-            return redirect(url_for('login'))
-        return f(*args, **kwargs)
-    return decorated_function
-
-def validar_token():
-    token = request.cookies.get('token')
-    dni = request.cookies.get('dni')
-    usuario = controlador_usuarios.obtener_usuario(dni)
-    if usuario and token == usuario[3]:
-        return True
-    return False
-
-
+# Ruta de inicio de sesión
 @app.route("/")
 @app.route("/login_user")
 def login():
-    token = request.cookies.get('token')
-    if not token:
-        return render_template("login_user.html")
-    if validar_token():
-        return redirect("/index")
+    try:
+        verify_jwt_in_request(optional=True)  # Verifica el token si existe
+        if get_jwt_identity():  # Obtiene la identidad solo si el token es válido
+            return redirect("/index")
+    except Exception:
+        pass  # Si no hay token o es inválido, continúa mostrando la página de login
     return render_template("login_user.html")
 
 @app.route("/index")
-@login_required
+@jwt_required()
 def index():
-    token = request.cookies.get('token')
-    dni = request.cookies.get('dni')
+    dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
-    
+
     if usuario and (not usuario[6] or usuario[6] is None):
-        usuario = list(usuario)  
-        usuario[6] = "perfil_defecto.png" 
+        usuario = list(usuario)
+        usuario[6] = "perfil_defecto.png"
 
     breadcrumbs = [{'name': 'Inicio', 'url': '/index'}]
     return render_template("index.html", breadcrumbs=breadcrumbs, usuario=usuario)
 
 @app.route("/actualizar_perfil", methods=["POST"])
+@jwt_required()
 def actualizar_perfil():
-    dni = request.cookies.get('dni')
+    dni = get_jwt_identity()
     nombres = request.form['nombres']
     apellidos = request.form['apellidos']
-    
-    # Actualiza los datos
+
     controlador_usuarios.actualizar_perfil_usuario(dni, nombres, apellidos)
-    
+
     flash("Perfil actualizado correctamente.")
     return redirect(url_for('perfil_usuario'))
 
-
-
+# Añade @jwt_required() a las rutas que requieren autenticación
 @app.route("/libro_diario", methods=["GET"])
-@login_required
+@jwt_required()
 def libro_diario():
-    token = request.cookies.get('token')
-    dni = request.cookies.get('dni')
+    dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
     fecha = request.args.get("fecha", None)
-    
+
     movimientos, total_debe, total_haber = (
         controlador_plantillas.obtener_libro_diario_por_fecha(fecha) if fecha else ([], 0, 0)
     )
-    
+
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Libro diario', 'url': '/libro_diario'}
     ]
-    
+
     return render_template(
         "libro_diario.html",
         movimientos=movimientos,
@@ -186,7 +164,7 @@ def libro_diario():
     )
 
 @app.route("/libro_diario_datos")
-@login_required
+@jwt_required()
 def libro_diario_datos():
     fecha = request.args.get("fecha")
     movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha)
@@ -209,6 +187,7 @@ def libro_diario_datos():
     return jsonify(filas=filas, total_debe=total_debe, total_haber=total_haber)
 
 @app.route("/libro_mayor")
+@jwt_required()
 def libro_mayor():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
@@ -245,6 +224,7 @@ def libro_mayor():
     )
 
 @app.route("/libro_mayor_datos", methods=["GET"])
+@jwt_required()
 def libro_mayor_datos():
     periodo = request.args.get('periodo', '')
     cuenta = request.args.get('cuenta', '')
@@ -275,6 +255,7 @@ def libro_mayor_datos():
     })
 
 @app.route("/exportar-todas-las-cuentas", methods=["GET"])
+@jwt_required()
 def exportar_todas_las_cuentas():
     try:
         periodo = request.args.get('periodo', '')
@@ -293,6 +274,7 @@ def exportar_todas_las_cuentas():
         return jsonify({'error': str(e)}), 500
 
 @app.route("/libro_caja", methods=["GET"])
+@jwt_required()
 def libro_caja():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
@@ -333,18 +315,8 @@ def libro_caja():
         usuario=usuario
     )
 
-    return render_template(
-        "libro_caja.html",
-        movimientos=movimientos,
-        breadcrumbs=breadcrumbs,
-        usuario=usuario,
-        total_deudor=total_deudor,
-        total_acreedor=total_acreedor
-    )
-
-
-
 @app.route("/registro_ventas", methods=["GET"])
+@jwt_required()
 def registro_ventas():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
@@ -371,6 +343,7 @@ def registro_ventas():
     )
 
 @app.route("/registro_ventas_datos", methods=["GET"])
+@jwt_required()
 def registro_ventas_datos():
     mes = request.args.get("month")
     anio = request.args.get("year")
@@ -401,6 +374,7 @@ def registro_ventas_datos():
     )
 
 @app.route("/registro_compras_datos", methods=["GET"])
+@jwt_required()
 def registro_compras_datos():
     mes = request.args.get("month")
     anio = request.args.get("year")
@@ -431,6 +405,7 @@ def registro_compras_datos():
     )
 
 @app.route('/exportar-libro-caja-bancos', methods=['GET'])
+@jwt_required()
 def exportar_libro_caja_bancos():
     periodo = request.args.get('periodo')
     if not periodo:
@@ -442,6 +417,7 @@ def exportar_libro_caja_bancos():
     return controlador_plantillas.generar_libro_caja_excel(mes, anio)
 
 @app.route('/exportar-libro-diario', methods=['GET'])
+@jwt_required()
 def exportar_libro_diario():
     fecha = request.args.get('fecha')
     if not fecha:
@@ -453,6 +429,7 @@ def exportar_libro_diario():
     return controlador_plantillas.generar_libro_diario_excel(fecha)
 
 @app.route("/asientos_contables")
+@jwt_required()
 def asientos_contables():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
@@ -468,6 +445,7 @@ def asientos_contables():
 
 
 @app.route("/registro_compras", methods=["GET"])
+@jwt_required()
 def registro_compras():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
@@ -494,6 +472,7 @@ def registro_compras():
     )
 
 @app.route("/ventas/productos")
+@jwt_required()
 def productos():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
@@ -509,60 +488,41 @@ def productos():
 def procesar_login():
     try:
         dni = request.form["dni"]
-        password = request.form["password"].strip()  # Elimina espacios en blanco adicionales
-        print(f"Intentando iniciar sesión con DNI: {dni}")
-        
-        # Obtenemos el usuario
+        password = request.form["password"].strip()
+
         usuario = controlador_usuarios.obtener_usuario(dni)
         if not usuario:
-            print("Usuario no encontrado")
             flash("Usuario no encontrado.")
             return redirect("/login_user")
 
-        # Encriptamos la contraseña ingresada por el usuario
         h = hashlib.new("sha256")
-        h.update(password.encode('utf-8'))  # Asegúrate de codificar la contraseña
-        encpass = h.hexdigest().lower()  # Convertimos el hash a minúsculas para la comparación
-        print(f"Contraseña encriptada ingresada: {encpass}, Contraseña esperada: {usuario[2]}")
+        h.update(password.encode('utf-8'))
+        encpass = h.hexdigest().lower()
 
-        # Comparamos el hash de la contraseña ingresada con el hash almacenado
-        if encpass == usuario[2].lower():  # Convertimos ambos a minúsculas para evitar problemas de mayúsculas/minúsculas
+        if encpass == usuario[2].lower():
             access_token = create_access_token(identity=dni)
-            controlador_usuarios.actualizartoken_usuario(dni, access_token)  # Actualiza el token en la base de datos
-            resp = make_response(redirect("/index"))  # Cambiado para redirigir a index.html
-            resp.set_cookie('token', access_token)
-            resp.set_cookie('dni', dni)
-            print("Inicio de sesión exitoso")
+            resp = make_response(redirect("/index"))
+            # Establecer el token en las cookies
+            set_access_cookies(resp, access_token)
             return resp
-
         else:
-            print("Contraseña incorrecta")
             flash("Contraseña incorrecta.")
             return redirect("/login_user")
 
     except Exception as e:
-        print(f"Error en el inicio de sesión: {e}")
         flash("Ocurrió un error. Por favor, inténtelo de nuevo.")
         return redirect("/login_user")
 
-
 @app.route("/procesar_logout")
 def procesar_logout():
-    try:
-        dni = request.cookies.get('dni')
-        controlador_usuarios.actualizartoken_usuario(dni, "")  # Borra el token en la base de datos
-        resp = make_response(redirect("/login_user"))
-        resp.set_cookie('token', '', 0)
-        resp.set_cookie('dni', '', 0)
-        print("Sesión cerrada correctamente")
-        return resp
-    except Exception as e:
-        print(f"Error al cerrar sesión: {e}")
-        flash("Error al cerrar la sesión.")
-        return redirect("/login_user")
-
+    resp = make_response(redirect("/login_user"))
+    # Eliminar las cookies JWT
+    unset_jwt_cookies(resp)
+    flash("Sesión cerrada correctamente.")
+    return resp
 
 @app.route("/cuentas")
+@jwt_required()
 def cuentas():
     cuentas_data = obtener_todas_cuentas()  # Llama a la función para obtener los datos de las cuentas
     token = request.cookies.get('token')
@@ -576,6 +536,7 @@ def cuentas():
     return render_template("cuentas.html", cuentas=cuentas_data, breadcrumbs=breadcrumbs, usuario=usuario)  # Pasar el usuario a la plantilla
 
 @app.route("/ventas_contables")
+@jwt_required()
 def ventas_contables():
     ventas_data = controlador_ventas.obtener_todas_ventas()
     breadcrumbs = [
@@ -585,6 +546,7 @@ def ventas_contables():
     return render_template("ventas/ventas_contables.html", ventas=ventas_data, breadcrumbs=breadcrumbs)
 
 @app.route("/boletas_ventas")
+@jwt_required()
 def boletas_ventas():
     boletas_data = controlador_ventas.obtener_boletas()
     breadcrumbs = [
@@ -593,27 +555,15 @@ def boletas_ventas():
     ]
     return render_template("ventas/boletas_ventas.html", boletas=boletas_data, breadcrumbs=breadcrumbs)
     
-#@app.before_request
-#def cargar_usuario():
-#   token = request.cookies.get('token')
- #   dni = request.cookies.get('dni')
- #   if dni:
-  #      g.usuario = controlador_usuarios.obtener_usuario(dni)  # Almacena el usuario en g
-   # else:
-    #    g.usuario = None  # Si no hay dni, asegura que g.usuario sea None
-
-
-#@app.context_processor
-#def contexto_global():
- #   return {'usuario': getattr(g, 'usuario', None)}  # Devuelve el usuario o None si no está definido
-
 # Endpoint para obtener cuentas por categoría
 @app.route("/cuentas/por_categoria", methods=["POST"])
+@jwt_required()
 def cuentas_por_categoria():
     return obtener_cuentas_por_categoria_endpoint()
 
 # Nueva ruta para añadir una cuenta
 @app.route("/cuentas/añadir", methods=["POST"])
+@jwt_required()
 def cuentas_añadir():
     try:
         # Llamar a la función para añadir una cuenta desde el controlador
@@ -625,6 +575,7 @@ def cuentas_añadir():
 
 #registro ventas
 @app.route('/exportar-registro-ventas', methods=['GET'])
+@jwt_required()
 def exportar_registro_ventas():
     periodo = request.args.get('periodo')
     if not periodo:
@@ -636,6 +587,7 @@ def exportar_registro_ventas():
     return controlador_plantillas.generar_registro_venta_excel(mes, anio)
 
 @app.route('/exportar-registro-compras', methods=['GET'])
+@jwt_required()
 def exportar_registro_compras():
     periodo = request.args.get('periodo')
     if not periodo:
@@ -647,6 +599,7 @@ def exportar_registro_compras():
     return controlador_plantillas.generar_registro_compra_excel(mes, anio)
 
 @app.route('/exportar-libro-mayor', methods=['GET'])
+@jwt_required()
 def exportar_libro_mayor():
     periodo = request.args.get('periodo')
     cuenta = request.args.get('cuenta')
@@ -660,6 +613,7 @@ def exportar_libro_mayor():
     return controlador_plantillas.generar_libro_mayor_excel(mes, año, cuenta)
 
 @app.route('/notificaciones', methods=['GET'])
+@jwt_required()
 def obtener_notificaciones_endpoint():
     notificaciones = obtener_todas_notificaciones()
     total_no_leidas = contar_notificaciones_no_leidas()
@@ -672,12 +626,14 @@ def obtener_notificaciones_endpoint():
 
 # Ruta para contar notificaciones no leídas
 @app.route('/notificaciones/contar', methods=['GET'])
+@jwt_required()
 def contar_notificaciones_endpoint():
     total_no_leidas = contar_notificaciones_no_leidas()
     return jsonify({'total_no_leidas': total_no_leidas})
 
 # Ruta para eliminar una notificación específica
 @app.route('/notificaciones/eliminar', methods=['POST'])
+@jwt_required()
 def eliminar_notificacion_endpoint():
     data = request.get_json()
     notificacion_id = data.get('id')
@@ -689,24 +645,24 @@ def eliminar_notificacion_endpoint():
 
 # Ruta para marcar todas las notificaciones como leídas
 @app.route('/notificaciones/marcar_leidas', methods=['POST'])
+@jwt_required()
 def marcar_notificaciones_leidas_endpoint():
     return marcar_notificaciones_leidas()
 
 @app.route("/perfil_usuario")
+@jwt_required()
 def perfil_usuario():
-    token = request.cookies.get('token')
-    dni = request.cookies.get('dni')
+    # Obtener el DNI del usuario autenticado desde el token JWT
+    dni = get_jwt_identity()
 
-    if not token or not validar_token():
-        return redirect("/login_user")
-    
+    # Obtener información del usuario
     usuario = controlador_usuarios.obtener_usuario(dni)
     perfil = controlador_usuarios.obtener_detalles_perfil(dni)
-    
+
     if not perfil:
         flash("Usuario no encontrado.")
         return redirect("/index")
-    
+
     # Obtener la descripción del rol
     descripcion_rol = obtener_descripcion_rol(perfil[3])
 
@@ -714,8 +670,82 @@ def perfil_usuario():
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Perfil del Usuario', 'url': '/perfil_usuario'}
     ]
-    
-    return render_template("perfil_usuario.html", usuario=usuario, perfil=perfil, descripcion_rol=descripcion_rol, breadcrumbs=breadcrumbs)
+
+    return render_template(
+        "perfil_usuario.html",
+        usuario=usuario,
+        perfil=perfil,
+        descripcion_rol=descripcion_rol,
+        breadcrumbs=breadcrumbs
+    )
+
+def cargar_usuario():
+    if request.endpoint in app.view_functions and 'static' not in request.path:
+        if get_jwt_identity():
+            dni = get_jwt_identity()
+            usuario = controlador_usuarios.obtener_usuario(dni)
+            if usuario:
+                g.usuario = usuario
+            else:
+                g.usuario = None
+        else:
+            g.usuario = None
+
+@app.context_processor
+def contexto_global():
+    return {'usuario': getattr(g, 'usuario', None)}
+
+@app.after_request
+def no_cache(response):
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, public, max-age=0"
+    response.headers["Expires"] = "0"
+    response.headers["Pragma"] = "no-cache"
+    return response
+
+@jwt.expired_token_loader
+def expired_token_callback(jwt_header, jwt_payload):
+    """
+    Manejo específico de tokens expirados.
+    """
+    flash("Tu sesión ha expirado. Por favor, inicia sesión nuevamente.")
+    resp = make_response(redirect(url_for('login')))
+    unset_jwt_cookies(resp)  # Elimina cookies vencidas
+    return resp
+
+# Manejador general de errores 401
+@app.errorhandler(401)
+def unauthorized_error_handler(e):
+    """
+    Manejo general de errores de autorización.
+    """
+    # Verificar si el error es por token expirado
+    if "token has expired" in str(e):
+        # Redirigir al flujo específico de expiración de tokens
+        return expired_token_callback(None, None)
+
+    # Caso general para otros errores de autorización
+    flash("No autorizado. Por favor, inicia sesión.")
+    resp = make_response(redirect(url_for('login')))
+    unset_jwt_cookies(resp)  # Limpia cookies, por si acaso
+    return resp
+
+@jwt.unauthorized_loader
+def custom_unauthorized_response(err_str):
+    """
+    Se llama cuando falta el token o es inválido.
+    Redirige al usuario a la página de inicio de sesión.
+    """
+    # Redirigir al login si no hay token
+    return redirect(url_for('login'))
+
+@jwt.invalid_token_loader
+def custom_invalid_token_response(err_str):
+    """
+    Se llama cuando el token es inválido.
+    Redirige al usuario a la página de inicio de sesión.
+    """
+    # Redirigir al login si el token es inválido
+    return redirect(url_for('login'))
 
 # Iniciar el servidor
 if __name__ == "__main__":
