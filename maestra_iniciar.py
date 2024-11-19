@@ -151,7 +151,6 @@ def actualizar_perfil():
     flash("Perfil actualizado correctamente.")
     return redirect(url_for('perfil_usuario'))
 
-# Añade @jwt_required() a las rutas que requieren autenticación
 @app.route("/libro_diario", methods=["GET"])
 @jwt_required()
 def libro_diario():
