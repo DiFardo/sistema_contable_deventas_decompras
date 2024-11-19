@@ -189,8 +189,7 @@ def libro_diario_datos():
 @app.route("/libro_mayor")
 @jwt_required()
 def libro_mayor():
-    token = request.cookies.get('token')
-    dni = request.cookies.get('dni')
+    dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
     cuentas = controlador_plantillas.obtener_cuentas_distintas()
     periodo = request.args.get('periodo', '')
@@ -276,8 +275,7 @@ def exportar_todas_las_cuentas():
 @app.route("/libro_caja", methods=["GET"])
 @jwt_required()
 def libro_caja():
-    token = request.cookies.get('token')
-    dni = request.cookies.get('dni')
+    dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
     periodo = request.args.get("periodo", None)
     mes = año = None
@@ -318,8 +316,7 @@ def libro_caja():
 @app.route("/registro_ventas", methods=["GET"])
 @jwt_required()
 def registro_ventas():
-    token = request.cookies.get('token')
-    dni = request.cookies.get('dni')
+    dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
     periodo = request.args.get("periodo", None)
     mes = año = None
@@ -431,8 +428,7 @@ def exportar_libro_diario():
 @app.route("/asientos_contables")
 @jwt_required()
 def asientos_contables():
-    token = request.cookies.get('token')
-    dni = request.cookies.get('dni')
+    dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
 
     breadcrumbs = [
@@ -447,8 +443,7 @@ def asientos_contables():
 @app.route("/registro_compras", methods=["GET"])
 @jwt_required()
 def registro_compras():
-    token = request.cookies.get('token')
-    dni = request.cookies.get('dni')
+    dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
     periodo = request.args.get("periodo", None)
     mes = año = None
@@ -474,8 +469,7 @@ def registro_compras():
 @app.route("/ventas/productos")
 @jwt_required()
 def productos():
-    token = request.cookies.get('token')
-    dni = request.cookies.get('dni')
+    dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
@@ -525,8 +519,7 @@ def procesar_logout():
 @jwt_required()
 def cuentas():
     cuentas_data = obtener_todas_cuentas()  # Llama a la función para obtener los datos de las cuentas
-    token = request.cookies.get('token')
-    dni = request.cookies.get('dni')
+    dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)  # Obtener el usuario con DNI desde la base de datos
 
     breadcrumbs = [
