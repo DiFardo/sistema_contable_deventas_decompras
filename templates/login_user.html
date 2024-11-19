@@ -100,8 +100,8 @@
                 <h4 class="font-weight-bolder text-center" style="margin-bottom: 30px;">Iniciar sesión</h4>
                 <form role="form" class="text-start" action="{{ url_for('procesar_login') }}" method="post">
                   <div class="input-group input-group-outline my-3 position-relative">
-                    <input type="text" class="form-control" name="dni" id="dni" placeholder="DNI" required>
-                  </div>
+                    <input type="text" class="form-control" name="dni" id="dni" placeholder="DNI" required maxlength="8">
+                  </div>                  
                   <div class="input-group input-group-outline mb-3 position-relative">
                     <input type="password" class="form-control" name="password" id="password" placeholder="Contraseña" required>
                   </div>

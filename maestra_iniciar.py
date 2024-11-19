@@ -746,20 +746,15 @@ def get_rutas():
             # Agrega más rutas aquí
         ]
 
-# Ruta para buscar
-@app.route("/buscar_rutas")
-def buscar_rutas():
-    term = request.args.get('term', '').lower()
-    rutas = get_rutas()  # Obtén las rutas dinámicamente
-    resultados = [ruta for ruta in rutas if term in ruta['nombre'].lower()]
-    return jsonify(resultados)
-
 @app.route('/buscar')
+@jwt_required()
 def buscar():
+    dni = get_jwt_identity()
+    usuario = controlador_usuarios.obtener_usuario(dni)
     term = request.args.get('term', '').lower()
     rutas = get_rutas()
     resultados = [ruta for ruta in rutas if term in ruta['nombre'].lower()]
-    return render_template('buscar.html', term=term, resultados=resultados)
+    return render_template('buscar.html', term=term, resultados=resultados, usuario=usuario)
 
 @app.errorhandler(404)
 def page_not_found(e):
