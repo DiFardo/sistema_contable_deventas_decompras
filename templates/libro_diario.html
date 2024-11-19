@@ -212,18 +212,23 @@
                     filas += `
                         <tr>
                             ${movimiento.debe === null && movimiento.haber === null ? `
-                                <td></td><td></td><td></td><td></td><td></td><td></td>
-                                <td>${movimiento.codigo_cuenta || "-"}</td>
-                                <td>${movimiento.denominacion || "-"}</td>
-                                <td class="text-right"></td>
-                                <td class="text-right"></td>
-                            ` : `
                                 <td>${movimiento.numero_correlativo || "-"}</td>
                                 <td>${movimiento.fecha || "-"}</td>
                                 <td>${movimiento.glosa || "-"}</td>
                                 <td>${movimiento.codigo_del_libro || "-"}</td>
                                 <td>${movimiento.numero_correlativo_documento || "-"}</td>
                                 <td>${movimiento.numero_documento_sustentatorio || "-"}</td>
+                                <td>${movimiento.codigo_cuenta || "-"}</td>
+                                <td>${movimiento.denominacion || "-"}</td>
+                                <td class="text-right"></td>
+                                <td class="text-right"></td>
+                            ` : `
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
                                 <td>${movimiento.codigo_cuenta || "-"}</td>
                                 <td>${movimiento.denominacion || "-"}</td>
                                 <td class="text-right">${movimiento.debe || "-"}</td>
