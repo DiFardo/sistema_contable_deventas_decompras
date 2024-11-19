@@ -12,15 +12,62 @@
 
 {% block contenido %}
 <style>
-  th {
+   th {
+    text-align: center;
+    vertical-align: middle;
+    font-weight: bold;
+  }
+  td.centered {
     text-align: center;
     vertical-align: middle;
   }
-  .text-center {
-    text-align: center;
+  .bg-orange {
+    background-color: #FF9933;
+    color: white;
   }
-  .text-right {
-    text-align: right;
+  .bg-cyan {
+    background-color: #00CCCC;
+    color: white;
+  }
+  .bg-green {
+    background-color: #99CC99;
+    color: black;
+  }
+  .w-correlativo {
+    width: 10%;
+  }
+
+  /* Estilos para centrar el spinner dentro de la tabla */
+  .spinner-wrapper {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+  }
+
+  /* Cambiar el color del spinner */
+  .spinner-border {
+    color: #e73209 !important; /* Color rojo para el spinner */
+  }
+
+  @media print {
+    body {
+      visibility: hidden;
+    }
+    .table-wrapper, .table {
+      visibility: visible;
+      width: 100%;
+    }
+    .table-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    @page {
+      size: landscape;
+    }
   }
 </style>
 
@@ -73,13 +120,15 @@
             </div>
           </div>
           <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-end">
-            <button class="btn btn-primary me-2" onclick="window.print()" style="background-color: #ff5733;">
-                <i class="material-icons">print</i> <span>Imprimir</span>
+            <button class="btn btn-danger me-2 d-flex align-items-center" onclick="abrirNuevaPaginaImprimirCaja()">
+                <i class="material-icons me-1">print</i>
+                <span>Imprimir</span>
             </button>
-            <button class="btn btn-success" onclick="exportarLibroCajaBancos()">
-              <i class="material-icons">file_download</i> <span>Exportar</span>
+            <button class="btn btn-success d-flex align-items-center" onclick="exportarLibroCajaBancos()">
+                <i class="material-icons me-1">picture_as_pdf</i>
+                <span>Exportar</span>
             </button>
-          </div>
+        </div>        
         </div>
       </div>
 
@@ -195,6 +244,22 @@
         const url = `/exportar-libro-caja-bancos?periodo=${encodeURIComponent(periodo)}`;
         window.location.href = url;
     }
+
+    function abrirNuevaPaginaImprimirCaja() {
+    const periodo = document.getElementById('filtro-periodo').value;
+    if (!periodo) {
+        alert('Por favor, selecciona un periodo antes de continuar.');
+        return;
+    }
+
+    // Redirige a la nueva ruta con el parámetro de periodo
+    const url = `/libro_caja_imprimir?periodo=${encodeURIComponent(periodo)}`;
+    const nuevaVentana = window.open(url, '_blank');
+    if (!nuevaVentana) {
+        alert('Por favor, permite que el navegador abra ventanas emergentes.');
+    }
+}
+
   </script>
 </div>
 {% endblock %}

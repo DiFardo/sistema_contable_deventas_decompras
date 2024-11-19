@@ -100,13 +100,17 @@
             </div>
           </div>
           <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-end">
-            <button class="btn btn-primary me-2" onclick="window.print()" style="background-color: #ff5733;">
-              <i class="material-icons">print</i> <span>Imprimir</span>
-            </button>
-            <button class="btn btn-success" onclick="exportarRegistroVentas()">
-              <i class="material-icons">file_download</i> <span>Exportar</span>
+            <button class="btn btn-danger me-2 d-flex align-items-center" onclick="abrirNuevaPaginaImprimirVentas()">
+              <i class="material-icons me-1">print</i>
+              <span>Imprimir</span>
+          </button>
+          
+            <button class="btn btn-success d-flex align-items-center" onclick="exportarRegistroVentas()">
+              <i class="material-icons me-1">picture_as_pdf</i>
+              <span>Exportar</span>
             </button>
           </div>
+        </div>
         </div>
       </div>
 
@@ -337,6 +341,22 @@
     // Redireccionar a la ruta de exportación con el período como parámetro
     window.location.href = `/exportar-registro-ventas?periodo=${filtroFecha}`;
     }
+
+    function abrirNuevaPaginaImprimirVentas() {
+    const periodo = document.getElementById('filtro-fecha').value; // Usar el ID correcto
+    if (!periodo) {
+        alert('Por favor, selecciona un periodo antes de continuar.');
+        return;
+    }
+
+    // Redirige a la nueva ruta con el parámetro de periodo
+    const url = `/registro_ventas_imprimir?periodo=${encodeURIComponent(periodo)}`;
+    const nuevaVentana = window.open(url, '_blank');
+    if (!nuevaVentana) {
+        alert('Por favor, permite que el navegador abra ventanas emergentes.');
+    }
+}
+
 
 </script>
 {% endblock %}

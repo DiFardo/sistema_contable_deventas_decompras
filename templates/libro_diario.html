@@ -104,9 +104,9 @@
         <div class="row justify-content-between align-items-center">
           <!-- Botones Alineados a la Derecha para Imprimir y Exportar -->
           <div class="col-12 d-flex justify-content-end">
-            <button class="btn btn-primary me-2" onclick="window.print()" style="background-color: #ff5733;">
+            <button class="btn btn-primary me-2" onclick="abrirNuevaPaginaImprimir()" style="background-color: #ff5733;">
               <i class="material-icons">print</i> <span>Imprimir</span>
-            </button>
+          </button>
             <button class="btn btn-success" onclick="exportarLibroDiario()">
               <i class="material-icons">file_download</i> <span>Exportar</span>
             </button>
@@ -360,6 +360,22 @@
         const url = `/exportar-libro-diario?fecha=${encodeURIComponent(fecha)}`;
         window.location.href = url;
     }
+
+    function abrirNuevaPaginaImprimir() {
+    const fecha = document.getElementById('filtro-fecha').value;
+    if (!fecha) {
+        alert('Por favor, selecciona una fecha antes de continuar.');
+        return;
+    }
+
+    // Redirige a la nueva ruta con el parámetro de fecha
+    const url = `/libro_diario_imprimir?fecha=${encodeURIComponent(fecha)}`;
+    const nuevaVentana = window.open(url, '_blank');
+    if (!nuevaVentana) {
+        alert('Por favor, permite que el navegador abra ventanas emergentes.');
+    }
+}
+
   </script>
 </div>
 {% endblock %}

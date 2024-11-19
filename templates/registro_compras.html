@@ -129,9 +129,9 @@
           </div>
 
           <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-end">
-            <button class="btn btn-primary me-2" onclick="window.print()" style="background-color: #ff5733;">
+            <button class="btn btn-primary me-2" onclick="abrirNuevaPaginaImprimirCompras()" style="background-color: #ff5733;">
               <i class="material-icons">print</i> <span>Imprimir</span>
-            </button>
+          </button>          
             <button class="btn btn-success" onclick="exportarRegistroCompras()">
               <i class="material-icons">file_download</i> <span>Exportar</span>
             </button>
@@ -374,6 +374,23 @@
       }
       window.location.href = `/exportar-registro-compras?periodo=${filtroFecha}`;
     }
+
+
+    function abrirNuevaPaginaImprimirCompras() {
+    const periodo = document.getElementById('filtro-fecha').value;
+    if (!periodo) {
+        alert('Por favor, selecciona un periodo antes de continuar.');
+        return;
+    }
+
+    // Redirige a la nueva ruta con el parámetro de periodo
+    const url = `/registro_compras_imprimir?periodo=${encodeURIComponent(periodo)}`;
+    const nuevaVentana = window.open(url, '_blank');
+    if (!nuevaVentana) {
+        alert('Por favor, permite que el navegador abra ventanas emergentes.');
+    }
+}
+
   </script>
 </div>
 {% endblock %}
