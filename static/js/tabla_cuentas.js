@@ -15,6 +15,11 @@ document.addEventListener('DOMContentLoaded', function () {
     // Variable para almacenar el nivel seleccionado
     let nivelSeleccionado = 2; // Nivel predeterminado de 3 dígitos
 
+
+    let cuentaSeleccionada = null; // Código de cuenta seleccionada para "Dar de Baja"
+    let nuevaAccionEstado = null;  // Estado que se aplicará a la cuenta ("true" o "false")
+
+
     // Crear mensajes de error para los campos
     var errorCodigo = document.createElement('div');
     errorCodigo.classList.add('error-message');
@@ -63,18 +68,18 @@ document.addEventListener('DOMContentLoaded', function () {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ categoria: categoriaId })
         })
-        .then(response => response.json())
-        .then(data => {
-            selectCuentaPadre.innerHTML = '<option value="">Seleccione una cuenta padre</option>';
-            data.forEach(cuenta => {
-                var option = document.createElement('option');
-                option.value = cuenta.id;
-                option.textContent = `${cuenta.codigo} - ${cuenta.descripcion}`;
-                selectCuentaPadre.appendChild(option);
-            });
-            if (callback) callback();
-        })
-        .catch(error => console.error('Error al cargar las cuentas por categoría:', error));
+            .then(response => response.json())
+            .then(data => {
+                selectCuentaPadre.innerHTML = '<option value="">Seleccione una cuenta padre</option>';
+                data.forEach(cuenta => {
+                    var option = document.createElement('option');
+                    option.value = cuenta.id;
+                    option.textContent = `${cuenta.codigo} - ${cuenta.descripcion}`;
+                    selectCuentaPadre.appendChild(option);
+                });
+                if (callback) callback();
+            })
+            .catch(error => console.error('Error al cargar las cuentas por categoría:', error));
     }
 
     selectCategoria.addEventListener('change', function () {
@@ -86,21 +91,25 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         limpiarError(selectCategoria, errorCategoria);
     });
-
     document.querySelectorAll('.add, .edit, .view').forEach(function (button) {
         button.addEventListener('click', function () {
+            limpiarErrores(); // Limpiar errores al abrir el modal
             if (button.classList.contains('add')) {
                 modalTitle.textContent = 'Añadir cuenta';
                 limpiarCamposModal();
                 habilitarCamposModal();
                 cuentaPadreContainer.style.display = 'block';
+                saveButton.textContent = 'Añadir';
                 saveButton.style.display = 'block';
+                saveButton.setAttribute('data-action', 'add');
             } else if (button.classList.contains('edit')) {
                 modalTitle.textContent = 'Editar cuenta';
                 cargarDatosCuenta(button, true);
-                habilitarCamposModal();
+                habilitarCamposEdicion(); // Solo habilitar campos relevantes para edición
                 cuentaPadreContainer.style.display = 'none';
+                saveButton.textContent = 'Guardar cambios';
                 saveButton.style.display = 'block';
+                saveButton.setAttribute('data-action', 'edit');
             } else if (button.classList.contains('view')) {
                 modalTitle.textContent = 'Ver cuenta';
                 cargarDatosCuenta(button, false);
@@ -108,9 +117,114 @@ document.addEventListener('DOMContentLoaded', function () {
                 cuentaPadreContainer.style.display = 'none';
                 saveButton.style.display = 'none';
             }
+            editModal.show();
+        });
+    });
+    document.querySelectorAll('.delete').forEach(function (button) {
+        button.addEventListener('click', function () {
+            // Obtener datos del botón
+            const codigo = button.getAttribute('data-codigo');
+            const descripcion = button.getAttribute('data-descripcion');
+            const estadoActual = button.getAttribute('data-estado') === 'true';
+
+            // Definir la acción (dar de baja o reactivar)
+            const nuevaAccion = estadoActual ? 'dar de baja' : 'reactivar';
+            nuevaAccionEstado = estadoActual ? 'false' : 'true';
+
+            // Actualizar el mensaje en el modal
+            document.getElementById('deleteMessage').textContent = `¿Estás seguro de que deseas ${nuevaAccion} la cuenta "${descripcion}" (Código: ${codigo})?`;
+
+            // Guardar los datos seleccionados para su uso al confirmar
+            cuentaSeleccionada = codigo;
         });
     });
 
+    document.getElementById('confirmDeleteButton').addEventListener('click', function () {
+        mostrarSpinner();
+        fetch('/cuentas/dar_baja', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                codigo: cuentaSeleccionada,
+                estado: nuevaAccionEstado
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            ocultarSpinner();
+            if (data.message) {
+                // Cambiar el estado visual de la fila en la tabla
+                const fila = document.querySelector(`tr[data-cuenta-id="${cuentaSeleccionada}"]`);
+                if (fila) {
+                    const botonDarBaja = fila.querySelector('.delete i'); // Ícono dentro del botón de "Dar de baja"
+                    if (nuevaAccionEstado === 'false') {
+                        fila.classList.add('cuenta-inactiva'); // Marcar como inactiva
+                        botonDarBaja.textContent = 'thumb_up'; // Cambiar a ícono de "Reactivar"
+                        botonDarBaja.parentElement.setAttribute('data-estado', 'false'); // Actualizar atributo
+                        botonDarBaja.setAttribute('title', 'Reactivar');
+                    } else {
+                        fila.classList.remove('cuenta-inactiva'); // Reactivar
+                        botonDarBaja.textContent = 'thumb_down'; // Cambiar a ícono de "Dar de baja"
+                        botonDarBaja.parentElement.setAttribute('data-estado', 'true'); // Actualizar atributo
+                        botonDarBaja.setAttribute('title', 'Dar de baja');
+                    }
+                }
+    
+                // Ocultar el modal de confirmación y mostrar el de éxito
+                const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteAccountModal'));
+                deleteModal.hide();
+    
+                document.getElementById('successMessage').textContent = data.message;
+                successModal.show();
+            } else if (data.error) {
+                console.error('Error:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error al cambiar el estado de la cuenta:', error);
+            ocultarSpinner();
+        });
+    });
+    
+    
+    
+
+
+    confirmDeleteButton.addEventListener('click', function () {
+        if (cuentaSeleccionada && nuevaAccionEstado !== null) {
+            cambiarEstadoCuenta(cuentaSeleccionada, nuevaAccionEstado);
+        }
+        deleteAccountModal.hide();
+    });
+
+
+    // Habilitar campos específicos para edición
+    function habilitarCamposEdicion() {
+        inputCodigo.setAttribute('readonly', true);
+        selectCategoria.setAttribute('disabled', true);
+        selectCuentaPadre.setAttribute('disabled', true);
+
+        formDescripcion.removeAttribute('readonly');
+        inputEstado.removeAttribute('disabled');
+    }
+
+    // Habilitar todos los campos para añadir
+    function habilitarCamposModal() {
+        inputCodigo.removeAttribute('readonly');
+        formDescripcion.removeAttribute('readonly');
+        selectCategoria.removeAttribute('disabled');
+        selectCuentaPadre.removeAttribute('disabled');
+        inputEstado.removeAttribute('disabled');
+    }
+
+    // Deshabilitar todos los campos
+    function deshabilitarCamposModal() {
+        inputCodigo.setAttribute('readonly', true);
+        formDescripcion.setAttribute('readonly', true);
+        selectCategoria.setAttribute('disabled', true);
+        selectCuentaPadre.setAttribute('disabled', true);
+        inputEstado.setAttribute('disabled', true);
+    }
     // Validación en tiempo real
     inputCodigo.addEventListener('input', validarCodigoCuentaPadreYNivel);
     selectCuentaPadre.addEventListener('change', validarCodigoCuentaPadreYNivel);
@@ -152,7 +266,7 @@ document.addEventListener('DOMContentLoaded', function () {
         } else if (esValido) {
             limpiarError(inputCodigo, errorCodigo);
         }
-        
+
         // Verificar si la descripción está vacía
         if (formDescripcion.value.trim() === '') {
             mostrarError(formDescripcion, errorDescripcion, 'La descripción es requerida.');
@@ -163,6 +277,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         return esValido; // Retornar la validez de la validación
     }
+
 
     function cargarDatosCuenta(button, editable) {
         inputCodigo.value = button.getAttribute('data-codigo');
@@ -231,16 +346,40 @@ document.addEventListener('DOMContentLoaded', function () {
         mensajeError.style.display = 'none';
     }
 
+    // Validación para el editar
+    function validarCamposEditar() {
+        let esValido = true;
+
+        // Validar descripción
+        if (formDescripcion.value.trim() === '') {
+            mostrarError(formDescripcion, errorDescripcion, 'La descripción es requerida.');
+            esValido = false;
+        } else {
+            limpiarError(formDescripcion, errorDescripcion);
+        }
+
+        return esValido;
+    }
+
     saveButton.addEventListener('click', function (e) {
         e.preventDefault();
-        if (!validarCodigoCuentaPadreYNivel()) return;
+        const action = saveButton.getAttribute('data-action');
+        if (action === 'add') {
+            if (!validarCodigoCuentaPadreYNivel()) return;
+            guardarNuevaCuenta();
+        } else if (action === 'edit') {
+            if (!validarCamposEditar()) return;
+            editarCuenta();
+        }
+    });
 
+    function guardarNuevaCuenta() {
         mostrarSpinner();
-        var codigo = inputCodigo.value;
-        var descripcion = formDescripcion.value;
-        var estado = inputEstado.checked ? 'true' : 'false';
-        var categoria = selectCategoria.value;
-        var cuentaPadre = selectCuentaPadre.value;
+        const codigo = inputCodigo.value;
+        const descripcion = formDescripcion.value;
+        const estado = inputEstado.checked ? 'true' : 'false';
+        const categoria = selectCategoria.value;
+        const cuentaPadre = selectCuentaPadre.value;
 
         fetch('/cuentas/añadir', {
             method: 'POST',
@@ -254,28 +393,67 @@ document.addEventListener('DOMContentLoaded', function () {
                 nivel: nivelSeleccionado
             })
         })
-        .then(response => response.json())
-        .then(data => {
-            ocultarSpinner();
-            if (data.message) {
-                mostrarCuentaAgregada(codigo, descripcion);
-                editModal.hide();
-                successModal.show();
-            } else if (data.error) {
-                mostrarError(inputCodigo, errorCodigo, data.error);
-            }
+            .then(response => response.json())
+            .then(data => {
+                ocultarSpinner();
+                if (data.message) {
+                    mostrarCuentaAgregada(codigo, descripcion); // Mensaje específico para añadir
+                    editModal.hide();
+                } else if (data.error) {
+                    mostrarError(inputCodigo, errorCodigo, data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error al añadir la cuenta:', error);
+                ocultarSpinner();
+            });
+    }
+
+    function editarCuenta() {
+        mostrarSpinner();
+        const codigo = inputCodigo.value;
+        const descripcion = formDescripcion.value;
+        const estado = inputEstado.checked ? 'true' : 'false';
+
+        fetch('/cuentas/editar', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                codigo: codigo,
+                descripcion: descripcion,
+                estado: estado
+            })
         })
-        .catch(error => {
-            console.error('Error al añadir la cuenta:', error);
-            ocultarSpinner();
-        });
-    });
+            .then(response => response.json())
+            .then(data => {
+                ocultarSpinner();
+                if (data.message) {
+                    mostrarCuentaActualizada(codigo, descripcion); // Mensaje específico para actualizar
+                    editModal.hide();
+                } else if (data.error) {
+                    mostrarError(formDescripcion, errorDescripcion, data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error al editar la cuenta:', error);
+                ocultarSpinner();
+            });
+    }
 
     function mostrarCuentaAgregada(codigo, descripcion) {
         document.getElementById('successMessage').textContent = 'La cuenta ha sido añadida correctamente.';
         document.getElementById('successCodigo').textContent = `Código: ${codigo}`;
         document.getElementById('successDescripcion').textContent = `Descripción: ${descripcion}`;
+        successModal.show();
     }
+
+    function mostrarCuentaActualizada(codigo, descripcion) {
+        document.getElementById('successMessage').textContent = 'La cuenta ha sido actualizada correctamente.';
+        document.getElementById('successCodigo').textContent = `Código: ${codigo}`;
+        document.getElementById('successDescripcion').textContent = `Descripción: ${descripcion}`;
+        successModal.show();
+    }
+
 
     document.getElementById('successModal').addEventListener('hidden.bs.modal', function () {
         location.reload();
@@ -306,4 +484,13 @@ document.addEventListener('DOMContentLoaded', function () {
         limpiarError(formDescripcion, errorDescripcion);
         limpiarError(selectCategoria, errorCategoria);
     });
+
+    function limpiarErrores() {
+        limpiarError(inputCodigo, errorCodigo);
+        limpiarError(formDescripcion, errorDescripcion);
+        limpiarError(selectCategoria, errorCategoria);
+    }
+
 });
+
+

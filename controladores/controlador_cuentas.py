@@ -131,6 +131,9 @@ def obtener_cuenta_padre(codigo):
     conexion.close()
     return cuenta_padre
 
+# Variable global para almacenar las cuentas nuevas añadidas
+cuentas_nuevas = set()
+
 def añadir_cuenta():
     data = request.get_json()
     codigo = data.get('codigo')
@@ -182,6 +185,9 @@ def añadir_cuenta():
 
             conexion.commit()
 
+            # Agregar la nueva cuenta al conjunto global
+            cuentas_nuevas.add(codigo)
+
         return jsonify({
             'message': 'Cuenta añadida exitosamente',
             'cuenta': {
@@ -191,13 +197,121 @@ def añadir_cuenta():
                 'cuenta_padre': cuenta_padre_id,
                 'estado': estado,
                 'categoria': categoria
-            }
+            },
+            'cuentas_nuevas': list(cuentas_nuevas)  # Devolver todas las cuentas nuevas añadidas
         }), 201
     except Exception as e:
         conexion.rollback()
         return jsonify({'error': f'Error al añadir la cuenta: {str(e)}'}), 500
     finally:
         conexion.close()
+
+def editar_cuenta():
+    data = request.get_json()
+    codigo = data.get('codigo')  # Código único de la cuenta
+    descripcion = data.get('descripcion')
+    estado = data.get('estado')
+
+    if not codigo or not descripcion:
+        return jsonify({'error': 'Faltan datos obligatorios'}), 400
+
+    # Conexión a la base de datos
+    conexion = obtener_conexion()
+    try:
+        with conexion.cursor() as cursor:
+            # Verificar si la cuenta existe
+            cursor.execute("SELECT cuenta_id FROM cuentas WHERE codigo = %s;", (codigo,))
+            cuenta_existente = cursor.fetchone()
+
+            if not cuenta_existente:
+                return jsonify({'error': 'La cuenta no existe.'}), 404
+
+            # Actualizar solo la descripción y el estado de la cuenta
+            cursor.execute("""
+                UPDATE cuentas
+                SET descripcion = %s, estado = %s
+                WHERE codigo = %s;
+            """, (descripcion, estado, codigo))
+
+            # Añadir una notificación de edición
+            mensaje = f"Se ha editado la cuenta: {descripcion} (Código: {codigo})"
+            url = "/cuentas"
+            cursor.execute("""
+                INSERT INTO notificaciones (mensaje, url, leido)
+                VALUES (%s, %s, FALSE);
+            """, (mensaje, url))
+
+            conexion.commit()
+
+        return jsonify({
+            'message': 'Cuenta actualizada exitosamente',
+            'cuenta': {
+                'codigo': codigo,
+                'descripcion': descripcion,
+                'estado': estado
+            }
+        }), 200
+    except Exception as e:
+        conexion.rollback()
+        return jsonify({'error': f'Error al actualizar la cuenta: {str(e)}'}), 500
+    finally:
+        conexion.close()
+
+def dar_baja_cuenta():
+    data = request.get_json()
+    codigo = data.get('codigo')  # Código único de la cuenta
+    estado = data.get('estado')  # true para activo, false para inactivo
+
+    if not codigo:
+        return jsonify({'error': 'Código de cuenta es obligatorio'}), 400
+
+    # Conexión a la base de datos
+    conexion = obtener_conexion()
+    try:
+        with conexion.cursor() as cursor:
+            # Verificar si la cuenta existe
+            cursor.execute("SELECT cuenta_id FROM cuentas WHERE codigo = %s;", (codigo,))
+            cuenta_existente = cursor.fetchone()
+
+            if not cuenta_existente:
+                return jsonify({'error': 'La cuenta no existe.'}), 404
+
+            # Actualizar el estado de la cuenta
+            cursor.execute("""
+                UPDATE cuentas
+                SET estado = %s
+                WHERE codigo = %s;
+            """, (estado, codigo))
+
+            # Añadir una notificación de baja o alta
+            accion = "dada de baja" if estado == 'false' else "reactivada"
+            mensaje = f"La cuenta con código {codigo} ha sido {accion}."
+            url = "/cuentas"
+            cursor.execute("""
+                INSERT INTO notificaciones (mensaje, url, leido)
+                VALUES (%s, %s, FALSE);
+            """, (mensaje, url))
+
+            conexion.commit()
+
+        return jsonify({
+            'message': f'Cuenta {accion} exitosamente.',
+            'cuenta': {
+                'codigo': codigo,
+                'estado': estado
+            }
+        }), 200
+    except Exception as e:
+        conexion.rollback()
+        return jsonify({'error': f'Error al actualizar el estado de la cuenta: {str(e)}'}), 500
+    finally:
+        conexion.close()
+
+
+
+
+
+
 
 def eliminar_notificacion(notificacion_id):
     conexion = obtener_conexion()

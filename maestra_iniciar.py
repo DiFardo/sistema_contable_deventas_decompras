@@ -13,7 +13,7 @@ from bd_conexion import obtener_conexion
 from controladores.controlador_cuentas import (
     obtener_todas_cuentas, obtener_cuentas_por_categoria_endpoint,
     añadir_cuenta, obtener_todas_notificaciones, marcar_notificaciones_leidas,
-    eliminar_notificacion, contar_notificaciones_no_leidas
+    eliminar_notificacion, contar_notificaciones_no_leidas, editar_cuenta, dar_baja_cuenta
 )
 from werkzeug.utils import secure_filename
 import datetime
@@ -860,6 +860,24 @@ def cuentas_añadir():
     try:
         # Llamar a la función para añadir una cuenta desde el controlador
         return añadir_cuenta()
+    except Exception as e:
+        return jsonify({'error': f'Error en el servidor: {str(e)}'}), 500
+    
+
+@app.route('/cuentas/editar', methods=['PUT'])
+@jwt_required()
+def cuentas_editar():
+    try:
+        return editar_cuenta()
+    except Exception as e:
+        return jsonify({'error': f'Error en el servidor: {str(e)}'}), 500
+
+
+@app.route('/cuentas/dar_baja', methods=['PUT'])
+@jwt_required()
+def cuentas_dar_baja():
+    try:
+        return dar_baja_cuenta()
     except Exception as e:
         return jsonify({'error': f'Error en el servidor: {str(e)}'}), 500
 
