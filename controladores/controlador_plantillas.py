@@ -199,7 +199,7 @@ def generar_registro_compra_excel(mes, anio):
             WHERE EXTRACT(MONTH FROM c.fecha) = %s AND EXTRACT(YEAR FROM c.fecha) = %s
             GROUP BY c.serie_comprobante, c.numero_comprobante, c.tipo_documento, 
                      c.numero_documento, c.nombre_proveedor, c.tipo_comprobante, c.fecha
-            ORDER BY c. fecha, c.serie_comprobante, c.numero_comprobante;
+            ORDER BY c.fecha, c.serie_comprobante, c.numero_comprobante;
         """
         cursor.execute(consulta, (mes, anio))
 
@@ -357,7 +357,7 @@ def generar_libro_diario_excel(fecha):
             FROM asientos_contables ac
             JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
             WHERE ac.fecha::date = %s::date
-            ORDER BY numero_correlativo, ac.id;
+            ORDER BY fecha, numero_correlativo, ac.id;
         """
         cursor.execute(consulta, (fecha,))
         resultados = cursor.fetchall()
@@ -497,7 +497,7 @@ def generar_libro_diario_pdf_horizontal(fecha):
             FROM asientos_contables ac
             JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
             WHERE ac.fecha::date = %s::date
-            ORDER BY numero_correlativo, ac.id;
+            ORDER BY fecha, numero_correlativo, ac.id;
         """
         cursor.execute(consulta, (fecha,))
         resultados = cursor.fetchall()
@@ -625,7 +625,7 @@ def generar_libro_caja_pdf_horizontal(mes, año):
             FROM asientos_contables ac
             JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
             WHERE EXTRACT(MONTH FROM ac.fecha) = %s AND EXTRACT(YEAR FROM ac.fecha) = %s
-            ORDER BY numero_correlativo, ac.id;
+            ORDER BY fecha_operacion, numero_correlativo, ac.id;
         """
         cursor.execute(consulta, (mes, año))
         resultados = cursor.fetchall()
@@ -907,7 +907,7 @@ def obtener_registro_ventas(mes, año):
             WHERE EXTRACT(MONTH FROM v.fecha) = %s AND EXTRACT(YEAR FROM v.fecha) = %s
             GROUP BY v.serie_comprobante, v.numero_comprobante, v.tipo_documento, 
                      v.numero_documento, v.usuario, v.tipo_comprobante, v.fecha
-            ORDER BY v. fecha, v.serie_comprobante, v.numero_comprobante;
+            ORDER BY v.fecha, v.serie_comprobante, v.numero_comprobante;
         """, (mes, año))
 
         registros = cursor.fetchall()
@@ -1247,7 +1247,7 @@ def obtener_libro_diario(fecha):
             FROM asientos_contables ac
             JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
             WHERE ac.fecha::date = %s::date
-            ORDER BY numero_correlativo, ac.id;
+            ORDER BY fecha, numero_correlativo, ac.id;
         """, (fecha,))
         
         movimientos = cursor.fetchall()
@@ -1290,7 +1290,7 @@ def obtener_libro_diario_por_fecha(fecha):
             FROM asientos_contables ac
             JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
             WHERE ac.fecha::date = %s::date
-            ORDER BY numero_correlativo, ac.id;
+            ORDER BY fecha, numero_correlativo, ac.id;
         """, (fecha,))
 
         movimientos = cursor.fetchall()
@@ -1334,7 +1334,7 @@ def obtener_movimientos_libro_diario(fecha):
                 FROM asientos_contables ac
                 JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
                 WHERE ac.fecha::date = %s::date
-                ORDER BY numero_correlativo, ac.id;
+                ORDER BY fecha, numero_correlativo, ac.id;
             """, (fecha,))
 
             movimientos = cursor.fetchall()
@@ -1386,7 +1386,7 @@ def obtener_libro_caja(mes, año):
                     (ac.codigo_cuenta LIKE '12%' OR ac.codigo_cuenta LIKE '42%')
                     AND EXTRACT(MONTH FROM ac.fecha) = {mes}
                     AND EXTRACT(YEAR FROM ac.fecha) = {año}
-                ORDER BY numero_correlativo, ac.id;
+                ORDER BY fecha_operacion, numero_correlativo, ac.id;
             """).format(mes=sql.Literal(mes), año=sql.Literal(año))
 
             cursor.execute(query)
@@ -1446,7 +1446,7 @@ def obtener_libro_mayor(mes, año, cuenta):
                 AND EXTRACT(YEAR FROM ac.fecha) = %s
                 AND ac.codigo_cuenta = %s
                 AND (ac.debe IS NOT NULL AND ac.debe != 0 OR ac.haber IS NOT NULL AND ac.haber != 0)
-                ORDER BY numero_correlativo, ac.id
+                ORDER BY fecha, numero_correlativo, ac.id
             ) AS subquery;
         """, (mes, año, cuenta))
         
@@ -1480,7 +1480,7 @@ def generar_libro_mayor_excel(mes, año, cuenta):
                 AND EXTRACT(YEAR FROM ac.fecha) = %s
                 AND ac.codigo_cuenta = %s
                 AND (ac.debe IS NOT NULL AND ac.debe != 0 OR ac.haber IS NOT NULL AND ac.haber != 0)
-                ORDER BY numero_correlativo, ac.id
+                ORDER BY fecha, numero_correlativo, ac.id
             ) AS subquery;
         """
         cursor.execute(consulta, (mes, año, cuenta))
@@ -1608,7 +1608,7 @@ def generar_libro_mayor_pdf(mes, año, cuenta):
                 AND EXTRACT(YEAR FROM ac.fecha) = %s
                 AND ac.codigo_cuenta = %s
                 AND (ac.debe IS NOT NULL AND ac.debe != 0 OR ac.haber IS NOT NULL AND ac.haber != 0)
-                ORDER BY numero_correlativo, ac.id
+                ORDER BY fecha, numero_correlativo, ac.id
             ) AS subquery;
         """
         cursor.execute(consulta, (mes, año, cuenta))
@@ -1740,7 +1740,7 @@ def generar_libro_caja_excel(mes, anio):
             (ac.codigo_cuenta LIKE '12%' OR ac.codigo_cuenta LIKE '42%')
             AND EXTRACT(MONTH FROM ac.fecha) = %s
             AND EXTRACT(YEAR FROM ac.fecha) = %s
-        ORDER BY numero_correlativo, ac.id;
+        ORDER BY fecha_operacion, numero_correlativo, ac.id;
         """
         cursor.execute(consulta, (mes, anio))
 
@@ -1897,7 +1897,7 @@ def generar_excel_todas_las_cuentas(mes, año):
                     AND EXTRACT(YEAR FROM ac.fecha) = %s
                     AND ac.codigo_cuenta = %s
                     AND (ac.debe IS NOT NULL AND ac.debe != 0 OR ac.haber IS NOT NULL AND ac.haber != 0)
-                    ORDER BY numero_correlativo, ac.id
+                    ORDER BY fecha, numero_correlativo, ac.id
                 ) AS subquery;
             """
             cursor.execute(consulta, (mes, año, codigo_cuenta))
