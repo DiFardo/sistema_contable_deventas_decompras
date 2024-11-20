@@ -1,5 +1,38 @@
 from bd_conexion import obtener_conexion
 import hashlib
+from psycopg2.extras import RealDictCursor
+
+def obtener_roles():
+    conexion = obtener_conexion()
+    roles = []
+    with conexion.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT id, nombre, descripcion 
+            FROM roles
+            WHERE estado = true
+            """
+        )
+        roles = cursor.fetchall()
+    conexion.close()
+    return roles
+
+def obtener_descripcion_rol_por_nombre(nombre_rol):
+    conexion = obtener_conexion()
+    descripcion = None
+    with conexion.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT descripcion 
+            FROM roles
+            WHERE nombre = %s AND estado = true
+            """, (nombre_rol,)
+        )
+        resultado = cursor.fetchone()
+        if resultado:
+            descripcion = resultado[0]
+    conexion.close()
+    return descripcion
 
 def obtener_usuario(dni):
     conexion = obtener_conexion()
@@ -7,18 +40,38 @@ def obtener_usuario(dni):
     with conexion.cursor() as cursor:
         cursor.execute(
             """
-            SELECT u.id, u.dni, u.pass, u.token, 
+            SELECT u.id AS usuario_id, u.dni, u.pass, u.token, 
                    CONCAT(p.nombre, ' ', p.apellido) AS nombre_completo, 
-                   p.rol, 
+                   r.nombre AS rol_nombre, 
                    p.imagen  
             FROM usuarios u
             JOIN personas p ON u.id_persona = p.id
+            LEFT JOIN roles r ON p.id_rol = r.id
             WHERE u.dni = %s
             """, (dni,))
         usuario = cursor.fetchone()
     conexion.close()
     return usuario
 
+def obtener_usuario_idrol(dni):
+    conexion = obtener_conexion()
+    usuario = None
+    with conexion.cursor(cursor_factory=RealDictCursor) as cursor:  # Usa RealDictCursor
+        cursor.execute(
+            """
+            SELECT u.id AS usuario_id, u.dni, u.pass, u.token, 
+                   CONCAT(p.nombre, ' ', p.apellido) AS nombre_completo, 
+                   r.id AS rol_id, 
+                   p.imagen  
+            FROM usuarios u
+            JOIN personas p ON u.id_persona = p.id
+            LEFT JOIN roles r ON p.id_rol = r.id
+            WHERE u.dni = %s
+            """, (dni,)
+        )
+        usuario = cursor.fetchone()  # Devuelve un diccionario
+    conexion.close()
+    return usuario
 
 def actualizartoken_usuario(dni, token):
     conexion = obtener_conexion()
@@ -36,9 +89,10 @@ def obtener_usuarioporid(id):
             """
             SELECT u.id, u.dni, u.pass, u.token, 
                    CONCAT(p.nombre, ' ', p.apellido) AS nombre_completo, 
-                   p.rol 
+                   r.nombre AS rol
             FROM usuarios u
             JOIN personas p ON u.id_persona = p.id
+            LEFT JOIN roles r ON p.id_rol = r.id
             WHERE u.id = %s
             """, (id,))
         usuario = cursor.fetchone()
@@ -58,10 +112,20 @@ def obtener_detalles_perfil(dni):
     with conexion.cursor() as cursor:
         cursor.execute(
             """
-            SELECT p.nombre, p.apellido, p.dni, p.rol, p.imagen
-            FROM personas p
-            JOIN usuarios u ON p.id = u.id_persona
-            WHERE u.dni = %s
+            SELECT 
+                p.nombre, 
+                p.apellido, 
+                p.dni, 
+                r.nombre AS rol, 
+                p.imagen
+            FROM 
+                personas p
+            LEFT JOIN 
+                roles r ON p.id_rol = r.id
+            JOIN 
+                usuarios u ON p.id = u.id_persona
+            WHERE 
+                u.dni = %s
             """, (dni,))
         perfil = cursor.fetchone()
     conexion.close()
@@ -118,11 +182,13 @@ def obtener_datos_persona(dni):
             """
             SELECT u.dni, u.pass, u.token, 
                    CONCAT(p.nombre, ' ', p.apellido) AS nombre_completo, 
-                   p.rol
+                   r.nombre AS rol
             FROM usuarios u
-            JOIN personas p ON u.dni = p.dni
+            JOIN personas p ON u.id_persona = p.id
+            LEFT JOIN roles r ON p.id_rol = r.id
             WHERE u.dni = %s
-            """, (dni,))
+            """, (dni,)
+        )
         usuario = cursor.fetchone()
     conexion.close()
     return usuario
@@ -133,9 +199,14 @@ def obtener_todos_usuarios():
     with conexion.cursor() as cursor:
         cursor.execute(
             """
-            SELECT u.dni, p.nombre, p.apellido, p.rol
+            SELECT 
+                u.dni, 
+                p.nombre, 
+                p.apellido, 
+                r.nombre AS rol
             FROM usuarios u
-            JOIN personas p ON u.dni = p.dni
+            JOIN personas p ON u.id_persona = p.id
+            LEFT JOIN roles r ON p.id_rol = r.id
             """
         )
         resultados = cursor.fetchall()
@@ -144,13 +215,13 @@ def obtener_todos_usuarios():
                 'dni': row[0],
                 'nombre': row[1],
                 'apellido': row[2],
-                'rol': row[3]
+                'rol': row[3] if row[3] else 'Sin rol asignado'
             }
             usuarios.append(usuario)
     conexion.close()
     return usuarios
 
-def agregar_usuario(dni, nombre, apellido, rol, password):
+def agregar_usuario(dni, nombre, apellido, id_rol, password):
     conexion = obtener_conexion()
     try:
         with conexion.cursor() as cursor:
@@ -159,8 +230,8 @@ def agregar_usuario(dni, nombre, apellido, rol, password):
                 print("El DNI ya existe en la base de datos.")
                 return False
             cursor.execute(
-                "INSERT INTO personas (nombre, apellido, dni, rol) VALUES (%s, %s, %s, %s)",
-                (nombre, apellido, dni, rol)
+                "INSERT INTO personas (nombre, apellido, dni, id_rol) VALUES (%s, %s, %s, %s)",
+                (nombre, apellido, dni, id_rol)
             )
             conexion.commit()
             cursor.execute("SELECT id FROM personas WHERE dni = %s", (dni,))
@@ -181,13 +252,13 @@ def agregar_usuario(dni, nombre, apellido, rol, password):
     finally:
         conexion.close()
 
-def editar_usuario(dni, nombre, apellido, rol):
+def editar_usuario(dni, nombre, apellido, id_rol):
     conexion = obtener_conexion()
     try:
         with conexion.cursor() as cursor:
             cursor.execute(
-                "UPDATE personas SET nombre = %s, apellido = %s, rol = %s WHERE dni = %s",
-                (nombre, apellido, rol, dni)
+                "UPDATE personas SET nombre = %s, apellido = %s, id_rol = %s WHERE dni = %s",
+                (nombre, apellido, id_rol, dni)
             )
             conexion.commit()
         return True
