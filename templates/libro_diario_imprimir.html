@@ -40,6 +40,14 @@
             width: 10%;
         }
 
+        .text-right{
+            text-align: right;
+        }
+
+        .text-center{
+            text-align: center;
+        }
+
         /* Estilos para centrar el spinner dentro de la tabla */
         .spinner-wrapper {
             display: none;
@@ -99,7 +107,7 @@
         <!-- Encabezado con título -->
         <div class="row mb-3">
             <div class="col-12">
-                <h2 class="text-left">Libro Diario - Detalle de las operaciones</h2>
+                <h2 class="text-left">Libro diario - detalle de las operaciones</h2>
             </div>
         </div>
 
@@ -123,10 +131,10 @@
                     {% for movimiento in movimientos %}
                     <tr>
                         <td class="text-center">{{ movimiento.numero_correlativo }}</td>
-                        <td>{{ movimiento.fecha }}</td>
+                        <td class="text-center">{{ movimiento.fecha }}</td>
                         <td>{{ movimiento.glosa }}</td>
-                        <td>{{ movimiento.codigo_del_libro or "-" }}</td>
-                        <td>{{ movimiento.numero_documento_sustentatorio or "-" }}</td>
+                        <td class="text-center">{{ movimiento.codigo_del_libro or "-" }}</td>
+                        <td class="text-center">{{ movimiento.numero_documento_sustentatorio or "-" }}</td>
                         <td>{{ movimiento.codigo_cuenta or "-" }}</td>
                         <td>{{ movimiento.denominacion or "-" }}</td>
                         <td class="text-right">{{ movimiento.debe or "-" }}</td>

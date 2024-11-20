@@ -40,6 +40,14 @@
             width: 10%;
         }
 
+        .text-right{
+            text-align: right;
+        }
+
+        .text-center{
+            text-align: center;
+        }
+
         /* Estilos para centrar el spinner dentro de la tabla */
         .spinner-wrapper {
             display: none;
@@ -99,7 +107,7 @@
         <!-- Encabezado con título -->
         <div class="row mb-3">
             <div class="col-12">
-                <h2 class="text-left">Libro Caja y Bancos - Detalle de los movimientos</h2>
+                <h2 class="text-left">Libro caja y bancos - detalle de los movimientos</h2>
             </div>
         </div>
 
@@ -113,15 +121,15 @@
                         <th>DESCRIPCIÓN DE LA OPERACIÓN</th>
                         <th>CÓDIGO</th>
                         <th>DENOMINACIÓN</th>
-                        <th class="text-right">DEUDOR</th>
-                        <th class="text-right">ACREEDOR</th>
+                        <th>DEUDOR</th>
+                        <th>ACREEDOR</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for movimiento in movimientos %}
                     <tr>
                         <td class="text-center">{{ movimiento.numero_correlativo }}</td>
-                        <td>{{ movimiento.fecha_operacion }}</td>
+                        <td class="text-center">{{ movimiento.fecha_operacion }}</td>
                         <td>{{ movimiento.descripcion_operacion }}</td>
                         <td>{{ movimiento.codigo_cuenta_asociada or "-" }}</td>
                         <td>{{ movimiento.denominacion_cuenta_asociada or "-" }}</td>

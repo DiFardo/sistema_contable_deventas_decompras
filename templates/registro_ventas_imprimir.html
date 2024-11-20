@@ -25,7 +25,7 @@
             background-color: #FF9933;
             color: white;
         }
-
+        
         .bg-cyan {
             background-color: #00CCCC;
             color: white;
@@ -38,6 +38,14 @@
 
         .w-correlativo {
             width: 10%;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
         }
 
         /* Estilos para centrar el spinner dentro de la tabla */
@@ -101,7 +109,7 @@
         <!-- Encabezado con título -->
         <div class="row mb-3">
             <div class="col-12">
-                <h2 class="text-left">Registro de Ventas e Ingresos - Detalle de las transacciones</h2>
+                <h2 class="text-left">Registro de ventas e ingresos - detalle de las transacciones</h2>
             </div>
         </div>
 
@@ -118,21 +126,21 @@
                         <th>TIPO DOCUMENTO</th>
                         <th>N° DOCUMENTO</th>
                         <th>RAZÓN SOCIAL</th>
-                        <th class="text-right">BASE IMPONIBLE</th>
-                        <th class="text-right">IGV</th>
-                        <th class="text-right">IMPORTE TOTAL</th>
+                        <th>BASE IMPONIBLE</th>
+                        <th>IGV</th>
+                        <th>IMPORTE TOTAL</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for registro in registros %}
                     <tr>
                         <td class="text-center">{{ registro.correlativo }}</td>
-                        <td>{{ registro.fecha_emision }}</td>
-                        <td>{{ registro.tipo_comprobante }}</td>
-                        <td>{{ registro.serie_comprobante }}</td>
-                        <td>{{ registro.numero_comprobante }}</td>
-                        <td>{{ registro.tipo_documento }}</td>
-                        <td>{{ registro.numero_documento }}</td>
+                        <td class="text-center">{{ registro.fecha_emision }}</td>
+                        <td class="text-center">{{ registro.tipo_comprobante }}</td>
+                        <td class="text-center">{{ registro.serie_comprobante }}</td>
+                        <td class="text-center">{{ registro.numero_comprobante }}</td>
+                        <td class="text-center">{{ registro.tipo_documento }}</td>
+                        <td class="text-center">{{ registro.numero_documento }}</td>
                         <td>{{ registro.usuario or "-" }}</td>
                         <td class="text-right">{{ registro.base_imponible or "-" }}</td>
                         <td class="text-right">{{ registro.igv or "-" }}</td>

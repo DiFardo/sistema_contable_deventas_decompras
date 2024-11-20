@@ -369,7 +369,6 @@
     function filtrarTabla() {
         const searchTerm = document.getElementById("search-input").value.toLowerCase();
         const rows = document.querySelectorAll("#tabla-cuerpo tr");
-
         rows.forEach(row => {
             const cells = row.querySelectorAll("td");
             const rowText = Array.from(cells).map(cell => cell.textContent.toLowerCase()).join(" ");
@@ -395,37 +394,30 @@
         alert("Por favor, seleccione un período antes de exportar.");
       }
     }
+
     function abrirNuevaPaginaImprimir() {
-      const fecha = document.getElementById('filtro-fecha').value; // Asegúrate de tener este campo en tu HTML
+      const fecha = document.getElementById('filtro-fecha').value;
       if (!fecha) {
         alert('Por favor, selecciona una fecha antes de continuar.');
         return;
       }
-
-      // Construye la URL con el parámetro de fecha
       const url = `/libro_diario_imprimir?fecha=${encodeURIComponent(fecha)}`;
-
-      // Abre la nueva página en una nueva pestaña o ventana
       const nuevaVentana = window.open(url, '_blank');
       if (!nuevaVentana) {
         alert('Por favor, permite que el navegador abra ventanas emergentes.');
       }
     }
+
     function abrirNuevaPaginaImprimir() {
       const periodo = document.getElementById("filtro-periodo").value;
       const cuenta = document.getElementById("filtro-cuenta").value;
-
       if (!periodo || !cuenta) {
         alert("Por favor, seleccione un período y una cuenta antes de imprimir.");
         return;
       }
-
       const url = `/libro_mayor_imprimir?periodo=${encodeURIComponent(periodo)}&cuenta=${encodeURIComponent(cuenta)}`;
       window.open(url, "_blank");
     }
-
-
-
   </script>
 
 </div>
