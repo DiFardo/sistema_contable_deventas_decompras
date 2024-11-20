@@ -16,17 +16,32 @@
   th {
     text-align: center;
     vertical-align: middle;
+    font-weight: bold;
+  }
+
+  td.centered {
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .bg-orange {
+    background-color: #FF9933;
+    color: white;
+  }
+
+  .bg-cyan {
+    background-color: #00CCCC;
+    color: white;
+  }
+
+  .bg-green {
+    background-color: #99CC99;
+    color: black;
   }
 
   .w-correlativo {
     width: 10%;
   }
-
-  .text-right {
-    text-align: right;
-  }
-
-  td.centered { text-align: center; vertical-align: middle; }
 
   /* Estilos para centrar el spinner dentro de la tabla */
   .spinner-wrapper {
@@ -41,21 +56,26 @@
   /* Cambiar el color del spinner */
   .spinner-border {
     color: #e73209 !important;
+    /* Color rojo para el spinner */
   }
 
   @media print {
     body {
       visibility: hidden;
     }
-    .table-wrapper, .table {
+
+    .table-wrapper,
+    .table {
       visibility: visible;
       width: 100%;
     }
+
     .table-wrapper {
       position: absolute;
       top: 0;
       left: 0;
     }
+
     @page {
       size: landscape;
     }
@@ -90,57 +110,69 @@
         <h2 class="text-left">Libro mayor - Detalle de las operaciones</h2>
       </div>
     </div>
-    <div class="row mb-3 align-items-center">
-      <div class="col-lg-4 col-md-6 col-sm-12 d-flex">
-        <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
-          <strong>PERIODO:</strong>
-        </label>
-        <input type="month" class="form-control" id="filtro-periodo" max="" value="{{ request.args.get('periodo', '') }}">
+    <!-- Filtros PERIODO, CUENTA y BUSCAR -->
+    <div class="row mb-3">
+      <!-- PERIODO -->
+      <div class="col-lg-4 col-md-6 col-sm-12">
+        <div class="d-flex align-items-center">
+          <label for="filtro-periodo" class="me-3">
+            <strong>PERIODO:</strong>
+          </label>
+          <input type="month" class="form-control" id="filtro-periodo" max=""
+            value="{{ request.args.get('periodo', '') }}">
+        </div>
       </div>
-      <div class="col-lg-4 col-md-6 col-sm-12 d-flex">
-        <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
-          <strong>CUENTA:</strong>
-        </label>
-        <select class="form-control" id="filtro-cuenta">
-          <option value="">Seleccionar cuenta</option>
-          {% for cuenta in cuentas %}
-          <option value="{{ cuenta.codigo_cuenta }}" {% if request.args.get('cuenta') == cuenta.codigo_cuenta %}selected{% endif %}>
-            {{ cuenta.codigo_cuenta }}
-          </option>
-          {% endfor %}
-        </select>
+
+      <!-- CUENTA -->
+      <div class="col-lg-4 col-md-6 col-sm-12">
+        <div class="d-flex align-items-center">
+          <label for="filtro-cuenta" class="me-3">
+            <strong>CUENTA:</strong>
+          </label>
+          <select class="form-control" id="filtro-cuenta">
+            <option value="">Seleccionar cuenta</option>
+            {% for cuenta in cuentas %}
+            <option value="{{ cuenta.codigo_cuenta }}" {% if request.args.get('cuenta')==cuenta.codigo_cuenta
+              %}selected{% endif %}>
+              {{ cuenta.codigo_cuenta }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
       </div>
-      <div class="col-lg-4 col-md-6 col-sm-12 d-flex">
-        <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
-          <strong>BUSCAR:</strong>
-        </label>
-        <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
-          <label class="me-3 d-flex justify-content-center align-items-center custom-label">
+
+      <!-- BUSCAR -->
+      <div class="col-lg-4 col-md-6 col-sm-12">
+        <div class="d-flex align-items-center">
+          <label for="search-input" class="me-3">
             <strong>BUSCAR:</strong>
           </label>
-          <input type="text" class="form-control" id="search-input" placeholder="Buscar en la tabla..." aria-label="Buscar">
+          <div class="input-group">
+            <input type="text" class="form-control" id="search-input" placeholder="Buscar en la tabla..."
+              aria-label="Buscar">
+          </div>
         </div>
       </div>
     </div>
     <div class="table-wrapper">
       <div class="table-title">
-        <div class="row justify-content-between align-items-center">
-          <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-end">
+        <div class="row">
+          <!-- Contenedor de botones -->
+          <div class="col-12 d-flex justify-content-end">
             <button class="btn btn-primary me-2" onclick="abrirNuevaPaginaImprimir()">
               <i class="material-icons">print</i> <span>Imprimir</span>
             </button>
-            
-            <button class="btn btn-success" onclick="exportarLibroMayor()">
-                <i class="material-icons">file_download</i> <span>Exportar</span>
+      
+            <button class="btn btn-success me-2" onclick="exportarLibroMayor()">
+              <i class="material-icons">file_download</i> <span>Exportar</span>
             </button>
+      
             <button class="btn btn-warning" onclick="exportarTodasLasCuentas()">
-                <i class="material-icons">file_download</i> <span>Exportar todas</span>
-            </button>            
-        </div>
-        
+              <i class="material-icons">file_download</i> <span>Exportar todas</span>
+            </button>
+          </div>
         </div>
       </div>
-
       <!-- Estructura de la tabla del Libro Mayor -->
       <table class="table table-bordered table-striped table-hover">
         <thead>
@@ -171,7 +203,8 @@
       <div class="d-flex justify-content-between align-items-center mt-3">
         <div class="d-flex me-3">
           <label for="records-per-page" class="me-2">Registros por página:</label>
-          <input type="number" id="records-per-page" class="form-control" value="5" min="1" max="100" style="width: 80px;">
+          <input type="number" id="records-per-page" class="form-control" value="5" min="1" max="100"
+            style="width: 80px;">
         </div>
         <nav aria-label="Page navigation example align-items-center">
           <ul class="pagination" id="pagination">
@@ -202,39 +235,39 @@
     const spinnerWrapper = document.getElementById("spinner-wrapper");
 
     document.addEventListener("DOMContentLoaded", function () {
-        const filtroPeriodo = document.getElementById("filtro-periodo");
-        const filtroCuenta = document.getElementById("filtro-cuenta");
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        filtroPeriodo.max = `${year}-${month}`;
+      const filtroPeriodo = document.getElementById("filtro-periodo");
+      const filtroCuenta = document.getElementById("filtro-cuenta");
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      filtroPeriodo.max = `${year}-${month}`;
 
-        filtroPeriodo.addEventListener("change", cargarTabla);
-        filtroCuenta.addEventListener("change", cargarTabla);
+      filtroPeriodo.addEventListener("change", cargarTabla);
+      filtroCuenta.addEventListener("change", cargarTabla);
 
-        if (filtroPeriodo.value && filtroCuenta.value) {
-            cargarTabla();
-        }
+      if (filtroPeriodo.value && filtroCuenta.value) {
+        cargarTabla();
+      }
     });
 
     function cargarTabla() {
-        const periodo = document.getElementById("filtro-periodo").value;
-        const cuenta = document.getElementById("filtro-cuenta").value;
-        if (!periodo || !cuenta) return;
+      const periodo = document.getElementById("filtro-periodo").value;
+      const cuenta = document.getElementById("filtro-cuenta").value;
+      if (!periodo || !cuenta) return;
 
-        spinnerWrapper.style.display = "block";
-        $.ajax({
-            url: "/libro_mayor_datos",
-            type: "GET",
-            data: { periodo, cuenta },
-            success: function (data) {
-                let filas = "";
-                data.movimientos.forEach(function (movimiento) {
-                    const fechaFormatted = new Date(movimiento.fecha).toLocaleDateString();
-                    const deudorFormatted = movimiento.deudor ? movimiento.deudor.toLocaleString('es-PE', { minimumFractionDigits: 2 }) : "-";
-                    const acreedorFormatted = movimiento.acreedor ? movimiento.acreedor.toLocaleString('es-PE', { minimumFractionDigits: 2 }) : "-";
+      spinnerWrapper.style.display = "block";
+      $.ajax({
+        url: "/libro_mayor_datos",
+        type: "GET",
+        data: { periodo, cuenta },
+        success: function (data) {
+          let filas = "";
+          data.movimientos.forEach(function (movimiento) {
+            const fechaFormatted = new Date(movimiento.fecha).toLocaleDateString();
+            const deudorFormatted = movimiento.deudor ? movimiento.deudor.toLocaleString('es-PE', { minimumFractionDigits: 2 }) : "-";
+            const acreedorFormatted = movimiento.acreedor ? movimiento.acreedor.toLocaleString('es-PE', { minimumFractionDigits: 2 }) : "-";
 
-                    filas += `
+            filas += `
                         <tr>
                             <td>${fechaFormatted}</td>
                             <td class="w-correlativo centered">${movimiento.numero_correlativo}</td>
@@ -243,41 +276,41 @@
                             <td class="text-right">${acreedorFormatted}</td>
                         </tr>
                     `;
-                });
+          });
 
-                $("#tabla-cuerpo").html(filas);
-                $("#total-debe").text(data.total_debe.toLocaleString('es-PE', { minimumFractionDigits: 2 }) || "-");
-                $("#total-haber").text(data.total_haber.toLocaleString('es-PE', { minimumFractionDigits: 2 }) || "-");
+          $("#tabla-cuerpo").html(filas);
+          $("#total-debe").text(data.total_debe.toLocaleString('es-PE', { minimumFractionDigits: 2 }) || "-");
+          $("#total-haber").text(data.total_haber.toLocaleString('es-PE', { minimumFractionDigits: 2 }) || "-");
 
-                totalPages = Math.ceil(data.movimientos.length / rowsPerPage);
-                if (totalPages === 0) totalPages = 1;
-                showPage(currentPage);
-            },
-            complete: function () {
-                spinnerWrapper.style.display = "none";
-            },
-            error: function (error) {
-                console.error("Error al cargar los datos:", error);
-                spinnerWrapper.style.display = "none";
-            }
-        });
+          totalPages = Math.ceil(data.movimientos.length / rowsPerPage);
+          if (totalPages === 0) totalPages = 1;
+          showPage(currentPage);
+        },
+        complete: function () {
+          spinnerWrapper.style.display = "none";
+        },
+        error: function (error) {
+          console.error("Error al cargar los datos:", error);
+          spinnerWrapper.style.display = "none";
+        }
+      });
     }
 
     function showPage(page) {
-        const rows = document.querySelectorAll("#tabla-cuerpo tr");
-        const start = (page - 1) * rowsPerPage;
-        const end = start + rowsPerPage;
+      const rows = document.querySelectorAll("#tabla-cuerpo tr");
+      const start = (page - 1) * rowsPerPage;
+      const end = start + rowsPerPage;
 
-        rows.forEach((row, index) => {
-            row.style.display = index >= start && index < end ? "" : "none";
-        });
+      rows.forEach((row, index) => {
+        row.style.display = index >= start && index < end ? "" : "none";
+      });
 
-        updatePagination();
+      updatePagination();
     }
 
     function updatePagination() {
-        const pagination = document.getElementById("pagination");
-        pagination.innerHTML = `
+      const pagination = document.getElementById("pagination");
+      pagination.innerHTML = `
             <li class="page-item ${currentPage === 1 ? "disabled" : ""}">
               <a class="page-link" href="#" aria-label="Previous" id="prev-page">
                 <span aria-hidden="true">&laquo;</span>
@@ -285,19 +318,19 @@
             </li>
         `;
 
-        const maxPagesToShow = 5;
-        const startPage = Math.max(currentPage - 2, 1);
-        const endPage = Math.min(startPage + maxPagesToShow - 1, totalPages);
+      const maxPagesToShow = 5;
+      const startPage = Math.max(currentPage - 2, 1);
+      const endPage = Math.min(startPage + maxPagesToShow - 1, totalPages);
 
-        for (let i = startPage; i <= endPage; i++) {
-            pagination.innerHTML += `
+      for (let i = startPage; i <= endPage; i++) {
+        pagination.innerHTML += `
                 <li class="page-item ${i === currentPage ? "active" : ""}">
                     <a class="page-link" href="#" data-page="${i}">${i}</a>
                 </li>
             `;
-        }
+      }
 
-        pagination.innerHTML += `
+      pagination.innerHTML += `
             <li class="page-item ${currentPage === totalPages ? "disabled" : ""}">
                 <a class="page-link" href="#" aria-label="Next" id="next-page">
                     <span aria-hidden="true">&raquo;</span>
@@ -305,81 +338,81 @@
             </li>
         `;
 
-        document.getElementById("prev-page").addEventListener("click", function (e) {
-            e.preventDefault();
-            if (currentPage > 1) {
-                currentPage--;
-                showPage(currentPage);
-            }
-        });
+      document.getElementById("prev-page").addEventListener("click", function (e) {
+        e.preventDefault();
+        if (currentPage > 1) {
+          currentPage--;
+          showPage(currentPage);
+        }
+      });
 
-        document.getElementById("next-page").addEventListener("click", function (e) {
-            e.preventDefault();
-            if (currentPage < totalPages) {
-                currentPage++;
-                showPage(currentPage);
-            }
-        });
+      document.getElementById("next-page").addEventListener("click", function (e) {
+        e.preventDefault();
+        if (currentPage < totalPages) {
+          currentPage++;
+          showPage(currentPage);
+        }
+      });
 
-        document.querySelectorAll(".page-link[data-page]").forEach(link => {
-            link.addEventListener("click", function (e) {
-                e.preventDefault();
-                currentPage = parseInt(this.getAttribute("data-page"));
-                showPage(currentPage);
-            });
+      document.querySelectorAll(".page-link[data-page]").forEach(link => {
+        link.addEventListener("click", function (e) {
+          e.preventDefault();
+          currentPage = parseInt(this.getAttribute("data-page"));
+          showPage(currentPage);
         });
+      });
     }
 
     function exportarLibroMayor() {
-        const periodo = document.getElementById("filtro-periodo").value;
-        const cuenta = document.getElementById("filtro-cuenta").value;
-        if (periodo && cuenta) {
-            window.location.href = `/exportar-libro-mayor?periodo=${periodo}&cuenta=${cuenta}`;
-        } else {
-            alert("Por favor, seleccione un período y una cuenta antes de exportar.");
-        }
+      const periodo = document.getElementById("filtro-periodo").value;
+      const cuenta = document.getElementById("filtro-cuenta").value;
+      if (periodo && cuenta) {
+        window.location.href = `/exportar-libro-mayor?periodo=${periodo}&cuenta=${cuenta}`;
+      } else {
+        alert("Por favor, seleccione un período y una cuenta antes de exportar.");
+      }
     }
 
     function exportarTodasLasCuentas() {
-        const periodo = document.getElementById('filtro-periodo').value;
-        if (periodo) {
-            window.location.href = `/exportar-todas-las-cuentas?periodo=${periodo}`;
-        } else {
-            alert("Por favor, seleccione un período antes de exportar.");
-        }
+      const periodo = document.getElementById('filtro-periodo').value;
+      if (periodo) {
+        window.location.href = `/exportar-todas-las-cuentas?periodo=${periodo}`;
+      } else {
+        alert("Por favor, seleccione un período antes de exportar.");
+      }
     }
-function abrirNuevaPaginaImprimir() {
-    const fecha = document.getElementById('filtro-fecha').value; // Asegúrate de tener este campo en tu HTML
-    if (!fecha) {
+    function abrirNuevaPaginaImprimir() {
+      const fecha = document.getElementById('filtro-fecha').value; // Asegúrate de tener este campo en tu HTML
+      if (!fecha) {
         alert('Por favor, selecciona una fecha antes de continuar.');
         return;
-    }
+      }
 
-    // Construye la URL con el parámetro de fecha
-    const url = `/libro_diario_imprimir?fecha=${encodeURIComponent(fecha)}`;
+      // Construye la URL con el parámetro de fecha
+      const url = `/libro_diario_imprimir?fecha=${encodeURIComponent(fecha)}`;
 
-    // Abre la nueva página en una nueva pestaña o ventana
-    const nuevaVentana = window.open(url, '_blank');
-    if (!nuevaVentana) {
+      // Abre la nueva página en una nueva pestaña o ventana
+      const nuevaVentana = window.open(url, '_blank');
+      if (!nuevaVentana) {
         alert('Por favor, permite que el navegador abra ventanas emergentes.');
+      }
     }
-}
-function abrirNuevaPaginaImprimir() {
-    const periodo = document.getElementById("filtro-periodo").value;
-    const cuenta = document.getElementById("filtro-cuenta").value;
+    function abrirNuevaPaginaImprimir() {
+      const periodo = document.getElementById("filtro-periodo").value;
+      const cuenta = document.getElementById("filtro-cuenta").value;
 
-    if (!periodo || !cuenta) {
+      if (!periodo || !cuenta) {
         alert("Por favor, seleccione un período y una cuenta antes de imprimir.");
         return;
+      }
+
+      const url = `/libro_mayor_imprimir?periodo=${encodeURIComponent(periodo)}&cuenta=${encodeURIComponent(cuenta)}`;
+      window.open(url, "_blank");
     }
 
-    const url = `/libro_mayor_imprimir?periodo=${encodeURIComponent(periodo)}&cuenta=${encodeURIComponent(cuenta)}`;
-    window.open(url, "_blank");
-}
 
 
-
-</script>
+  </script>
 
 </div>
 {% endblock %}

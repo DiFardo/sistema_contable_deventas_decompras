@@ -102,17 +102,20 @@
     <div class="table-wrapper">
       <div class="table-title">
         <div class="row justify-content-between align-items-center">
-          <!-- Botones Alineados a la Derecha para Imprimir y Exportar -->
+          <!-- Botones Alineados a la Derecha para Vista Previa y Exportar -->
           <div class="col-12 d-flex justify-content-end">
             <button class="btn btn-primary me-2" onclick="abrirNuevaPaginaImprimir()" style="background-color: #ff5733;">
-              <i class="material-icons">print</i> <span>Imprimir</span>
-          </button>
-            <button class="btn btn-success" onclick="exportarLibroDiario()">
-              <i class="material-icons">file_download</i> <span>Exportar</span>
+              <i class="material-icons me-1">visibility</i> <!-- Cambiado el icono a "visibility" -->
+              <span>Vista previa</span>
+            </button>
+            <button class="btn btn-success d-flex align-items-center" onclick="exportarLibroDiario()">
+              <i class="material-icons me-1">file_download</i>
+              <span>Exportar</span>
             </button>
           </div>
         </div>
       </div>
+      
 
       <!-- Estructura de la tabla del Libro Diario -->
       <table class="table table-bordered table-striped table-hover">

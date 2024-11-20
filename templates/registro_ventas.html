@@ -13,12 +13,35 @@
 
 {% block contenido %}
 <style>
-  th { text-align: center; vertical-align: middle; font-weight: bold; }
-  td.centered { text-align: center; vertical-align: middle; }
-  .bg-orange { background-color: #FF9933; color: white; }
-  .bg-cyan { background-color: #00CCCC; color: white; }
-  .bg-green { background-color: #99CC99; color: black; }
-  .w-correlativo { width: 10%; }
+  th {
+    text-align: center;
+    vertical-align: middle;
+    font-weight: bold;
+  }
+
+  td.centered {
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .bg-orange {
+    background-color: #FF9933;
+    color: white;
+  }
+
+  .bg-cyan {
+    background-color: #00CCCC;
+    color: white;
+  }
+
+  .bg-green {
+    background-color: #99CC99;
+    color: black;
+  }
+
+  .w-correlativo {
+    width: 10%;
+  }
 
   /* Estilos para centrar el spinner dentro de la tabla */
   .spinner-wrapper {
@@ -29,17 +52,34 @@
     transform: translate(-50%, -50%);
     z-index: 9999;
   }
+
   /* Cambiar el color del spinner */
   .spinner-border {
-    color: #e73209 !important; /* Color rojo para el spinner, con !important para prioridad */
+    color: #e73209 !important;
+    /* Color rojo para el spinner, con !important para prioridad */
   }
-  
+
 
   @media print {
-    body { visibility: hidden; }
-    .table-wrapper, .table { visibility: visible; width: 100%; }
-    .table-wrapper { position: absolute; top: 0; left: 0; }
-    @page { size: landscape; }
+    body {
+      visibility: hidden;
+    }
+
+    .table-wrapper,
+    .table {
+      visibility: visible;
+      width: 100%;
+    }
+
+    .table-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    @page {
+      size: landscape;
+    }
   }
 </style>
 
@@ -72,7 +112,7 @@
       </div>
     </div>
 
-    <!-- Filtros: Fecha exacta y RUC en una sola fila alineados correctamente con centrado vertical -->
+    <!-- Filtros: Fecha exacta y Buscar en una sola fila alineados correctamente con centrado vertical -->
     <div class="row mb-3 align-items-center">
       <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
         <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
@@ -82,38 +122,31 @@
       </div>
       <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
         <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
-          <strong>RUC:</strong>
+          <strong>BUSCAR:</strong>
         </label>
-        <input type="text" class="form-control" value="20612188930" readonly>
+        <div class="input-group">
+          <input type="text" id="search-input" class="form-control" placeholder="Buscar en la tabla..."
+            aria-label="Buscar">
+        </div>
       </div>
     </div>
-
     <div class="table-wrapper">
       <div class="table-title">
-        <div class="row justify-content-between align-items-center">
-          <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-start">
-            <div class="input-group">
-              <input type="text" id="search-input" class="form-control" placeholder="Buscar en la tabla..." aria-label="Buscar">
-              <button class="btn btn-outline-secondary" type="button">
-                <i class="material-icons">search</i>
-              </button>
-            </div>
-          </div>
-          <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-end">
-            <button class="btn btn-danger me-2 d-flex align-items-center" onclick="abrirNuevaPaginaImprimirVentas()">
-              <i class="material-icons me-1">print</i>
-              <span>Imprimir</span>
-          </button>
-          
+        <div class="row justify-content-end align-items-center">
+          <!-- Botones Alineados a la Derecha -->
+          <div class="col-lg-6 col-md-6 col-sm-12 d-flex justify-content-end">
+            <button class="btn btn-danger me-2 d-flex align-items-center" onclick="abrirNuevaPaginaImprimirVentas()" style="background-color: #ff5733;">
+              <i class="material-icons me-1">visibility</i>
+              <span>Vista previa</span>
+            </button>
             <button class="btn btn-success d-flex align-items-center" onclick="exportarRegistroVentas()">
               <i class="material-icons me-1">picture_as_pdf</i>
               <span>Exportar</span>
             </button>
           </div>
         </div>
-        </div>
       </div>
-
+      
       <!-- Estructura de la tabla del Registro de Ventas e Ingresos -->
       <table class="table table-bordered table-striped table-hover" id="tabla-cuentas">
         <thead>
@@ -152,7 +185,8 @@
       <div class="d-flex justify-content-between align-items-center mt-3">
         <div class="d-flex me-3">
           <label for="records-per-page" class="me-2">Registros por página:</label>
-          <input type="number" id="records-per-page" class="form-control" value="5" min="1" max="100" style="width: 80px;">
+          <input type="number" id="records-per-page" class="form-control" value="5" min="1" max="100"
+            style="width: 80px;">
         </div>
         <nav aria-label="Page navigation example align-items-center">
           <ul class="pagination" id="pagination" class="pagination">
@@ -181,7 +215,7 @@
   let currentPage = 1;
   let rowsPerPage = parseInt(document.getElementById("records-per-page").value);
 
-  document.addEventListener("DOMContentLoaded", function() {
+  document.addEventListener("DOMContentLoaded", function () {
     const today = new Date();
     const year = today.getFullYear();
     const month = String(today.getMonth() + 1).padStart(2, '0');
@@ -190,7 +224,7 @@
     const spinnerWrapper = document.getElementById("spinner-wrapper"); // Referencia al spinner
     filtroFecha.max = maxDate;
 
-    filtroFecha.addEventListener("change", function() {
+    filtroFecha.addEventListener("change", function () {
       currentPage = 1;
       cargarDatos(filtroFecha.value);
     });
@@ -202,7 +236,7 @@
         url: "/registro_ventas_datos",
         type: "GET",
         data: { month, year },
-        success: function(data) {
+        success: function (data) {
           let filas = "";
           data.registros.forEach(registro => {
             filas += `
@@ -229,10 +263,10 @@
           totalPages = Math.ceil(data.registros.length / rowsPerPage);
           showPage(currentPage);
         },
-        error: function(error) {
+        error: function (error) {
           console.error("Error al cargar los datos:", error);
         },
-        complete: function() {
+        complete: function () {
           spinnerWrapper.style.display = "none"; // Ocultar el spinner cuando la carga finaliza
         }
       });
@@ -295,7 +329,7 @@
         </li>
       `;
 
-      document.getElementById("prev-page").addEventListener("click", function(e) {
+      document.getElementById("prev-page").addEventListener("click", function (e) {
         e.preventDefault();
         if (currentPage > 1) {
           currentPage--;
@@ -303,7 +337,7 @@
         }
       });
 
-      document.getElementById("next-page").addEventListener("click", function(e) {
+      document.getElementById("next-page").addEventListener("click", function (e) {
         e.preventDefault();
         if (currentPage < totalPages) {
           currentPage++;
@@ -312,7 +346,7 @@
       });
 
       document.querySelectorAll(".page-link[data-page]").forEach(link => {
-        link.addEventListener("click", function(e) {
+        link.addEventListener("click", function (e) {
           e.preventDefault();
           currentPage = parseInt(e.target.getAttribute("data-page"));
           showPage(currentPage);
@@ -321,7 +355,7 @@
     }
 
     const recordsInput = document.getElementById("records-per-page");
-    recordsInput.addEventListener("input", function() {
+    recordsInput.addEventListener("input", function () {
       rowsPerPage = parseInt(this.value);
       currentPage = 1;
       showPage(currentPage);
@@ -340,22 +374,22 @@
     }
     // Redireccionar a la ruta de exportación con el período como parámetro
     window.location.href = `/exportar-registro-ventas?periodo=${filtroFecha}`;
-    }
+  }
 
-    function abrirNuevaPaginaImprimirVentas() {
+  function abrirNuevaPaginaImprimirVentas() {
     const periodo = document.getElementById('filtro-fecha').value; // Usar el ID correcto
     if (!periodo) {
-        alert('Por favor, selecciona un periodo antes de continuar.');
-        return;
+      alert('Por favor, selecciona un periodo antes de continuar.');
+      return;
     }
 
     // Redirige a la nueva ruta con el parámetro de periodo
     const url = `/registro_ventas_imprimir?periodo=${encodeURIComponent(periodo)}`;
     const nuevaVentana = window.open(url, '_blank');
     if (!nuevaVentana) {
-        alert('Por favor, permite que el navegador abra ventanas emergentes.');
+      alert('Por favor, permite que el navegador abra ventanas emergentes.');
     }
-}
+  }
 
 
 </script>

@@ -17,22 +17,27 @@
     vertical-align: middle;
     font-weight: bold;
   }
+
   td.centered {
     text-align: center;
     vertical-align: middle;
   }
+
   .bg-orange {
     background-color: #FF9933;
     color: white;
   }
+
   .bg-cyan {
     background-color: #00CCCC;
     color: white;
   }
+
   .bg-green {
     background-color: #99CC99;
     color: black;
   }
+
   .w-correlativo {
     width: 10%;
   }
@@ -49,22 +54,27 @@
 
   /* Cambiar el color del spinner */
   .spinner-border {
-    color: #e73209 !important; /* Color rojo para el spinner */
+    color: #e73209 !important;
+    /* Color rojo para el spinner */
   }
 
   @media print {
     body {
       visibility: hidden;
     }
-    .table-wrapper, .table {
+
+    .table-wrapper,
+    .table {
       visibility: visible;
       width: 100%;
     }
+
     .table-wrapper {
       position: absolute;
       top: 0;
       left: 0;
     }
+
     @page {
       size: landscape;
     }
@@ -99,8 +109,7 @@
         <h2 class="text-left">Registro de compras</h2>
       </div>
     </div>
-
-    <!-- Filtros: Fecha exacta y RUC en una sola fila alineados correctamente con centrado vertical -->
+    <!-- Filtros: Fecha exacta y Buscar en una sola fila alineados correctamente con centrado vertical -->
     <div class="row mb-3 align-items-center">
       <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
         <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
@@ -110,34 +119,31 @@
       </div>
       <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
         <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
-          <strong>RUC:</strong>
+          <strong>BUSCAR:</strong>
         </label>
-        <input type="text" class="form-control" value="20612188930" readonly>
+        <input type="text" id="search-input" class="form-control" placeholder="Buscar en la tabla..."
+          aria-label="Buscar">
       </div>
     </div>
 
+
     <div class="table-wrapper">
       <div class="table-title">
-        <div class="row justify-content-between align-items-center">
-          <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-start">
-            <div class="input-group">
-              <input type="text" id="search-input" class="form-control" placeholder="Buscar en la tabla..." aria-label="Buscar">
-              <button class="btn btn-outline-secondary" type="button">
-                <i class="material-icons">search</i>
-              </button>
-            </div>
-          </div>
-
-          <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-end">
-            <button class="btn btn-primary me-2" onclick="abrirNuevaPaginaImprimirCompras()" style="background-color: #ff5733;">
-              <i class="material-icons">print</i> <span>Imprimir</span>
-          </button>          
-            <button class="btn btn-success" onclick="exportarRegistroCompras()">
-              <i class="material-icons">file_download</i> <span>Exportar</span>
+        <div class="row justify-content-end align-items-center">
+          <!-- Botones Alineados a la Derecha -->
+          <div class="col-lg-6 col-md-6 col-sm-12 d-flex justify-content-end">
+            <button class="btn btn-danger me-2 d-flex align-items-center" onclick="abrirNuevaPaginaImprimirCompras()" style="background-color: #ff5733;"></button>>
+              <i class="material-icons me-1">visibility</i>
+              <span>Vista previa</span>
+            </button>
+            <button class="btn btn-success d-flex align-items-center" onclick="exportarRegistroCompras()">
+              <i class="material-icons me-1">picture_as_pdf</i>
+              <span>Exportar</span>
             </button>
           </div>
         </div>
       </div>
+
 
       <!-- Estructura de la tabla del Registro de Compras -->
       <table class="table table-bordered table-striped table-hover" id="tabla-cuentas">
@@ -162,7 +168,7 @@
         </thead>
         <tbody id="tabla-cuerpo">
           <!-- Aquí se cargarán las filas dinámicamente -->
-        </tbody>        
+        </tbody>
         <tfoot>
           <tr>
             <td colspan="8" class="text-end"><strong>TOTALES</strong></td>
@@ -170,14 +176,15 @@
             <td class="text-end" id="total-igv">-</td>
             <td class="text-end" id="total-total-comprobante">-</td>
           </tr>
-        </tfoot>        
+        </tfoot>
       </table>
 
       <!-- Controles de paginación y selector de número de registros -->
       <div class="d-flex justify-content-between align-items-center mt-3">
         <div class="d-flex me-3">
           <label for="records-per-page" class="me-2">Registros por página:</label>
-          <input type="number" id="records-per-page" class="form-control" value="6" min="1" max="100" style="width: 80px;">
+          <input type="number" id="records-per-page" class="form-control" value="6" min="1" max="100"
+            style="width: 80px;">
         </div>
         <nav aria-label="Page navigation example align-items-center">
           <ul class="pagination" id="pagination">
@@ -209,7 +216,7 @@
     let rowsPerPage = parseInt(document.getElementById("records-per-page").value);
     const spinnerWrapper = document.getElementById("spinner-wrapper"); // Referencia al spinner
 
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", function () {
       const today = new Date();
       const year = today.getFullYear();
       const month = String(today.getMonth() + 1).padStart(2, '0');
@@ -221,12 +228,12 @@
       const periodo = urlParams.get('periodo');
 
       if (periodo) {
-          filtroFecha.value = periodo;
+        filtroFecha.value = periodo;
       }
 
-      filtroFecha.addEventListener('change', function() {
-          currentPage = 1;
-          cargarDatos(filtroFecha.value);
+      filtroFecha.addEventListener('change', function () {
+        currentPage = 1;
+        cargarDatos(filtroFecha.value);
       });
 
       function cargarDatos(periodo) {
@@ -236,7 +243,7 @@
           url: "/registro_compras_datos",
           type: "GET",
           data: { month, year },
-          success: function(data) {
+          success: function (data) {
             let filas = "";
             data.registros.forEach(registro => {
               filas += `
@@ -263,10 +270,10 @@
             totalPages = Math.ceil(data.registros.length / rowsPerPage);
             showPage(currentPage);
           },
-          error: function(error) {
+          error: function (error) {
             console.error("Error al cargar los datos:", error);
           },
-          complete: function() {
+          complete: function () {
             spinnerWrapper.style.display = "none"; // Ocultar el spinner al finalizar la carga
           }
         });
@@ -329,7 +336,7 @@
           </li>
         `;
 
-        document.getElementById("prev-page").addEventListener("click", function(e) {
+        document.getElementById("prev-page").addEventListener("click", function (e) {
           e.preventDefault();
           if (currentPage > 1) {
             currentPage--;
@@ -337,7 +344,7 @@
           }
         });
 
-        document.getElementById("next-page").addEventListener("click", function(e) {
+        document.getElementById("next-page").addEventListener("click", function (e) {
           e.preventDefault();
           if (currentPage < totalPages) {
             currentPage++;
@@ -346,7 +353,7 @@
         });
 
         document.querySelectorAll(".page-link[data-page]").forEach(link => {
-          link.addEventListener("click", function(e) {
+          link.addEventListener("click", function (e) {
             e.preventDefault();
             currentPage = parseInt(e.target.getAttribute("data-page"));
             showPage(currentPage);
@@ -355,7 +362,7 @@
       }
 
       const recordsInput = document.getElementById("records-per-page");
-      recordsInput.addEventListener("input", function() {
+      recordsInput.addEventListener("input", function () {
         rowsPerPage = parseInt(this.value);
         currentPage = 1;
         showPage(currentPage);
@@ -377,19 +384,19 @@
 
 
     function abrirNuevaPaginaImprimirCompras() {
-    const periodo = document.getElementById('filtro-fecha').value;
-    if (!periodo) {
+      const periodo = document.getElementById('filtro-fecha').value;
+      if (!periodo) {
         alert('Por favor, selecciona un periodo antes de continuar.');
         return;
-    }
+      }
 
-    // Redirige a la nueva ruta con el parámetro de periodo
-    const url = `/registro_compras_imprimir?periodo=${encodeURIComponent(periodo)}`;
-    const nuevaVentana = window.open(url, '_blank');
-    if (!nuevaVentana) {
+      // Redirige a la nueva ruta con el parámetro de periodo
+      const url = `/registro_compras_imprimir?periodo=${encodeURIComponent(periodo)}`;
+      const nuevaVentana = window.open(url, '_blank');
+      if (!nuevaVentana) {
         alert('Por favor, permite que el navegador abra ventanas emergentes.');
+      }
     }
-}
 
   </script>
 </div>
