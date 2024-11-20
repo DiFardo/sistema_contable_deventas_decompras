@@ -39,6 +39,7 @@
             border: 2px solid white;
             border-radius: 50%;
         }
+        
     </style>
 </head>
 
@@ -63,10 +64,13 @@
                 <!-- Configuración visible solo en Inicio -->
                 {% if request.endpoint == 'index' %}
                 <li class="nav-item">
-                    <a href="">
+                    <a href="#configuracionSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
                         <i class="material-icons">settings</i>
                         <span>Configuración</span>
                     </a>
+                    <ul class="collapse list-unstyled" id="configuracionSubmenu">
+                        <li><a href="{{ url_for('personal') }}"><i class="material-icons">book</i>Personal</a></li>
+                    </ul>
                 </li>
                 {% endif %}
 
@@ -85,7 +89,7 @@
                     </a>
                     <ul class="collapse list-unstyled" id="librosContablesSubmenu">
                         <li><a href="{{ url_for('libro_diario') }}"><i class="material-icons">book</i> Libro diario</a></li>
-                        <li><a href="{{ url_for('libro_mayor') }}"><i class="material-icons">book_online</i> Libro mayor</a></li>
+                        <li><a href="{{ url_for('libro_mayor') }}"><i class="material-icons">book</i> Libro mayor</a></li>
                         <li><a href="{{ url_for('libro_caja') }}"><i class="material-icons">account_balance_wallet</i> Caja y bancos</a></li>
                         <li><a href="{{ url_for('registro_ventas') }}"><i class="material-icons">receipt_long</i> Registro de ventas</a></li>
                         <li><a href="{{ url_for('registro_compras') }}"><i class="material-icons">receipt_long</i> Registro de compras</a></li>
@@ -104,12 +108,6 @@
                         <span>Clientes</span>
                     </a>
                 </li>
-                <li class="nav-item reportes hidden">
-                    <a href="#">
-                        <i class="material-icons">bar_chart</i>
-                        <span>Reportes de ventas</span>
-                    </a>
-                </li>
             </ul>
         </nav>
 
@@ -126,17 +124,18 @@
 
                         <div class="col-md-5 order-3 order-md-2">
                             <div class="xp-searchbar">
-                                <form id="searchForm">
+                                <form id="searchForm" action="/buscar" method="GET" class="form-inline position-relative">
                                     <div class="input-group">
-                                        <input type="search" class="form-control" placeholder="Buscar" id="searchInput">
+                                        <input type="search" name="term" class="form-control" placeholder="Buscar" id="searchInput" autocomplete="off">
                                         <div class="input-group-append">
-                                            <button class="btn" type="button" onclick="searchText()">Buscar</button>
+                                            <button class="btn" type="submit">Buscar</button>
                                         </div>
                                     </div>
+                                    <div id="searchDropdown" class="dropdown-menu" aria-labelledby="searchInput"></div>
                                 </form>
                             </div>
-                        </div>
-
+                        </div>                       
+                        
                         <div class="col-10 col-md-6 order-1 order-md-3">
                             <div class="xp-profilebar text-right">
                                 <nav class="navbar p-0">
@@ -181,12 +180,13 @@
         </div>
     </div>
 
-    <!-- Optional JavaScript -->
     <script src="/static/js/jquery-3.3.1.min.js"></script>
     <script src="/static/js/popper.min.js"></script>
     <script src="/static/js/bootstrap.min.js"></script>
+
     <!-- Archivo JS para manejar notificaciones -->
     <script src="/static/js/notificaciones.js"></script>
+    <script src="/static/js/tu-script.js"></script>
     <script type="text/javascript">
         function toggleVisibility(module) {
             const sidebarTitle = document.getElementById('sidebar-title');

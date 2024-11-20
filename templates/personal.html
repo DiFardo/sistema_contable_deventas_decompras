@@ -1,0 +1,563 @@
+{% extends "pagina_maestra.html" %}
+
+{% block titulo %}Gestión de Usuarios{% endblock %}
+
+{% block link %}
+<!-- Enlaces a CSS y Bootstrap -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-Avb2QiuDEEvB4bZJYdft2mNjVShBftLdPG8FJ0V7irTLQ8Uo0qcPxh4Plq7G5tGm0rU+1SPhVotteLpBERwTkw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+{% endblock %}
+
+{% block contenido %}
+<style>
+  /* Estilos personalizados */
+  .error-input {
+    border: 1px solid red;
+  }
+
+  .error-message {
+    color: red;
+    font-size: 12px;
+    margin-top: 5px;
+    display: none;
+  }
+
+  /* Spinner de carga */
+  #loadingSpinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1051;
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.4rem;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from {
+      transform: translate(-50%, -50%) rotate(0deg);
+    }
+    to {
+      transform: translate(-50%, -50%) rotate(360deg);
+    }
+  }
+
+  .input-group-text i {
+    width: 1.5em; /* Fija un ancho */
+    text-align: center; /* Alinea el ícono */
+    }
+
+</style>
+
+<div id="content">
+  <div class="main-content">
+    <!-- Breadcrumb dinámico -->
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        {% for crumb in breadcrumbs %}
+        {% if loop.last %}
+        <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
+        {% else %}
+        <li class="breadcrumb-item"><a href="{{ crumb.url }}">{{ crumb.name }}</a></li>
+        {% endif %}
+        {% endfor %}
+      </ol>
+    </nav>
+
+    <!-- Encabezado con título adicional -->
+    <div class="row mb-3">
+      <div class="col-12">
+        <h2 class="text-left">Gestión de usuarios</h2>
+      </div>
+    </div>
+
+    <!-- Mostrar mensajes flash -->
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="alert alert-info mt-3" role="alert">
+          {{ messages[0] }}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- Tabla de Usuarios -->
+    <div class="table-wrapper">
+      <div class="table-title">
+        <div class="row align-items-center justify-content-between">
+          <!-- Input Group para Filtro de Búsqueda -->
+          <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-lg-center justify-content-md-start mb-2 mb-lg-0">
+            <div class="input-group">
+              <input type="text" id="search-input" class="form-control" placeholder="Buscar usuarios..." aria-label="Buscar">
+              <button class="btn btn-outline-secondary" type="button">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Botón para Añadir Usuario -->
+          <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-lg-end justify-content-md-start">
+            <a href="#" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addUserModal">
+              <i class="material-icons">&#xE147;</i> <span>Añadir usuario</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <table class="table table-striped table-hover" id="tabla-usuarios">
+        <thead>
+          <tr>
+            <th>DNI</th>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Rol</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for usuario in usuarios %}
+          <tr>
+            <td>{{ usuario.dni }}</td>
+            <td>{{ usuario.nombre }}</td>
+            <td>{{ usuario.apellido }}</td>
+            <td>{{ usuario.rol }}</td>
+            <td>
+              <a href="#" class="edit" data-bs-toggle="modal" data-bs-target="#editUserModal"
+                data-dni="{{ usuario.dni }}"
+                data-nombre="{{ usuario.nombre }}"
+                data-apellido="{{ usuario.apellido }}"
+                data-rol="{{ usuario.rol }}">
+                <i class="material-icons" data-bs-toggle="tooltip" title="Editar">&#xE254;</i>
+              </a>
+              <a href="#" class="delete" data-bs-toggle="modal" data-bs-target="#deleteUserModal"
+                data-dni="{{ usuario.dni }}">
+                <i class="material-icons" data-bs-toggle="tooltip" title="Eliminar">&#xE872;</i>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal para Agregar Usuario -->
+  <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Añadir usuario</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <!-- Spinner de carga -->
+        <div id="loadingSpinner" class="spinner-border text-primary" role="status" style="display: none;">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <div class="modal-body">
+          <form id="addUserForm" method="post" action="{{ url_for('agregar_usuario') }}">
+            <div class="mb-3">
+              <label for="dni" class="form-label">DNI</label>
+              <input type="text" class="form-control" id="dni" name="dni" required maxlength="8">
+            </div>
+            <div class="mb-3">
+              <label for="nombre" class="form-label">Nombre</label>
+              <input type="text" class="form-control" id="nombre" name="nombre" required>
+            </div>
+            <div class="mb-3">
+              <label for="apellido" class="form-label">Apellido</label>
+              <input type="text" class="form-control" id="apellido" name="apellido" required>
+            </div>
+            <div class="mb-3">
+              <label for="rol" class="form-label">Rol</label>
+              <select class="form-select" id="rol" name="rol" required>
+                <option value="">Seleccione un rol</option>
+                {% for rol in roles %}
+                  <option value="{{ rol }}">{{ rol }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <!-- Campo de Contraseña con opción para mostrar/ocultar -->
+            <div class="mb-3">
+              <label for="password" class="form-label">Contraseña</label>
+              <div class="input-group">
+                <input type="password" class="form-control" id="password" name="password" required>
+                <span class="input-group-text">
+                  <i class="fas fa-eye" id="togglePassword" style="cursor: pointer;"></i>
+                </span>
+              </div>
+            </div>
+            <!-- Campo de Confirmación de Contraseña con opción para mostrar/ocultar -->
+            <div class="mb-3">
+              <label for="confirm-password" class="form-label">Confirmar contraseña</label>
+              <div class="input-group">
+                <input type="password" class="form-control" id="confirm-password" name="confirm_password" required>
+                <span class="input-group-text">
+                  <i class="fas fa-eye" id="toggleConfirmPassword" style="cursor: pointer;"></i>
+                </span>
+              </div>
+              <div id="passwordError" class="error-message">Las contraseñas no coinciden.</div>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Agregar usuario</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Editar Usuario -->
+  <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar usuario</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <!-- Spinner de carga -->
+        <div id="loadingSpinnerEdit" class="spinner-border text-primary" role="status" style="display: none;">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <div class="modal-body">
+          <form id="editUserForm" method="post" action="{{ url_for('editar_usuario') }}">
+            <div class="mb-3">
+              <label for="edit-dni" class="form-label">DNI</label>
+              <input type="text" class="form-control" id="edit-dni" name="dni" readonly>
+            </div>
+            <div class="mb-3">
+              <label for="edit-nombre" class="form-label">Nombre</label>
+              <input type="text" class="form-control" id="edit-nombre" name="nombre" required>
+            </div>
+            <div class="mb-3">
+              <label for="edit-apellido" class="form-label">Apellido</label>
+              <input type="text" class="form-control" id="edit-apellido" name="apellido" required>
+            </div>
+            <div class="mb-3">
+              <label for="edit-rol" class="form-label">Rol</label>
+              <select class="form-select" id="edit-rol" name="rol" required>
+                <option value="">Seleccione un rol</option>
+                {% for rol in roles %}
+                  <option value="{{ rol }}">{{ rol }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <!-- Si deseas permitir cambiar la contraseña desde aquí, puedes agregar el campo -->
+            <!--
+            <div class="mb-3">
+              <label for="edit-password" class="form-label">Nueva Contraseña</label>
+              <div class="input-group">
+                <input type="password" class="form-control" id="edit-password" name="password">
+                <span class="input-group-text">
+                  <i class="far fa-eye" id="toggleEditPassword" style="cursor: pointer;"></i>
+                </span>
+              </div>
+            </div>
+            -->
+            <button type="submit" class="btn btn-primary w-100">Guardar Cambios</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Confirmar Eliminación -->
+  <div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="deleteUserForm" method="post" action="{{ url_for('eliminar_usuario') }}">
+          <div class="modal-header">
+            <h5 class="modal-title">Eliminar usuario</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <p>¿Estás seguro de que deseas eliminar este usuario?</p>
+            <p class="text-warning"><small>Esta acción no se puede deshacer.</small></p>
+            <input type="hidden" name="dni" id="delete-dni">
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-danger">Eliminar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+{% block scripts %}
+<!-- Bootstrap JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Otros scripts si es necesario -->
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Selección de elementos comunes
+        const passwordInput = document.getElementById("password");
+        const confirmPasswordInput = document.getElementById("confirm-password");
+        const passwordError = document.getElementById("passwordError");
+        const dniInput = document.getElementById("dni");
+        const nombreInput = document.getElementById("nombre");
+        const apellidoInput = document.getElementById("apellido");
+
+        // Selección de elementos en el modal de edición
+        const editNombreInput = document.getElementById("edit-nombre");
+        const editApellidoInput = document.getElementById("edit-apellido");
+        const editForm = document.getElementById("editUserForm");
+
+        // Expresiones regulares para validación
+        const dniRegex = /^\d{8}$/; // Exactamente 8 dígitos
+        const textRegex = /^[a-zA-Z\s]+$/; // Solo letras y espacios
+        const passwordRegex = /^[a-zA-Z0-9]+$/; // Solo letras y números
+
+        // Función para mostrar errores
+        function mostrarError(input, mensaje) {
+            input.classList.add("error-input");
+            let errorMessage = input.parentElement.querySelector(".error-message");
+            if (!errorMessage) {
+                errorMessage = document.createElement("div");
+                errorMessage.className = "error-message";
+                input.parentElement.appendChild(errorMessage);
+            }
+            errorMessage.innerText = mensaje;
+            errorMessage.style.display = "block";
+        }
+
+        // Función para quitar errores
+        function quitarError(input) {
+            input.classList.remove("error-input");
+            let errorMessage = input.parentElement.querySelector(".error-message");
+            if (errorMessage) {
+                errorMessage.style.display = "none";
+            }
+        }
+
+        // Validación en tiempo real para nombres y apellidos
+        function validarTexto(input) {
+            input.value = input.value.trim(); // Elimina espacios al inicio y al final
+            if (input.value === "") {
+                mostrarError(input, "Este campo no puede estar vacío.");
+            } else if (!textRegex.test(input.value)) {
+                mostrarError(input, "Este campo solo debe contener letras y espacios.");
+            } else {
+                quitarError(input);
+            }
+        }
+
+        nombreInput.addEventListener("input", function () {
+            validarTexto(this);
+        });
+
+        apellidoInput.addEventListener("input", function () {
+            validarTexto(this);
+        });
+
+        editNombreInput.addEventListener("input", function () {
+            validarTexto(this);
+        });
+
+        editApellidoInput.addEventListener("input", function () {
+            validarTexto(this);
+        });
+
+        // Validación en tiempo real para DNI
+        dniInput.addEventListener("input", function () {
+            this.value = this.value.trim(); // Elimina espacios
+            if (this.value === "") {
+                mostrarError(this, "El DNI es obligatorio.");
+            } else if (!/^\d+$/.test(this.value)) {
+                mostrarError(this, "El DNI solo debe contener números.");
+            } else if (this.value.length !== 8) {
+                mostrarError(this, "El DNI debe tener exactamente 8 dígitos.");
+            } else {
+                quitarError(this);
+            }
+        });
+
+        // Verificar existencia del DNI al terminar de escribir (blur)
+        dniInput.addEventListener("blur", async function () {
+            if (dniRegex.test(this.value)) {
+                const dni = this.value;
+                const response = await fetch(`/verificar_dni/${dni}`);
+                const data = await response.json();
+                if (data.existe) {
+                    mostrarError(this, "El DNI ya está registrado.");
+                } else {
+                    quitarError(this);
+                }
+            }
+        });
+
+        // Validación en tiempo real para contraseña
+        passwordInput.addEventListener("input", function () {
+            this.value = this.value.trim(); // Elimina espacios
+            if (this.value === "") {
+                quitarError(this);
+            } else if (!passwordRegex.test(this.value)) {
+                mostrarError(this, "La contraseña no debe contener caracteres especiales.");
+            } else {
+                quitarError(this);
+            }
+        });
+
+        // Validación de coincidencia de contraseñas
+        function validatePasswordMatch() {
+            if (passwordInput.value !== confirmPasswordInput.value) {
+                passwordError.style.display = "block";
+                confirmPasswordInput.classList.add("error-input");
+            } else {
+                passwordError.style.display = "none";
+                confirmPasswordInput.classList.remove("error-input");
+            }
+        }
+
+        passwordInput.addEventListener("input", validatePasswordMatch);
+        confirmPasswordInput.addEventListener("input", validatePasswordMatch);
+
+        // Validar formulario de edición antes de enviarlo
+        editForm.addEventListener('submit', function (e) {
+            let hasError = false;
+
+            // Validar nombre
+            validarTexto(editNombreInput);
+            if (editNombreInput.classList.contains("error-input")) {
+                hasError = true;
+            }
+
+            // Validar apellido
+            validarTexto(editApellidoInput);
+            if (editApellidoInput.classList.contains("error-input")) {
+                hasError = true;
+            }
+
+            if (hasError) {
+                e.preventDefault();
+            }
+        });
+
+        // Manejar clic en el botón de editar usuario
+        const editButtons = document.querySelectorAll('.edit');
+        editButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                const dni = this.getAttribute('data-dni');
+                const nombre = this.getAttribute('data-nombre');
+                const apellido = this.getAttribute('data-apellido');
+                const rol = this.getAttribute('data-rol');
+
+                document.getElementById('edit-dni').value = dni;
+                document.getElementById('edit-nombre').value = nombre.trim();
+                document.getElementById('edit-apellido').value = apellido.trim();
+                document.getElementById('edit-rol').value = rol;
+            });
+        });
+
+        // Manejar clic en el botón de eliminar usuario
+        const deleteButtons = document.querySelectorAll('.delete');
+        deleteButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                const dni = this.getAttribute('data-dni');
+                document.getElementById('delete-dni').value = dni;
+            });
+        });
+
+        // Mostrar/Ocultar contraseña
+        const togglePassword = document.getElementById('togglePassword');
+        const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
+
+        togglePassword.addEventListener("click", function () {
+            const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+            passwordInput.setAttribute("type", type);
+            if (this.classList.contains("fa-eye")) {
+            this.classList.remove("fa-eye");
+            this.classList.add("fa-eye-slash");
+            } else {
+            this.classList.remove("fa-eye-slash");
+            this.classList.add("fa-eye");
+            }
+        });
+
+        toggleConfirmPassword.addEventListener("click", function () {
+            const type = confirmPasswordInput.getAttribute("type") === "password" ? "text" : "password";
+            confirmPasswordInput.setAttribute("type", type);
+            if (this.classList.contains("fa-eye")) {
+            this.classList.remove("fa-eye");
+            this.classList.add("fa-eye-slash");
+            } else {
+            this.classList.remove("fa-eye-slash");
+            this.classList.add("fa-eye");
+            }
+        });
+
+        // Mostrar pantalla de carga al enviar el formulario
+        const addUserForm = document.getElementById('addUserForm');
+        addUserForm.addEventListener('submit', function (e) {
+            if (!dniRegex.test(dniInput.value)) {
+                e.preventDefault();
+                mostrarError(dniInput, "El DNI es obligatorio y debe tener exactamente 8 dígitos.");
+                dniInput.focus();
+                return;
+            }
+            if (passwordInput.value !== confirmPasswordInput.value) {
+                e.preventDefault();
+                passwordError.style.display = "block";
+                confirmPasswordInput.classList.add("error-input");
+                confirmPasswordInput.focus();
+                return;
+            }
+            document.getElementById("loadingSpinner").style.display = "block";
+        });
+
+        // Ocultar pantalla de carga al navegar hacia atrás
+        window.addEventListener("pageshow", function (event) {
+            if (event.persisted) {
+                document.getElementById("loadingSpinner").style.display = "none";
+            }
+        });
+
+        // Limpiar formulario al abrir el modal de agregar usuario
+        const addUserModal = document.getElementById('addUserModal');
+        addUserModal.addEventListener('show.bs.modal', function () {
+            addUserForm.reset();
+            passwordError.style.display = "none";
+            confirmPasswordInput.classList.remove("error-input");
+
+            // Restablecer iconos de mostrar contraseña
+            if (passwordInput.getAttribute('type') === 'text') {
+                passwordInput.setAttribute('type', 'password');
+                togglePassword.classList.remove('fa-eye-slash');
+                togglePassword.classList.add('fa-eye');
+            }
+            if (confirmPasswordInput.getAttribute('type') === 'text') {
+                confirmPasswordInput.setAttribute('type', 'password');
+                toggleConfirmPassword.classList.remove('fa-eye-slash');
+                toggleConfirmPassword.classList.add('fa-eye');
+            }
+        });
+
+        // Funcionalidad de búsqueda en tabla
+        const searchInput = document.getElementById('search-input');
+        const tablaUsuarios = document.getElementById('tabla-usuarios');
+
+        function filtrarTabla() {
+            const filtro = searchInput.value.toLowerCase();
+            const filas = tablaUsuarios.querySelectorAll('tbody tr');
+
+            filas.forEach(fila => {
+                const celdas = fila.querySelectorAll('td');
+                let coincidencia = false;
+
+                celdas.forEach(celda => {
+                    if (celda.textContent.toLowerCase().includes(filtro)) {
+                        coincidencia = true;
+                    }
+                });
+
+                fila.style.display = coincidencia ? '' : 'none';
+            });
+        }
+
+        searchInput.addEventListener('input', filtrarTabla);
+    });
+</script>
+{% endblock %}
+{% endblock %}

@@ -73,6 +73,7 @@
         0%, 100% { opacity: 1; }
         50% { opacity: 0.5; }
     }
+    
   </style>
 </head>
 
@@ -100,8 +101,8 @@
                 <h4 class="font-weight-bolder text-center" style="margin-bottom: 30px;">Iniciar sesión</h4>
                 <form role="form" class="text-start" action="{{ url_for('procesar_login') }}" method="post">
                   <div class="input-group input-group-outline my-3 position-relative">
-                    <input type="text" class="form-control" name="dni" id="dni" placeholder="DNI" required>
-                  </div>
+                    <input type="text" class="form-control" name="dni" id="dni" placeholder="DNI" required maxlength="8">
+                  </div>                  
                   <div class="input-group input-group-outline mb-3 position-relative">
                     <input type="password" class="form-control" name="password" id="password" placeholder="Contraseña" required>
                   </div>
@@ -182,18 +183,48 @@
         }
     });
 
-    // Mostrar la pantalla de carga cuando se envía el formulario
+    // Funcionalidad para guardar credenciales
+    const dniInput = document.getElementById('dni');
+    const passwordInput = document.getElementById('password');
+    const saveCredentialsCheckbox = document.getElementById('flexCheckDefault');
+
+    // Cargar credenciales guardadas al iniciar
+    window.addEventListener('DOMContentLoaded', () => {
+        const savedDNI = localStorage.getItem('savedDNI');
+        const savedPassword = localStorage.getItem('savedPassword');
+        const saveCredentials = localStorage.getItem('saveCredentials') === 'true';
+
+        if (saveCredentials && savedDNI && savedPassword) {
+            dniInput.value = savedDNI;
+            passwordInput.value = savedPassword;
+            saveCredentialsCheckbox.checked = true;
+        }
+    });
+
+    // Manejar el evento de envío del formulario
     document.querySelector('form').addEventListener('submit', function(event) {
+        if (saveCredentialsCheckbox.checked) {
+            // Guardar credenciales en localStorage
+            localStorage.setItem('savedDNI', dniInput.value);
+            localStorage.setItem('savedPassword', passwordInput.value);
+            localStorage.setItem('saveCredentials', 'true');
+        } else {
+            // Eliminar credenciales si el checkbox no está marcado
+            localStorage.removeItem('savedDNI');
+            localStorage.removeItem('savedPassword');
+            localStorage.setItem('saveCredentials', 'false');
+        }
+        // Mostrar la pantalla de carga
         document.getElementById('loading-screen').style.display = 'flex';
     });
 
     // Detectar si se está navegando hacia atrás y ocultar la pantalla de carga
-    window.addEventListener("pageshow", function (event) {
+    window.addEventListener("pageshow", function(event) {
         if (event.persisted) {
             document.getElementById("loading-screen").style.display = "none";
         }
     });
-  </script>
+</script>
 
   <!-- Core JS Files -->
   <script src="{{ url_for('static', filename='js/core/popper.min.js') }}"></script>

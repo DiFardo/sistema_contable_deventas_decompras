@@ -140,7 +140,7 @@
               <span>Vista previa</span>
             </button>
             <button class="btn btn-success d-flex align-items-center" onclick="exportarRegistroVentas()">
-              <i class="material-icons me-1">picture_as_pdf</i>
+              <i class="material-icons me-1">file_download</i>
               <span>Exportar</span>
             </button>
           </div>
@@ -228,6 +228,9 @@
       currentPage = 1;
       cargarDatos(filtroFecha.value);
     });
+
+    // Activar búsqueda dinámica
+    document.getElementById("search-input").addEventListener("input", filtrarTabla);
 
     function cargarDatos(periodo) {
       const [year, month] = periodo.split("-");
@@ -351,6 +354,17 @@
           currentPage = parseInt(e.target.getAttribute("data-page"));
           showPage(currentPage);
         });
+      });
+    }
+
+    function filtrarTabla() {
+      const searchTerm = document.getElementById("search-input").value.toLowerCase();
+      const rows = document.querySelectorAll("#tabla-cuerpo tr");
+
+      rows.forEach(row => {
+        const cells = row.querySelectorAll("td");
+        const rowText = Array.from(cells).map(cell => cell.textContent.toLowerCase()).join(" ");
+        row.style.display = rowText.includes(searchTerm) ? "" : "none";
       });
     }
 

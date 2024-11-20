@@ -214,7 +214,7 @@
                             <h5>Funciones del rol</h5>
                             <ul class="list-group">
                                 <li class="list-group-item"><strong>Rol:</strong> {{ perfil[3] }}</li>
-                                <li class="list-group-item justificado"><strong>Descripción:</strong> {{ descripcion_rol }}</li>
+                                <li class="list-group-item justificado"><strong>Descripción:</strong> {{ descripcion_rol if descripcion_rol else "No se recibió descripción" }}</li>
                             </ul>
                         </div>
                     </div>

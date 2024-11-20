@@ -1428,7 +1428,7 @@ def obtener_libro_mayor(mes, año, cuenta):
 
     with conexion.cursor(cursor_factory=DictCursor) as cursor:
         cursor.execute("""
-            SELECT fecha, numero_correlativo, glosa, debe as deudor, haber as acreedor
+            SELECT fecha::date, numero_correlativo, glosa, debe as deudor, haber as acreedor
             FROM (
                 SELECT
                     DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo,

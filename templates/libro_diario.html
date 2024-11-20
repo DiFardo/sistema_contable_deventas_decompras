@@ -19,6 +19,9 @@
   .text-right {
     text-align: right;
   }
+  .text-center {
+    text-align: center;
+  }
 
   /* Estilos para centrar el spinner dentro de la tabla */
   .spinner-wrapper {
@@ -206,12 +209,12 @@
                     filas += `
                         <tr>
                             ${movimiento.debe === null && movimiento.haber === null ? `
-                                <td>${movimiento.numero_correlativo || "-"}</td>
-                                <td>${movimiento.fecha || "-"}</td>
+                                <td class="text-center">${movimiento.numero_correlativo || "-"}</td>
+                                <td class="text-center">${movimiento.fecha || "-"}</td>
                                 <td>${movimiento.glosa || "-"}</td>
-                                <td>${movimiento.codigo_del_libro || "-"}</td>
-                                <td>${movimiento.numero_correlativo_documento || "-"}</td>
-                                <td>${movimiento.numero_documento_sustentatorio || "-"}</td>
+                                <td class="text-center">${movimiento.codigo_del_libro || "-"}</td>
+                                <td class="text-center">${movimiento.numero_correlativo_documento || "-"}</td>
+                                <td class="text-center">${movimiento.numero_documento_sustentatorio || "-"}</td>
                                 <td>${movimiento.codigo_cuenta || "-"}</td>
                                 <td>${movimiento.denominacion || "-"}</td>
                                 <td class="text-right"></td>
@@ -245,6 +248,17 @@
             complete: function () {
                 spinnerWrapper.style.display = "none"; // Ocultar el spinner al finalizar la carga
             }
+        });
+    }
+
+    function filtrarTabla() {
+        const searchTerm = document.getElementById("search-input").value.toLowerCase();
+        const rows = document.querySelectorAll("#tabla-cuerpo tr");
+
+        rows.forEach(row => {
+            const cells = row.querySelectorAll("td");
+            const rowText = Array.from(cells).map(cell => cell.textContent.toLowerCase()).join(" ");
+            row.style.display = rowText.includes(searchTerm) ? "" : "none";
         });
     }
 
@@ -346,6 +360,8 @@
             currentPage = 1;
             showPage(currentPage);
         });
+
+        document.getElementById("search-input").addEventListener("input", filtrarTabla); // Activar la búsqueda en vivo
 
         if (filtroFecha.value) {
             cargarTabla(filtroFecha.value);
