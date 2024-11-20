@@ -157,16 +157,13 @@ def libro_diario():
     dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
     fecha = request.args.get("fecha", None)
-
     movimientos, total_debe, total_haber = (
         controlador_plantillas.obtener_libro_diario_por_fecha(fecha) if fecha else ([], 0, 0)
     )
-
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Libro diario', 'url': '/libro_diario'}
     ]
-
     return render_template(
         "libro_diario.html",
         movimientos=movimientos,
@@ -181,7 +178,6 @@ def libro_diario():
 def libro_diario_datos():
     fecha = request.args.get("fecha")
     movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha)
-    
     filas = []
     for movimiento in movimientos:
         filas.append({
@@ -196,7 +192,6 @@ def libro_diario_datos():
             "debe": movimiento["debe"],
             "haber": movimiento["haber"]
         })
-
     return jsonify(filas=filas, total_debe=total_debe, total_haber=total_haber)
 
 @app.route("/libro_mayor")
@@ -648,24 +643,17 @@ def marcar_notificaciones_leidas_endpoint():
 @app.route("/perfil_usuario")
 @jwt_required()
 def perfil_usuario():
-    # Obtener el DNI del usuario autenticado desde el token JWT
     dni = get_jwt_identity()
-
-    # Obtener información del usuario
     usuario = controlador_usuarios.obtener_usuario(dni)
     perfil = controlador_usuarios.obtener_detalles_perfil(dni)
-
     if not perfil:
         flash("Usuario no encontrado.")
         return redirect("/index")
-
-    # Obtener la descripción del rol
     descripcion_rol = obtener_descripcion_rol(perfil[3])
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Perfil del Usuario', 'url': '/perfil_usuario'}
     ]
-
     return render_template(
         "perfil_usuario.html",
         usuario=usuario,
@@ -673,6 +661,64 @@ def perfil_usuario():
         descripcion_rol=descripcion_rol,
         breadcrumbs=breadcrumbs
     )
+
+@app.route('/agregar_usuario', methods=['POST'])
+@jwt_required()
+def agregar_usuario():
+    dni = request.form['dni']
+    nombre = request.form['nombre']
+    apellido = request.form['apellido']
+    rol = request.form['rol']
+    password = request.form['password']
+    success = controlador_usuarios.agregar_usuario(dni, nombre, apellido, rol, password)
+    if success:
+        flash("Usuario agregado exitosamente.")
+    else:
+        flash("Hubo un error al agregar el usuario. Verifica que el DNI no exista ya en el sistema.")
+    return redirect(url_for('personal'))
+
+@app.route('/editar_usuario', methods=['POST'])
+@jwt_required()
+def editar_usuario():
+    dni = request.form['dni']
+    nombre = request.form['nombre']
+    apellido = request.form['apellido']
+    rol = request.form['rol']
+    success = controlador_usuarios.editar_usuario(dni, nombre, apellido, rol)
+    if success:
+        flash("Usuario actualizado exitosamente.")
+    else:
+        flash("Hubo un error al actualizar el usuario.")
+    return redirect(url_for('personal'))
+
+@app.route('/eliminar_usuario', methods=['POST'])
+@jwt_required()
+def eliminar_usuario():
+    dni = request.form['dni']
+    success = controlador_usuarios.eliminar_usuario(dni)
+    if success:
+        flash("Usuario eliminado exitosamente.")
+    else:
+        flash("Hubo un error al eliminar el usuario.")
+    return redirect(url_for('personal'))
+
+@app.route('/personal')
+@jwt_required()
+def personal():
+    dni = get_jwt_identity()
+    usuario = controlador_usuarios.obtener_usuario(dni)
+    usuarios = controlador_usuarios.obtener_todos_usuarios()
+    roles = list(descripciones.keys())
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Gestión de usuarios', 'url': '/personal'}
+    ]
+    return render_template('personal.html', usuarios=usuarios, breadcrumbs=breadcrumbs, usuario=usuario, roles=roles)
+
+@app.route('/verificar_dni/<dni>', methods=['GET'])
+def verificar_dni_route(dni):
+    existe = controlador_usuarios.verificar_dni(dni)
+    return jsonify({'existe': existe})
 
 def cargar_usuario():
     if request.endpoint in app.view_functions and 'static' not in request.path:

@@ -64,10 +64,13 @@
                 <!-- Configuración visible solo en Inicio -->
                 {% if request.endpoint == 'index' %}
                 <li class="nav-item">
-                    <a href="">
+                    <a href="#configuracionSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
                         <i class="material-icons">settings</i>
                         <span>Configuración</span>
                     </a>
+                    <ul class="collapse list-unstyled" id="configuracionSubmenu">
+                        <li><a href="{{ url_for('personal') }}"><i class="material-icons">book</i>Personal</a></li>
+                    </ul>
                 </li>
                 {% endif %}
 
