@@ -37,7 +37,7 @@ app.config['JWT_COOKIE_SAMESITE'] = 'Lax'  # Política SameSite para las cookies
 app.config['JWT_COOKIE_CSRF_PROTECT'] = False  # Desactivar protección CSRF para simplificar (puedes activarla si lo deseas)
 app.config['JWT_ACCESS_COOKIE_PATH'] = '/'  # Ruta de la cookie
 app.config['JWT_SESSION_COOKIE'] = True  # La cookie expirará cuando se cierre el navegador
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=20)
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=30)
 
 # Inicializa JWTManager
 jwt = JWTManager(app)
@@ -194,6 +194,225 @@ def libro_diario_datos():
         })
     return jsonify(filas=filas, total_debe=total_debe, total_haber=total_haber)
 
+
+################################################################################################
+
+############### RUTAS PARA LAS PAGINAS DE IMPRIMIR #############################################
+
+
+@app.route("/libro_diario_imprimir", methods=["GET"])
+@jwt_required()
+def libro_diario_imprimir():
+    token = request.cookies.get('token')
+    dni = request.cookies.get('dni')
+    usuario = controlador_usuarios.obtener_usuario(dni)
+    fecha = request.args.get("fecha", None)
+
+    # Verificar si la fecha está presente
+    if not fecha:
+        print("No se proporcionó una fecha válida")  # Mensaje de depuración
+        movimientos, total_debe, total_haber = [], 0, 0
+    else:
+        # Obtener los movimientos del libro diario para la fecha proporcionada
+        movimientos, total_debe, total_haber = controlador_plantillas.obtener_movimientos_libro_diario(fecha)
+        print(f"Movimientos obtenidos: {len(movimientos)}")  # Mensaje de depuración
+
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Libro Diario', 'url': '/libro_diario'},
+        {'name': 'Imprimir', 'url': ''}
+    ]
+
+    # Renderizar la plantilla con los datos obtenidos
+    return render_template(
+        "libro_diario_imprimir.html",
+        movimientos=movimientos,
+        total_debe=total_debe,
+        total_haber=total_haber,
+        fecha=fecha,
+        breadcrumbs=breadcrumbs,
+        usuario=usuario
+    )
+
+@app.route("/libro_caja_imprimir", methods=["GET"])
+@jwt_required()
+def libro_caja_imprimir():
+    token = request.cookies.get('token')
+    dni = request.cookies.get('dni')
+    usuario = controlador_usuarios.obtener_usuario(dni)
+    periodo = request.args.get("periodo", None)
+
+    # Verificar si el periodo está presente
+    if not periodo:
+        print("No se proporcionó un periodo válido")  # Mensaje de depuración
+        movimientos, total_deudor, total_acreedor = [], 0, 0
+    else:
+        # Extraer mes y año del periodo proporcionado
+        try:
+            año, mes = periodo.split("-")
+            # Obtener los movimientos del libro caja para el periodo
+            movimientos, total_deudor, total_acreedor = controlador_plantillas.obtener_libro_caja(mes, año)
+            print(f"Movimientos obtenidos: {len(movimientos)}")  # Mensaje de depuración
+        except ValueError:
+            print("Error en el formato del periodo")  # Mensaje de depuración
+            movimientos, total_deudor, total_acreedor = [], 0, 0
+
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Libro Caja y Bancos', 'url': '/libro_caja'},
+        {'name': 'Imprimir', 'url': ''}
+    ]
+
+    # Renderizar la plantilla con los datos obtenidos
+    return render_template(
+        "libro_caja_imprimir.html",
+        movimientos=movimientos,
+        total_deudor=total_deudor,
+        total_acreedor=total_acreedor,
+        periodo=periodo,
+        breadcrumbs=breadcrumbs,
+        usuario=usuario
+    )
+
+
+@app.route("/registro_ventas_imprimir", methods=["GET"])
+@jwt_required()
+def registro_ventas_imprimir():
+    token = request.cookies.get("token")
+    dni = request.cookies.get("dni")
+    usuario = controlador_usuarios.obtener_usuario(dni)
+    periodo = request.args.get("periodo", None)
+
+    # Verificar si el periodo está presente
+    if not periodo:
+        print("No se proporcionó un periodo válido")  # Mensaje de depuración
+        registros, total_base_imponible, total_igv, total_total_comprobante = [], 0, 0, 0
+    else:
+        # Extraer mes y año del periodo proporcionado
+        try:
+            año, mes = periodo.split("-")
+            # Obtener los registros del Registro de Ventas para el periodo
+            registros, total_base_imponible, total_igv, total_total_comprobante = controlador_plantillas.obtener_registro_ventas(
+                mes, año
+            )
+            print(f"Registros obtenidos: {len(registros)}")  # Mensaje de depuración
+        except ValueError:
+            print("Error en el formato del periodo")  # Mensaje de depuración
+            registros, total_base_imponible, total_igv, total_total_comprobante = [], 0, 0, 0
+
+    breadcrumbs = [
+        {"name": "Inicio", "url": "/index"},
+        {"name": "Registro de Ventas", "url": "/registro_ventas"},
+        {"name": "Imprimir", "url": ""},
+    ]
+
+    # Renderizar la plantilla con los datos obtenidos
+    return render_template(
+        "registro_ventas_imprimir.html",
+        registros=registros,
+        total_base_imponible=total_base_imponible,
+        total_igv=total_igv,
+        total_total_comprobante=total_total_comprobante,
+        periodo=periodo,
+        breadcrumbs=breadcrumbs,
+        usuario=usuario,
+    )
+
+
+@app.route("/registro_compras_imprimir", methods=["GET"])
+@jwt_required()
+def registro_compras_imprimir():
+    token = request.cookies.get("token")
+    dni = request.cookies.get("dni")
+    usuario = controlador_usuarios.obtener_usuario(dni)
+    periodo = request.args.get("periodo", None)
+
+    # Verificar si el periodo está presente
+    if not periodo:
+        print("No se proporcionó un periodo válido")  # Mensaje de depuración
+        registros, total_base_imponible, total_igv, total_total_comprobante = [], 0, 0, 0
+    else:
+        # Extraer mes y año del periodo proporcionado
+        try:
+            año, mes = periodo.split("-")
+            # Obtener los registros del Registro de Compras para el periodo
+            registros, total_base_imponible, total_igv, total_total_comprobante = controlador_plantillas.obtener_registro_compras(
+                mes, año
+            )
+            print(f"Registros obtenidos: {len(registros)}")  # Mensaje de depuración
+        except ValueError:
+            print("Error en el formato del periodo")  # Mensaje de depuración
+            registros, total_base_imponible, total_igv, total_total_comprobante = [], 0, 0, 0
+
+    breadcrumbs = [
+        {"name": "Inicio", "url": "/index"},
+        {"name": "Registro de Compras", "url": "/registro_compras"},
+        {"name": "Imprimir", "url": ""},
+    ]
+
+    # Renderizar la plantilla con los datos obtenidos
+    return render_template(
+        "registro_compras_imprimir.html",
+        registros=registros,
+        total_base_imponible=total_base_imponible,
+        total_igv=total_igv,
+        total_total_comprobante=total_total_comprobante,
+        periodo=periodo,
+        breadcrumbs=breadcrumbs,
+        usuario=usuario,
+    )
+
+@app.route("/libro_mayor_imprimir", methods=["GET"])
+@jwt_required()
+def libro_mayor_imprimir():
+    token = request.cookies.get("token")
+    dni = request.cookies.get("dni")
+    usuario = controlador_usuarios.obtener_usuario(dni)
+    periodo = request.args.get("periodo", None)
+    cuenta = request.args.get("cuenta", None)
+
+    movimientos = []
+    total_debe = 0
+    total_haber = 0
+
+    # Verificar parámetros obligatorios
+    if not periodo or not cuenta:
+        print("No se proporcionó un periodo o cuenta válidos")
+    else:
+        try:
+            # Validar y desglosar el período
+            año, mes = periodo.split("-")
+            movimientos = controlador_plantillas.obtener_libro_mayor(mes, año, cuenta)
+            
+            # Calcular totales
+            for movimiento in movimientos:
+                total_debe += movimiento.get('deudor', 0) or 0
+                total_haber += movimiento.get('acreedor', 0) or 0
+            print(f"Movimientos obtenidos: {len(movimientos)}")
+        except ValueError:
+            print("Error en el formato del periodo")
+            movimientos = []
+
+    breadcrumbs = [
+        {"name": "Inicio", "url": "/index"},
+        {"name": "Libro Mayor", "url": "/libro_mayor"},
+        {"name": "Imprimir", "url": ""},
+    ]
+
+    return render_template(
+        "libro_mayor_imprimir.html",
+        movimientos=movimientos,
+        total_debe=total_debe,
+        total_haber=total_haber,
+        periodo=periodo,
+        cuenta=cuenta,
+        breadcrumbs=breadcrumbs,
+        usuario=usuario,
+    )
+
+
+###########################################################################################################3
+
 @app.route("/libro_mayor")
 @jwt_required()
 def libro_mayor():
@@ -261,6 +480,9 @@ def libro_mayor_datos():
         "total_haber": total_acreedor   
     })
 
+
+
+
 @app.route("/exportar-todas-las-cuentas", methods=["GET"])
 @jwt_required()
 def exportar_todas_las_cuentas():
@@ -320,6 +542,82 @@ def libro_caja():
         breadcrumbs=breadcrumbs,
         usuario=usuario
     )
+
+##################################################################################################
+@app.route('/exportar-libro-caja-pdf', methods=['GET'])
+@jwt_required()
+def exportar_libro_caja_pdf():
+    periodo = request.args.get('periodo')
+    if not periodo:
+        return jsonify({'error': 'El parámetro "periodo" es requerido.'}), 400
+
+    try:
+        año, mes = periodo.split("-")
+        mes = int(mes)
+        año = int(año)
+    except ValueError:
+        return jsonify({'error': 'El formato del periodo es incorrecto. Debe ser "YYYY-MM".'}), 400
+
+    return controlador_plantillas.generar_libro_caja_pdf_horizontal(mes, año)
+
+@app.route("/exportar-registro-ventas-pdf", methods=["GET"])
+@jwt_required()
+def exportar_registro_ventas_pdf():
+    # Obtener el parámetro "periodo" de la solicitud
+    periodo = request.args.get("periodo")
+    if not periodo:
+        return jsonify({'error': 'El parámetro "periodo" es requerido.'}), 400
+
+    try:
+        # Extraer el mes y el año del periodo
+        año, mes = periodo.split("-")
+        mes = int(mes)
+        año = int(año)
+    except ValueError:
+        return jsonify({'error': 'El formato del periodo es incorrecto. Debe ser "YYYY-MM".'}), 400
+
+    # Generar el PDF utilizando el controlador
+    return controlador_plantillas.generar_registro_ventas_pdf(mes, año)
+
+@app.route("/exportar-registro-compras-pdf", methods=["GET"])
+@jwt_required()
+def exportar_registro_compras_pdf():
+    periodo = request.args.get("periodo")
+    if not periodo:
+        return jsonify({'error': 'El parámetro "periodo" es requerido.'}), 400
+
+    try:
+        año, mes = periodo.split("-")
+        mes = int(mes)
+        año = int(año)
+    except ValueError:
+        return jsonify({'error': 'El formato del periodo es incorrecto. Debe ser "YYYY-MM".'}), 400
+
+    return controlador_plantillas.generar_registro_compras_pdf(mes, año)
+
+@app.route("/exportar-libro-mayor-pdf", methods=["GET"])
+@jwt_required()
+def exportar_libro_mayor_pdf():
+    # Obtener los parámetros "periodo" y "cuenta" de la solicitud
+    periodo = request.args.get("periodo")
+    cuenta = request.args.get("cuenta")
+    
+    # Validar los parámetros requeridos
+    if not periodo or not cuenta:
+        return jsonify({'error': 'Los parámetros "periodo" y "cuenta" son requeridos.'}), 400
+
+    try:
+        # Extraer el mes y el año del periodo
+        año, mes = periodo.split("-")
+        mes = int(mes)
+        año = int(año)
+    except ValueError:
+        return jsonify({'error': 'El formato del periodo es incorrecto. Debe ser "YYYY-MM".'}), 400
+
+    # Llamar al controlador para generar el PDF
+    return controlador_plantillas.generar_libro_mayor_pdf(mes, año, cuenta)
+
+##################################################################################################
 
 @app.route("/registro_ventas", methods=["GET"])
 @jwt_required()
@@ -432,6 +730,23 @@ def exportar_libro_diario():
     except ValueError:
         return jsonify({'error': 'El formato de la fecha es incorrecto. Debe ser "YYYY-MM-DD".'}), 400
     return controlador_plantillas.generar_libro_diario_excel(fecha)
+
+@app.route('/exportar-libro-diario-pdf', methods=['GET'])
+@jwt_required()
+def exportar_libro_diario_pdf():
+    fecha = request.args.get('fecha')
+    if not fecha:
+        return jsonify({'error': 'El parámetro "fecha" es requerido.'}), 400
+
+    try:
+        datetime.datetime.strptime(fecha, '%Y-%m-%d')
+    except ValueError:
+        return jsonify({'error': 'El formato de la fecha es incorrecto. Debe ser "YYYY-MM-DD".'}), 400
+
+    return controlador_plantillas.generar_libro_diario_pdf_horizontal(fecha)
+
+
+
 
 @app.route("/asientos_contables")
 @jwt_required()
