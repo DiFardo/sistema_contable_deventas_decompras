@@ -13,7 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Icons" rel="stylesheet">
     <style>
-       .hidden {
+        .hidden {
             display: none;
         }
 
@@ -39,7 +39,85 @@
             border: 2px solid white;
             border-radius: 50%;
         }
-        
+
+
+
+        .notification-dropdown table {
+            width: 100%;
+            margin: 0;
+            font-size: 0.85rem;
+            border-collapse: collapse;
+        }
+
+        .notification-dropdown th,
+        .notification-dropdown td {
+            text-align: left;
+            padding: 8px;
+        }
+
+        .notification-dropdown th {
+            background-color: #f5f5f5;
+        }
+
+        .notification-dropdown td {
+            vertical-align: middle;
+        }
+
+        .notification-dropdown td:last-child {
+            text-align: center;
+            width: 50px;
+        }
+
+        .notification-dropdown .close-icon {
+            background-color: #ff4d4d !important;
+            color: white !important;
+            padding: 5px !important;
+            border-radius: 50% !important;
+            cursor: pointer !important;
+            transition: background-color 0.3s ease !important;
+            display: inline-block !important;
+            font-size: 1.2rem !important;
+            text-align: center !important;
+            line-height: 1.2rem !important;
+        }
+
+        .notification-dropdown .close-icon:hover {
+            background-color: #cc0000 !important;
+        }
+
+
+        /* Ventana flotante */
+        .ventana-flotante {
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            width: 350px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1050;
+            border-radius: 8px;
+            display: none;
+            /* Oculto por defecto */
+        }
+
+        /* Mostrar ventana flotante */
+        .ventana-flotante:not(.hidden) {
+            display: block;
+        }
+
+        /* Botones de igual tamaño */
+        #contenido-perfil .btn {
+            font-size: 0.9rem;
+            font-weight: bold;
+            padding: 10px;
+            text-align: center;
+        }
+
+        /* Ajuste de espaciado entre los botones */
+        #contenido-perfil .btn+.btn {
+            margin-left: 10px;
+        }
     </style>
 </head>
 
@@ -47,13 +125,24 @@
     <div class="wrapper sidebar-active">
         <div class="body-overlay"></div>
 
-        <!-- Sidebar -->
         <nav id="sidebar">
             <div class="sidebar-header">
-                <h3 id="sidebar-title"><span>Sistema Contable</span></h3>
+                <h3 id="sidebar-title">
+                    <span>
+                        {% if usuario[5] == "Contador" %}
+                        Módulo Contable
+                        {% elif usuario[5] == "Gestor de operaciones comerciales" %}
+                        Módulo de Ventas
+                        {% elif usuario[5] == "Administrador" %}
+                        Sistema General
+                        {% else %}
+                        Sistema
+                        {% endif %}
+                    </span>
+                </h3>
             </div>
             <ul id="navbar-options" class="list-unstyled components">
-                <!-- Inicio visible por defecto -->
+                <!-- Inicio visible para todos -->
                 <li class="nav-item">
                     <a href="{{ url_for('index') }}" class="dashboard">
                         <i class="material-icons">dashboard</i>
@@ -61,10 +150,11 @@
                     </a>
                 </li>
 
-                <!-- Configuración visible solo en Inicio -->
-                {% if request.endpoint == 'index' %}
+                <!-- Configuración visible solo en Inicio y solo para Administrador -->
+                {% if request.endpoint == 'index' and usuario[5] == "Administrador" %}
                 <li class="nav-item">
-                    <a href="#configuracionSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                    <a href="#configuracionSubmenu" data-toggle="collapse" aria-expanded="false"
+                        class="dropdown-toggle">
                         <i class="material-icons">settings</i>
                         <span>Configuración</span>
                     </a>
@@ -83,16 +173,22 @@
                 </li>
 
                 <li class="nav-item libros hidden">
-                    <a href="#librosContablesSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                    <a href="#librosContablesSubmenu" data-toggle="collapse" aria-expanded="false"
+                        class="dropdown-toggle">
                         <i class="material-icons">library_books</i>
                         <span>Libros contables</span>
                     </a>
                     <ul class="collapse list-unstyled" id="librosContablesSubmenu">
-                        <li><a href="{{ url_for('libro_diario') }}"><i class="material-icons">book</i> Libro diario</a></li>
-                        <li><a href="{{ url_for('libro_mayor') }}"><i class="material-icons">book</i> Libro mayor</a></li>
-                        <li><a href="{{ url_for('libro_caja') }}"><i class="material-icons">account_balance_wallet</i> Caja y bancos</a></li>
-                        <li><a href="{{ url_for('registro_ventas') }}"><i class="material-icons">receipt_long</i> Registro de ventas</a></li>
-                        <li><a href="{{ url_for('registro_compras') }}"><i class="material-icons">receipt_long</i> Registro de compras</a></li>
+                        <li><a href="{{ url_for('libro_diario') }}"><i class="material-icons">book</i> Libro diario</a>
+                        </li>
+                        <li><a href="{{ url_for('libro_mayor') }}"><i class="material-icons">book</i> Libro mayor</a>
+                        </li>
+                        <li><a href="{{ url_for('libro_caja') }}"><i class="material-icons">account_balance_wallet</i>
+                                Caja y bancos</a></li>
+                        <li><a href="{{ url_for('registro_ventas') }}"><i class="material-icons">receipt_long</i>
+                                Registro de ventas</a></li>
+                        <li><a href="{{ url_for('registro_compras') }}"><i class="material-icons">receipt_long</i>
+                                Registro de compras</a></li>
                     </ul>
                 </li>
                 <!-- Opciones del Módulo de Ventas -->
@@ -124,9 +220,11 @@
 
                         <div class="col-md-5 order-3 order-md-2">
                             <div class="xp-searchbar">
-                                <form id="searchForm" action="/buscar" method="GET" class="form-inline position-relative">
+                                <form id="searchForm" action="/buscar" method="GET"
+                                    class="form-inline position-relative">
                                     <div class="input-group">
-                                        <input type="search" name="term" class="form-control" placeholder="Buscar" id="searchInput" autocomplete="off">
+                                        <input type="search" name="term" class="form-control" placeholder="Buscar"
+                                            id="searchInput" autocomplete="off">
                                         <div class="input-group-append">
                                             <button class="btn" type="submit">Buscar</button>
                                         </div>
@@ -134,36 +232,34 @@
                                     <div id="searchDropdown" class="dropdown-menu" aria-labelledby="searchInput"></div>
                                 </form>
                             </div>
-                        </div>                       
-                        
+                        </div>
+
                         <div class="col-10 col-md-6 order-1 order-md-3">
                             <div class="xp-profilebar text-right">
                                 <nav class="navbar p-0">
                                     <ul class="nav navbar-nav flex-row ml-auto">
-                                        <li class="dropdown nav-item active">
-                                            <a href="#" class="nav-link" id="notification-icon" data-toggle="dropdown" aria-expanded="false">
+                                        <!-- Icono de notificaciones -->
+                                        <li class="nav-item">
+                                            <a href="#" class="nav-link" id="notification-icon"
+                                                onclick="mostrarVentana('notificaciones')">
                                                 <span class="material-icons">notifications</span>
                                                 <span class="notification" id="notification-count">0</span>
                                             </a>
-                                            <ul class="dropdown-menu notification-dropdown" id="notification-list">
-                                                <li class="no-notifications">No hay notificaciones nuevas</li>
-                                            </ul>
                                         </li>
 
-                                        <!-- Perfil del usuario -->
+                                        <!-- Icono de perfil -->
                                         {% if usuario %}
-                                        <li class="nav-item dropdown user-dropdown">
-                                            <a href="#" class="nav-link d-flex align-items-center" data-toggle="dropdown" aria-expanded="false">
+                                        <li class="nav-item">
+                                            <a href="#" class="nav-link d-flex align-items-center" id="profile-icon"
+                                                onclick="mostrarVentana('perfil')">
                                                 <div class="profile-image">
-                                                    <img src="{{ url_for('static', filename='img/perfiles/' + (usuario[6] if usuario[6] else 'perfil_defecto.png')) }}" alt="Perfil">
+                                                    <img src="{{ url_for('static', filename='img/perfiles/' + (usuario[7] if usuario[7] else 'perfil_defecto.png')) }}"
+                                                        alt="Perfil">
                                                     <div class="active-status"></div>
                                                 </div>
-                                                <span class="ml-2 d-none d-md-inline">{{ usuario[4] }} - {{ usuario[5] }}</span>
+                                                <span class="ml-2 d-none d-md-inline">{{ usuario[4] }} - {{ usuario[5]
+                                                    }}</span>
                                             </a>
-                                            <ul class="dropdown-menu">
-                                                <li><a href="{{ url_for('perfil_usuario') }}"><span class="material-icons">person_outline</span>Perfil</a></li>
-                                                <li><a href="{{ url_for('procesar_logout') }}"><span class="material-icons">logout</span>Cerrar sesión</a></li>
-                                            </ul>
                                         </li>
                                         {% else %}
                                         <li class="nav-item">
@@ -178,6 +274,45 @@
                 </div>
             </div>
         </div>
+        <!-- Ventana flotante -->
+        <div id="ventana-flotante" class="ventana-flotante hidden">
+            <!-- Contenido de notificaciones -->
+            <div id="contenido-notificaciones" class="contenido-flotante hidden">
+                <h5>Notificaciones</h5>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Mensaje</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="notification-table-body">
+                        <tr class="no-notifications">
+                            <td colspan="2" class="text-center">No hay notificaciones nuevas</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Contenido del perfil -->
+            <div id="contenido-perfil" class="contenido-flotante hidden">
+                <h5 class="text-center mb-3">Perfil de Usuario</h5>
+                <p><strong>Nombre:</strong> {{ usuario[4] }}</p>
+                <p><strong>Rol:</strong> {{ usuario[5] }}</p>
+
+                <!-- Botones alineados y de igual tamaño -->
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{{ url_for('perfil_usuario') }}" class="btn btn-primary w-50 me-2">
+                        Ver Perfil
+                    </a>
+                    <a href="{{ url_for('procesar_logout') }}" class="btn btn-danger w-50 ms-2">
+                        Cerrar Sesión
+                    </a>
+                </div>
+            </div>
+        </div>
+
+
     </div>
 
     <script src="/static/js/jquery-3.3.1.min.js"></script>
@@ -213,6 +348,46 @@
                 toggleVisibility("contable");
             }
         });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const ventanaFlotante = document.getElementById('ventana-flotante');
+            const contenidoNotificaciones = document.getElementById('contenido-notificaciones');
+            const contenidoPerfil = document.getElementById('contenido-perfil');
+
+            // Mostrar ventana flotante
+            window.mostrarVentana = function (tipo) {
+                if (ventanaFlotante.classList.contains('hidden')) {
+                    ventanaFlotante.classList.remove('hidden');
+                } else if (
+                    (tipo === 'notificaciones' && !contenidoNotificaciones.classList.contains('hidden')) ||
+                    (tipo === 'perfil' && !contenidoPerfil.classList.contains('hidden'))
+                ) {
+                    ventanaFlotante.classList.add('hidden');
+                    return; // Cierra si se hace clic en el mismo botón
+                }
+
+                if (tipo === 'notificaciones') {
+                    contenidoNotificaciones.classList.remove('hidden');
+                    contenidoPerfil.classList.add('hidden');
+                } else if (tipo === 'perfil') {
+                    contenidoPerfil.classList.remove('hidden');
+                    contenidoNotificaciones.classList.add('hidden');
+                }
+            };
+
+            // Ocultar al hacer clic fuera
+            document.addEventListener('click', function (event) {
+                if (
+                    !ventanaFlotante.contains(event.target) &&
+                    !event.target.closest('#notification-icon') &&
+                    !event.target.closest('#profile-icon')
+                ) {
+                    ventanaFlotante.classList.add('hidden');
+                }
+            });
+        });
+
+
     </script>
 </body>
 

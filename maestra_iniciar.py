@@ -46,25 +46,6 @@ jwt = JWTManager(app)
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-descripciones = {
-    "Coordinador general": "Responsable de supervisar y organizar el equipo para cumplir objetivos, asegurando una comunicación efectiva y la resolución de problemas. Facilita la toma de decisiones, gestiona riesgos y mantiene informadas a las partes interesadas sobre el progreso del proyecto.",
-    "Administrador de base de datos": "Responsable del diseño, implementación, seguridad y mantenimiento de la base de datos. Debe tener experiencia en la optimización del rendimiento de consultas y asegurar la integridad de los datos, con un enfoque en la resolución de problemas y la gestión eficiente de los datos.",
-    "Analista": "Encargado de recopilar y analizar los requisitos del sistema. Debe ser capaz de identificar las necesidades del cliente y traducirlas en especificaciones técnicas claras para el equipo. Fuerte capacidad de análisis y comunicación efectiva son clave.",
-    "Diseñador": "Encargado de la creación del diseño visual y de la experiencia del usuario (UI/UX). Debe ser capaz de crear interfaces atractivas y funcionales, asegurando que el sistema sea intuitivo y fácil de usar para los usuarios finales.",
-    "Arquitecto de software": "Responsable de diseñar la estructura técnica del sistema, seleccionando tecnologías y definiendo los componentes clave. Debe tener una visión amplia del sistema y asegurarse de que el software cumpla con los requisitos de escalabilidad, seguridad y eficiencia.",
-    "Programador": "Encargados de la codificación del sistema siguiendo las especificaciones del analista y el diseño del arquitecto. Deben tener experiencia en lenguajes de programación adecuados y ser capaces de trabajar en equipo, respetando plazos y estándares de calidad.",
-    "Supervisor de calidad": "Responsable de asegurar que el sistema cumpla con los estándares de calidad definidos. Debe gestionar las pruebas y asegurar que se mantengan altos niveles de rendimiento, usabilidad y seguridad, monitoreando el progreso y haciendo ajustes si es necesario.",
-    "Tester": "Encargados de realizar pruebas funcionales y de rendimiento del sistema para identificar errores y áreas de mejora. Deben tener habilidades técnicas para diseñar casos de prueba efectivos y capacidad para detectar problemas antes del despliegue del sistema.",
-    "Capacitador": "Responsable de desarrollar y ejecutar planes de capacitación para los usuarios finales. Debe ser capaz de crear manuales y ofrecer formación clara y efectiva, asegurándose de que los usuarios puedan manejar el sistema correctamente.",
-    "Asesor": "Ofrece asesoramiento especializado en áreas clave del proyecto, como estrategias de negocio, tecnología o gestión, y guía al equipo en la toma de decisiones críticas para el éxito del proyecto.",
-    "Administrador del negocio": "Administrador del negocio"
-}
-
-def obtener_descripcion_rol(rol):
-    print(f"Rol recibido: '{rol}'")
-    rol_normalizado = rol.strip().lower()
-    descripciones_normalizadas = {k.lower(): v for k, v in descripciones.items()}
-    return descripciones_normalizadas.get(rol_normalizado, "Rol no identificado")
 
 # Ruta para subir imagen de perfil
 @app.route("/subir_imagen_perfil", methods=["POST"])
@@ -130,14 +111,79 @@ def login():
 @jwt_required()
 def index():
     dni = get_jwt_identity()
-    usuario = controlador_usuarios.obtener_usuario(dni)
+    usuario = controlador_usuarios.obtener_usuario(dni)  # Obtener información del usuario
 
-    if usuario and (not usuario[6] or usuario[6] is None):
+    # Asegurarse de que el usuario tenga una imagen predeterminada si no está definida
+    if usuario and (not usuario[7] or usuario[7] is None):  # Asumiendo que la imagen está en la posición 7
         usuario = list(usuario)
-        usuario[6] = "perfil_defecto.png"
+        usuario[7] = "perfil_defecto.png"
+
+    # Definir los módulos y descripciones según el nombre del rol del usuario
+    rol_nombre = usuario[5]  # Asumiendo que el nombre del rol está en la posición 5 del usuario
+    if rol_nombre == "Contador":  # Rol Contador
+        titulo_principal = "Sistema Contable"
+        descripcion_principal = "Gestión de finanzas y reportes contables."
+        descripcion_secundaria = "Optimiza tus procesos financieros con herramientas avanzadas."
+        modulos = [
+            {
+                "titulo": "Módulo contable",
+                "descripcion": "Accede a cuentas, asientos y reportes contables.",
+                "url": url_for('cuentas'),
+                "clase_cuerpo": "card-body-modulo-contable",
+                "clase_encabezado": "card-header-modulo-contable"
+            }
+        ]
+    elif rol_nombre == "Gestor de operaciones comerciales":  # Rol Gestor de Operaciones Comerciales
+        titulo_principal = "Sistema de Gestión de Compras y Ventas"
+        descripcion_principal = "Gestión de productos y transacciones comerciales."
+        descripcion_secundaria = "Mejora tus operaciones con herramientas de ventas y compras."
+        modulos = [
+            {
+                "titulo": "Módulo de ventas",
+                "descripcion": "Sistema transaccional para gestionar ventas y compras.",
+                "url": url_for('productos'),
+                "clase_cuerpo": "card-body-modulo-ventas",
+                "clase_encabezado": "card-header-modulo-ventas"
+            }
+        ]
+    elif rol_nombre == "Administrador":  # Rol Administrador
+        titulo_principal = "Sistema General"
+        descripcion_principal = "Acceso completo a los módulos del sistema."
+        descripcion_secundaria = "Administra y supervisa todas las operaciones del sistema."
+        modulos = [
+            {
+                "titulo": "Módulo contable",
+                "descripcion": "Accede a cuentas, asientos y reportes contables.",
+                "url": url_for('cuentas'),
+                "clase_cuerpo": "card-body-modulo-contable",
+                "clase_encabezado": "card-header-modulo-contable"
+            },
+            {
+                "titulo": "Módulo de ventas",
+                "descripcion": "Sistema transaccional para gestionar ventas y compras.",
+                "url": url_for('productos'),
+                "clase_cuerpo": "card-body-modulo-ventas",
+                "clase_encabezado": "card-header-modulo-ventas"
+            }
+        ]
+    else:  # Rol no definido
+        titulo_principal = "Sistema General"
+        descripcion_principal = "Accede a las herramientas generales del sistema."
+        descripcion_secundaria = "Explora y utiliza las funcionalidades disponibles."
+        modulos = []
 
     breadcrumbs = [{'name': 'Inicio', 'url': '/index'}]
-    return render_template("index.html", breadcrumbs=breadcrumbs, usuario=usuario)
+    
+    return render_template(
+        "index.html",
+        breadcrumbs=breadcrumbs,
+        usuario=usuario,
+        titulo_principal=titulo_principal,
+        descripcion_principal=descripcion_principal,
+        descripcion_secundaria=descripcion_secundaria,
+        modulos=modulos
+    )
+
 
 @app.route("/actualizar_perfil", methods=["POST"])
 @jwt_required()
@@ -983,7 +1029,7 @@ def perfil_usuario():
     if not perfil:
         flash("Usuario no encontrado.")
         return redirect("/index")
-    descripcion_rol = obtener_descripcion_rol(perfil[3])
+    descripcion_rol = controlador_usuarios.obtener_descripcion_rol(perfil[3])
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Perfil del Usuario', 'url': '/perfil_usuario'}
@@ -1004,12 +1050,24 @@ def agregar_usuario():
     apellido = request.form['apellido']
     rol = request.form['rol']
     password = request.form['password']
-    success = controlador_usuarios.agregar_usuario(dni, nombre, apellido, rol, password)
+    
+    # DEBUG: Verifica los valores recibidos
+    print(f"DNI: {dni}, Nombre: {nombre}, Apellido: {apellido}, Rol: {rol}, Password: {password}")
+    
+    # Convertir rol a int si es necesario
+    try:
+        id_rol = int(rol)
+    except ValueError:
+        flash("El rol proporcionado no es válido.")
+        return redirect(url_for('personal'))
+
+    success = controlador_usuarios.agregar_usuario(dni, nombre, apellido, id_rol, password)
     if success:
         flash("Usuario agregado exitosamente.")
     else:
         flash("Hubo un error al agregar el usuario. Verifica que el DNI no exista ya en el sistema.")
     return redirect(url_for('personal'))
+
 
 @app.route('/editar_usuario', methods=['POST'])
 @jwt_required()
@@ -1040,14 +1098,37 @@ def eliminar_usuario():
 @jwt_required()
 def personal():
     dni = get_jwt_identity()
+    
+    # Obtener el usuario actual basado en el DNI
     usuario = controlador_usuarios.obtener_usuario(dni)
+    
+    # Obtener todos los usuarios
     usuarios = controlador_usuarios.obtener_todos_usuarios()
-    roles = list(descripciones.keys())
+    
+    # Asignar el rol a cada usuario
+    for user in usuarios:
+        rol = controlador_usuarios.obtener_rol_por_usuario(user['dni'])
+        user['rol'] = rol['rol_nombre'] if isinstance(rol, dict) else rol[0] if rol else 'Sin rol asignado'
+    
+    # Obtener todos los roles
+    roles = controlador_usuarios.obtener_nombres_roles()
+
+    # Breadcrumbs para navegación
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Gestión de usuarios', 'url': '/personal'}
     ]
-    return render_template('personal.html', usuarios=usuarios, breadcrumbs=breadcrumbs, usuario=usuario, roles=roles)
+    
+    # Pasar la información al template
+    return render_template(
+        'personal.html',
+        usuarios=usuarios,
+        roles=roles,  # Enviamos los roles disponibles al template
+        breadcrumbs=breadcrumbs,
+        usuario=usuario
+    )
+
+
 
 @app.route('/verificar_dni/<dni>', methods=['GET'])
 def verificar_dni_route(dni):

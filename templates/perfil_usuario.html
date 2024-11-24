@@ -157,8 +157,8 @@
                     <h4 id="displayName">{{ perfil[0] }} {{ perfil[1] }}</h4>
                     
                     <!-- Mostrar la imagen de perfil si existe -->
-                    {% if perfil[4] %}
-                        <img id="profileImage" src="{{ url_for('static', filename='img/perfiles/' + perfil[4]) }}" alt="User Photo">
+                    {% if perfil[5] %}
+                        <img id="profileImage" src="{{ url_for('static', filename='img/perfiles/' + perfil[5]) }}" alt="User Photo">
                     {% else %}
                         <img id="profileImage" src="https://via.placeholder.com/120" alt="User Photo">
                     {% endif %}
