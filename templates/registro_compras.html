@@ -109,6 +109,7 @@
         <h2 class="text-left">Registro de compras</h2>
       </div>
     </div>
+
     <!-- Filtros: Fecha exacta y Buscar en una sola fila alineados correctamente con centrado vertical -->
     <div class="row mb-3 align-items-center">
       <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
@@ -126,15 +127,12 @@
       </div>
     </div>
 
-
     <div class="table-wrapper">
       <div class="table-title">
         <div class="row justify-content-end align-items-center">
           <!-- Botones Alineados a la Derecha -->
-
           <div class="col-lg-6 col-md-6 col-sm-12 d-flex justify-content-end">
-            <button class="btn btn-danger me-2 d-flex align-items-center" onclick="abrirNuevaPaginaImprimirCompras()">
-
+            <button class="btn btn-danger me-2 d-flex align-items-center" onclick="abrirNuevaPaginaImprimirCompras()" style="background-color: #ff5733;">
               <i class="material-icons me-1">visibility</i>
               <span>Vista previa</span>
             </button>
@@ -145,7 +143,6 @@
           </div>
         </div>
       </div>
-
 
       <!-- Estructura de la tabla del Registro de Compras -->
       <table class="table table-bordered table-striped table-hover" id="tabla-cuentas">
@@ -205,6 +202,7 @@
       </div>
     </div>
   </div>
+</div>
 
   <!-- Scripts al final de la página para mejorar la carga -->
   <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>

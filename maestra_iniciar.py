@@ -19,6 +19,7 @@ from werkzeug.utils import secure_filename
 import datetime
 from io import BytesIO
 from datetime import timedelta
+from functools import wraps
 
 # Directorio donde se guardarán las imágenes de perfil
 UPLOAD_FOLDER = 'static/img/perfiles'
@@ -46,6 +47,25 @@ jwt = JWTManager(app)
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+descripciones = {
+    "Coordinador general": "Responsable de supervisar y organizar el equipo para cumplir objetivos, asegurando una comunicación efectiva y la resolución de problemas. Facilita la toma de decisiones, gestiona riesgos y mantiene informadas a las partes interesadas sobre el progreso del proyecto.",
+    "Administrador de base de datos": "Responsable del diseño, implementación, seguridad y mantenimiento de la base de datos. Debe tener experiencia en la optimización del rendimiento de consultas y asegurar la integridad de los datos, con un enfoque en la resolución de problemas y la gestión eficiente de los datos.",
+    "Analista": "Encargado de recopilar y analizar los requisitos del sistema. Debe ser capaz de identificar las necesidades del cliente y traducirlas en especificaciones técnicas claras para el equipo. Fuerte capacidad de análisis y comunicación efectiva son clave.",
+    "Diseñador": "Encargado de la creación del diseño visual y de la experiencia del usuario (UI/UX). Debe ser capaz de crear interfaces atractivas y funcionales, asegurando que el sistema sea intuitivo y fácil de usar para los usuarios finales.",
+    "Arquitecto de software": "Responsable de diseñar la estructura técnica del sistema, seleccionando tecnologías y definiendo los componentes clave. Debe tener una visión amplia del sistema y asegurarse de que el software cumpla con los requisitos de escalabilidad, seguridad y eficiencia.",
+    "Programador": "Encargados de la codificación del sistema siguiendo las especificaciones del analista y el diseño del arquitecto. Deben tener experiencia en lenguajes de programación adecuados y ser capaces de trabajar en equipo, respetando plazos y estándares de calidad.",
+    "Supervisor de calidad": "Responsable de asegurar que el sistema cumpla con los estándares de calidad definidos. Debe gestionar las pruebas y asegurar que se mantengan altos niveles de rendimiento, usabilidad y seguridad, monitoreando el progreso y haciendo ajustes si es necesario.",
+    "Tester": "Encargados de realizar pruebas funcionales y de rendimiento del sistema para identificar errores y áreas de mejora. Deben tener habilidades técnicas para diseñar casos de prueba efectivos y capacidad para detectar problemas antes del despliegue del sistema.",
+    "Capacitador": "Responsable de desarrollar y ejecutar planes de capacitación para los usuarios finales. Debe ser capaz de crear manuales y ofrecer formación clara y efectiva, asegurándose de que los usuarios puedan manejar el sistema correctamente.",
+    "Asesor": "Ofrece asesoramiento especializado en áreas clave del proyecto, como estrategias de negocio, tecnología o gestión, y guía al equipo en la toma de decisiones críticas para el éxito del proyecto.",
+    "Administrador del negocio": "Administrador del negocio"
+}
+
+def obtener_descripcion_rol(rol):
+    print(f"Rol recibido: '{rol}'")
+    rol_normalizado = rol.strip().lower()
+    descripciones_normalizadas = {k.lower(): v for k, v in descripciones.items()}
+    return descripciones_normalizadas.get(rol_normalizado, "Rol no identificado")
 
 # Ruta para subir imagen de perfil
 @app.route("/subir_imagen_perfil", methods=["POST"])
@@ -54,123 +74,50 @@ def subir_imagen_perfil():
     if 'imagen_perfil' not in request.files:
         flash('No se ha seleccionado ningún archivo.')
         return redirect(url_for('perfil_usuario'))
-
     file = request.files['imagen_perfil']
-
     if file.filename == '':
         flash('No se seleccionó ningún archivo.')
         return redirect(url_for('perfil_usuario'))
-
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-
-        # Obtener el DNI del usuario autenticado
         dni = get_jwt_identity()
         controlador_usuarios.actualizar_imagen_perfil(dni, filename)
-
         flash('Imagen de perfil actualizada con éxito.')
         return redirect(url_for('perfil_usuario'))
-
     flash('Tipo de archivo no permitido. Selecciona una imagen válida (png, jpg, jpeg, gif).')
     return redirect(url_for('perfil_usuario'))
 
-# Ruta para eliminar la imagen de perfil
 @app.route("/eliminar_imagen_perfil", methods=["POST"])
 @jwt_required()
 def eliminar_imagen_perfil():
     dni = get_jwt_identity()
-
     imagen_actual = controlador_usuarios.obtener_imagen_perfil(dni)
-
     if not imagen_actual:
         flash('No tienes una imagen de perfil para eliminar.')
         return redirect(url_for('perfil_usuario'))
-
     if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], imagen_actual)):
         os.remove(os.path.join(app.config['UPLOAD_FOLDER'], imagen_actual))
-
     controlador_usuarios.eliminar_imagen_perfil(dni)
-
     flash('Imagen de perfil eliminada con éxito.')
     return redirect(url_for('perfil_usuario'))
 
-# Ruta de inicio de sesión
 @app.route("/")
 @app.route("/login_user")
 def login():
-    try:
-        verify_jwt_in_request(optional=True)  # Verifica el token si existe
-        if get_jwt_identity():  # Obtiene la identidad solo si el token es válido
-            return redirect("/index")
-    except Exception:
-        pass  # Si no hay token o es inválido, continúa mostrando la página de login
-    return render_template("login_user.html")
+    resp = make_response(render_template("login_user.html"))
+    unset_jwt_cookies(resp)
+    return resp
 
 @app.route("/index")
 @jwt_required()
 def index():
     dni = get_jwt_identity()
-    usuario = controlador_usuarios.obtener_usuario(dni)  # Obtener información del usuario
+    usuario = controlador_usuarios.obtener_usuario(dni)
 
-    # Asegurarse de que el usuario tenga una imagen predeterminada si no está definida
-    if usuario and (not usuario[7] or usuario[7] is None):  # Asumiendo que la imagen está en la posición 7
+    if usuario and (not usuario[6] or usuario[6] is None):
         usuario = list(usuario)
-        usuario[7] = "perfil_defecto.png"
-
-    # Definir los módulos y descripciones según el nombre del rol del usuario
-    rol_nombre = usuario[5]  # Asumiendo que el nombre del rol está en la posición 5 del usuario
-    if rol_nombre == "Contador":  # Rol Contador
-        titulo_principal = "Sistema Contable"
-        descripcion_principal = "Gestión de finanzas y reportes contables."
-        descripcion_secundaria = "Optimiza tus procesos financieros con herramientas avanzadas."
-        modulos = [
-            {
-                "titulo": "Módulo contable",
-                "descripcion": "Accede a cuentas, asientos y reportes contables.",
-                "url": url_for('cuentas'),
-                "clase_cuerpo": "card-body-modulo-contable",
-                "clase_encabezado": "card-header-modulo-contable"
-            }
-        ]
-    elif rol_nombre == "Gestor de operaciones comerciales":  # Rol Gestor de Operaciones Comerciales
-        titulo_principal = "Sistema de Gestión de Compras y Ventas"
-        descripcion_principal = "Gestión de productos y transacciones comerciales."
-        descripcion_secundaria = "Mejora tus operaciones con herramientas de ventas y compras."
-        modulos = [
-            {
-                "titulo": "Módulo de ventas",
-                "descripcion": "Sistema transaccional para gestionar ventas y compras.",
-                "url": url_for('productos'),
-                "clase_cuerpo": "card-body-modulo-ventas",
-                "clase_encabezado": "card-header-modulo-ventas"
-            }
-        ]
-    elif rol_nombre == "Administrador":  # Rol Administrador
-        titulo_principal = "Sistema General"
-        descripcion_principal = "Acceso completo a los módulos del sistema."
-        descripcion_secundaria = "Administra y supervisa todas las operaciones del sistema."
-        modulos = [
-            {
-                "titulo": "Módulo contable",
-                "descripcion": "Accede a cuentas, asientos y reportes contables.",
-                "url": url_for('cuentas'),
-                "clase_cuerpo": "card-body-modulo-contable",
-                "clase_encabezado": "card-header-modulo-contable"
-            },
-            {
-                "titulo": "Módulo de ventas",
-                "descripcion": "Sistema transaccional para gestionar ventas y compras.",
-                "url": url_for('productos'),
-                "clase_cuerpo": "card-body-modulo-ventas",
-                "clase_encabezado": "card-header-modulo-ventas"
-            }
-        ]
-    else:  # Rol no definido
-        titulo_principal = "Sistema General"
-        descripcion_principal = "Accede a las herramientas generales del sistema."
-        descripcion_secundaria = "Explora y utiliza las funcionalidades disponibles."
-        modulos = []
+        usuario[6] = "perfil_defecto.png"
 
     breadcrumbs = [{'name': 'Inicio', 'url': '/index'}]
     
@@ -199,6 +146,7 @@ def actualizar_perfil():
 
 @app.route("/libro_diario", methods=["GET"])
 @jwt_required()
+@role_required(1,3)
 def libro_diario():
     dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
@@ -221,24 +169,12 @@ def libro_diario():
 
 @app.route("/libro_diario_datos")
 @jwt_required()
+@role_required(1,3)
 def libro_diario_datos():
     fecha = request.args.get("fecha")
-    movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha)
-    filas = []
-    for movimiento in movimientos:
-        filas.append({
-            "numero_correlativo": movimiento["numero_correlativo"],
-            "fecha": movimiento["fecha"],
-            "glosa": movimiento["glosa"],
-            "codigo_del_libro": movimiento["codigo_del_libro"],
-            "numero_correlativo_documento": movimiento["numero_correlativo_documento"],
-            "numero_documento_sustentatorio": movimiento["numero_documento_sustentatorio"],
-            "codigo_cuenta": movimiento["codigo_cuenta"],
-            "denominacion": movimiento["denominacion"],
-            "debe": movimiento["debe"],
-            "haber": movimiento["haber"]
-        })
-    return jsonify(filas=filas, total_debe=total_debe, total_haber=total_haber)
+    grouped_movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha)
+    return jsonify(filas=grouped_movimientos, total_debe=total_debe, total_haber=total_haber)
+
 
 
 ################################################################################################
@@ -248,6 +184,7 @@ def libro_diario_datos():
 
 @app.route("/libro_diario_imprimir", methods=["GET"])
 @jwt_required()
+@role_required(1,3)
 def libro_diario_imprimir():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
@@ -282,6 +219,7 @@ def libro_diario_imprimir():
 
 @app.route("/libro_caja_imprimir", methods=["GET"])
 @jwt_required()
+@role_required(1,3)
 def libro_caja_imprimir():
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
@@ -323,6 +261,7 @@ def libro_caja_imprimir():
 
 @app.route("/registro_ventas_imprimir", methods=["GET"])
 @jwt_required()
+@role_required(1,3)
 def registro_ventas_imprimir():
     token = request.cookies.get("token")
     dni = request.cookies.get("dni")
@@ -367,6 +306,7 @@ def registro_ventas_imprimir():
 
 @app.route("/registro_compras_imprimir", methods=["GET"])
 @jwt_required()
+@role_required(1,3)
 def registro_compras_imprimir():
     token = request.cookies.get("token")
     dni = request.cookies.get("dni")
@@ -410,6 +350,7 @@ def registro_compras_imprimir():
 
 @app.route("/libro_mayor_imprimir", methods=["GET"])
 @jwt_required()
+@role_required(1,3)
 def libro_mayor_imprimir():
     token = request.cookies.get("token")
     dni = request.cookies.get("dni")
@@ -461,6 +402,7 @@ def libro_mayor_imprimir():
 
 @app.route("/libro_mayor")
 @jwt_required()
+@role_required(1,3)
 def libro_mayor():
     dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
@@ -497,6 +439,7 @@ def libro_mayor():
 
 @app.route("/libro_mayor_datos", methods=["GET"])
 @jwt_required()
+@role_required(1,3)
 def libro_mayor_datos():
     periodo = request.args.get('periodo', '')
     cuenta = request.args.get('cuenta', '')
@@ -531,6 +474,7 @@ def libro_mayor_datos():
 
 @app.route("/exportar-todas-las-cuentas", methods=["GET"])
 @jwt_required()
+@role_required(1,3)
 def exportar_todas_las_cuentas():
     try:
         periodo = request.args.get('periodo', '')
@@ -592,6 +536,7 @@ def libro_caja():
 ##################################################################################################
 @app.route('/exportar-libro-caja-pdf', methods=['GET'])
 @jwt_required()
+@role_required(1,3)
 def exportar_libro_caja_pdf():
     periodo = request.args.get('periodo')
     if not periodo:
@@ -608,6 +553,7 @@ def exportar_libro_caja_pdf():
 
 @app.route("/exportar-registro-ventas-pdf", methods=["GET"])
 @jwt_required()
+@role_required(1,3)
 def exportar_registro_ventas_pdf():
     # Obtener el parámetro "periodo" de la solicitud
     periodo = request.args.get("periodo")
@@ -627,6 +573,7 @@ def exportar_registro_ventas_pdf():
 
 @app.route("/exportar-registro-compras-pdf", methods=["GET"])
 @jwt_required()
+@role_required(1,3)
 def exportar_registro_compras_pdf():
     periodo = request.args.get("periodo")
     if not periodo:
@@ -643,6 +590,7 @@ def exportar_registro_compras_pdf():
 
 @app.route("/exportar-libro-mayor-pdf", methods=["GET"])
 @jwt_required()
+@role_required(1,3)
 def exportar_libro_mayor_pdf():
     # Obtener los parámetros "periodo" y "cuenta" de la solicitud
     periodo = request.args.get("periodo")
@@ -667,6 +615,7 @@ def exportar_libro_mayor_pdf():
 
 @app.route("/registro_ventas", methods=["GET"])
 @jwt_required()
+@role_required(1,3)
 def registro_ventas():
     dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
@@ -693,6 +642,7 @@ def registro_ventas():
 
 @app.route("/registro_ventas_datos", methods=["GET"])
 @jwt_required()
+@role_required(1,3)
 def registro_ventas_datos():
     mes = request.args.get("month")
     anio = request.args.get("year")
@@ -724,6 +674,7 @@ def registro_ventas_datos():
 
 @app.route("/registro_compras_datos", methods=["GET"])
 @jwt_required()
+@role_required(1,3)
 def registro_compras_datos():
     mes = request.args.get("month")
     anio = request.args.get("year")
@@ -755,6 +706,7 @@ def registro_compras_datos():
 
 @app.route('/exportar-libro-caja-bancos', methods=['GET'])
 @jwt_required()
+@role_required(1,3)
 def exportar_libro_caja_bancos():
     periodo = request.args.get('periodo')
     if not periodo:
@@ -767,6 +719,7 @@ def exportar_libro_caja_bancos():
 
 @app.route('/exportar-libro-diario', methods=['GET'])
 @jwt_required()
+@role_required(1,3)
 def exportar_libro_diario():
     fecha = request.args.get('fecha')
     if not fecha:
@@ -779,6 +732,7 @@ def exportar_libro_diario():
 
 @app.route('/exportar-libro-diario-pdf', methods=['GET'])
 @jwt_required()
+@role_required(1,3)
 def exportar_libro_diario_pdf():
     fecha = request.args.get('fecha')
     if not fecha:
@@ -790,9 +744,6 @@ def exportar_libro_diario_pdf():
         return jsonify({'error': 'El formato de la fecha es incorrecto. Debe ser "YYYY-MM-DD".'}), 400
 
     return controlador_plantillas.generar_libro_diario_pdf_horizontal(fecha)
-
-
-
 
 @app.route("/asientos_contables")
 @jwt_required()
@@ -811,6 +762,7 @@ def asientos_contables():
 
 @app.route("/registro_compras", methods=["GET"])
 @jwt_required()
+@role_required(1,3)
 def registro_compras():
     dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
@@ -837,6 +789,7 @@ def registro_compras():
 
 @app.route("/ventas/productos")
 @jwt_required()
+@role_required(2,3)
 def productos():
     dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
@@ -852,26 +805,21 @@ def procesar_login():
     try:
         dni = request.form["dni"]
         password = request.form["password"].strip()
-
         usuario = controlador_usuarios.obtener_usuario(dni)
         if not usuario:
             flash("Usuario no encontrado.")
             return redirect("/login_user")
-
         h = hashlib.new("sha256")
         h.update(password.encode('utf-8'))
         encpass = h.hexdigest().lower()
-
         if encpass == usuario[2].lower():
             access_token = create_access_token(identity=dni)
             resp = make_response(redirect("/index"))
-            # Establecer el token en las cookies
             set_access_cookies(resp, access_token)
             return resp
         else:
             flash("Contraseña incorrecta.")
             return redirect("/login_user")
-
     except Exception as e:
         flash("Ocurrió un error. Por favor, inténtelo de nuevo.")
         return redirect("/login_user")
@@ -886,6 +834,7 @@ def procesar_logout():
 
 @app.route("/cuentas")
 @jwt_required()
+@role_required(1,3)
 def cuentas():
     cuentas_data = obtener_todas_cuentas()  # Llama a la función para obtener los datos de las cuentas
     dni = get_jwt_identity()
@@ -896,17 +845,6 @@ def cuentas():
         {'name': 'Cuentas contables', 'url': '/cuentas'}
     ]
     return render_template("cuentas.html", cuentas=cuentas_data, breadcrumbs=breadcrumbs, usuario=usuario)  # Pasar el usuario a la plantilla
-
-@app.route("/ventas_contables")
-@jwt_required()
-def ventas_contables():
-    ventas_data = controlador_ventas.obtener_todas_ventas()
-    breadcrumbs = [
-        {'name': 'Inicio', 'url': '/index'},
-        {'name': 'Ventas contables', 'url': '/ventas_contables'}
-    ]
-    return render_template("ventas/ventas_contables.html", ventas=ventas_data, breadcrumbs=breadcrumbs)
-
     
 # Endpoint para obtener cuentas por categoría
 @app.route("/cuentas/por_categoria", methods=["POST"])
@@ -947,6 +885,7 @@ def cuentas_dar_baja():
 #registro ventas
 @app.route('/exportar-registro-ventas', methods=['GET'])
 @jwt_required()
+@role_required(1,3)
 def exportar_registro_ventas():
     periodo = request.args.get('periodo')
     if not periodo:
@@ -959,6 +898,7 @@ def exportar_registro_ventas():
 
 @app.route('/exportar-registro-compras', methods=['GET'])
 @jwt_required()
+@role_required(1,3)
 def exportar_registro_compras():
     periodo = request.args.get('periodo')
     if not periodo:
@@ -971,6 +911,7 @@ def exportar_registro_compras():
 
 @app.route('/exportar-libro-mayor', methods=['GET'])
 @jwt_required()
+@role_required(1,3)
 def exportar_libro_mayor():
     periodo = request.args.get('periodo')
     cuenta = request.args.get('cuenta')
@@ -1029,7 +970,7 @@ def perfil_usuario():
     if not perfil:
         flash("Usuario no encontrado.")
         return redirect("/index")
-    descripcion_rol = controlador_usuarios.obtener_descripcion_rol(perfil[3])
+    descripcion_rol = obtener_descripcion_rol(perfil[3])
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Perfil del Usuario', 'url': '/perfil_usuario'}
@@ -1044,6 +985,7 @@ def perfil_usuario():
 
 @app.route('/agregar_usuario', methods=['POST'])
 @jwt_required()
+@role_required(3)
 def agregar_usuario():
     dni = request.form['dni']
     nombre = request.form['nombre']
@@ -1063,14 +1005,15 @@ def agregar_usuario():
 
     success = controlador_usuarios.agregar_usuario(dni, nombre, apellido, id_rol, password)
     if success:
-        flash("Usuario agregado exitosamente.")
+        flash("Usuario agregado exitosamente.", 'gestion_usuarios')
     else:
-        flash("Hubo un error al agregar el usuario. Verifica que el DNI no exista ya en el sistema.")
+        flash("Hubo un error al agregar el usuario. Verifica que el DNI no exista ya en el sistema.", 'gestion_usuarios')
     return redirect(url_for('personal'))
 
 
 @app.route('/editar_usuario', methods=['POST'])
 @jwt_required()
+@role_required(3)
 def editar_usuario():
     dni = request.form['dni']
     nombre = request.form['nombre']
@@ -1078,24 +1021,26 @@ def editar_usuario():
     rol = request.form['rol']
     success = controlador_usuarios.editar_usuario(dni, nombre, apellido, rol)
     if success:
-        flash("Usuario actualizado exitosamente.")
+        flash("Usuario actualizado exitosamente.", 'gestion_usuarios')
     else:
-        flash("Hubo un error al actualizar el usuario.")
+        flash("Hubo un error al actualizar el usuario.", 'gestion_usuarios')
     return redirect(url_for('personal'))
 
 @app.route('/eliminar_usuario', methods=['POST'])
 @jwt_required()
+@role_required(3)
 def eliminar_usuario():
     dni = request.form['dni']
     success = controlador_usuarios.eliminar_usuario(dni)
     if success:
-        flash("Usuario eliminado exitosamente.")
+        flash("Usuario eliminado exitosamente.", 'gestion_usuarios')
     else:
-        flash("Hubo un error al eliminar el usuario.")
+        flash("Hubo un error al eliminar el usuario.", 'gestion_usuarios')
     return redirect(url_for('personal'))
 
 @app.route('/personal')
 @jwt_required()
+@role_required(3)
 def personal():
     dni = get_jwt_identity()
     
@@ -1104,48 +1049,17 @@ def personal():
     
     # Obtener todos los usuarios
     usuarios = controlador_usuarios.obtener_todos_usuarios()
-    
-    # Asignar el rol a cada usuario
-    for user in usuarios:
-        rol = controlador_usuarios.obtener_rol_por_usuario(user['dni'])
-        user['rol'] = rol['rol_nombre'] if isinstance(rol, dict) else rol[0] if rol else 'Sin rol asignado'
-    
-    # Obtener todos los roles
-    roles = controlador_usuarios.obtener_nombres_roles()
-
-    # Breadcrumbs para navegación
+    roles = list(descripciones.keys())
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Gestión de usuarios', 'url': '/personal'}
     ]
-    
-    # Pasar la información al template
-    return render_template(
-        'personal.html',
-        usuarios=usuarios,
-        roles=roles,  # Enviamos los roles disponibles al template
-        breadcrumbs=breadcrumbs,
-        usuario=usuario
-    )
-
-
+    return render_template('personal.html', usuarios=usuarios, breadcrumbs=breadcrumbs, usuario=usuario, roles=roles)
 
 @app.route('/verificar_dni/<dni>', methods=['GET'])
 def verificar_dni_route(dni):
     existe = controlador_usuarios.verificar_dni(dni)
     return jsonify({'existe': existe})
-
-def cargar_usuario():
-    if request.endpoint in app.view_functions and 'static' not in request.path:
-        if get_jwt_identity():
-            dni = get_jwt_identity()
-            usuario = controlador_usuarios.obtener_usuario(dni)
-            if usuario:
-                g.usuario = usuario
-            else:
-                g.usuario = None
-        else:
-            g.usuario = None
 
 @app.context_processor
 def contexto_global():
@@ -1165,24 +1079,19 @@ def expired_token_callback(jwt_header, jwt_payload):
     """
     flash("Tu sesión ha expirado. Por favor, inicia sesión nuevamente.")
     resp = make_response(redirect(url_for('login')))
-    unset_jwt_cookies(resp)  # Elimina cookies vencidas
+    unset_jwt_cookies(resp)
     return resp
 
-# Manejador general de errores 401
 @app.errorhandler(401)
 def unauthorized_error_handler(e):
     """
     Manejo general de errores de autorización.
     """
-    # Verificar si el error es por token expirado
     if "token has expired" in str(e):
-        # Redirigir al flujo específico de expiración de tokens
         return expired_token_callback(None, None)
-
-    # Caso general para otros errores de autorización
     flash("No autorizado. Por favor, inicia sesión.")
     resp = make_response(redirect(url_for('login')))
-    unset_jwt_cookies(resp)  # Limpia cookies, por si acaso
+    unset_jwt_cookies(resp)
     return resp
 
 @jwt.unauthorized_loader
@@ -1191,7 +1100,6 @@ def custom_unauthorized_response(err_str):
     Se llama cuando falta el token o es inválido.
     Redirige al usuario a la página de inicio de sesión.
     """
-    # Redirigir al login si no hay token
     return redirect(url_for('login'))
 
 @jwt.invalid_token_loader
@@ -1200,23 +1108,21 @@ def custom_invalid_token_response(err_str):
     Se llama cuando el token es inválido.
     Redirige al usuario a la página de inicio de sesión.
     """
-    # Redirigir al login si el token es inválido
     return redirect(url_for('login'))
 
 def get_rutas():
     with app.app_context():
         return [
-            {"nombre": "Inicio", "url": url_for('index')},
-            {"nombre": "Login", "url": url_for('login')},
-            {"nombre": "Perfil de Usuario", "url": url_for('perfil_usuario')},
-            {"nombre": "Libro Diario", "url": url_for('libro_diario')},
-            {"nombre": "Libro Mayor", "url": url_for('libro_mayor')},
-            {"nombre": "Libro Caja y Bancos", "url": url_for('libro_caja')},
-            {"nombre": "Registro de Ventas", "url": url_for('registro_ventas')},
-            {"nombre": "Registro de Compras", "url": url_for('registro_compras')},
-            {"nombre": "Productos", "url": url_for('productos')},
-            {"nombre": "Cuentas Contables", "url": url_for('cuentas')},
-            # Agrega más rutas aquí
+            {"nombre": "Inicio", "url": url_for('index'), "roles": "all"},
+            {"nombre": "Perfil de Usuario", "url": url_for('perfil_usuario'), "roles": "all"},
+            {"nombre": "Libro Diario", "url": url_for('libro_diario'), "roles": [1,3]},
+            {"nombre": "Libro Mayor", "url": url_for('libro_mayor'), "roles": [1,3]},
+            {"nombre": "Libro Caja y Bancos", "url": url_for('libro_caja'), "roles": [1,3]},
+            {"nombre": "Registro de Ventas", "url": url_for('registro_ventas'), "roles": [1,3]},
+            {"nombre": "Registro de Compras", "url": url_for('registro_compras'), "roles": [1,3]},
+            {"nombre": "Transaccional de compra y venta", "url": url_for('productos'), "roles": [2,3]},
+            {"nombre": "Cuentas Contables", "url": url_for('cuentas'), "roles": [1,3]},
+            {"nombre": "Personal", "url": url_for('personal'), "roles": [3]},
         ]
 
 @app.route('/buscar')
@@ -1224,9 +1130,16 @@ def get_rutas():
 def buscar():
     dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
+    if not usuario:
+        flash("Usuario no encontrado.")
+        return redirect(url_for('login'))
+    rol_id = usuario[7]
     term = request.args.get('term', '').lower()
     rutas = get_rutas()
-    resultados = [ruta for ruta in rutas if term in ruta['nombre'].lower()]
+    resultados = [
+        ruta for ruta in rutas
+        if term in ruta['nombre'].lower() and (ruta['roles'] == "all" or rol_id in ruta['roles'])
+    ]
     return render_template('buscar.html', term=term, resultados=resultados, usuario=usuario)
 
 @app.errorhandler(404)
