@@ -1262,10 +1262,9 @@ def obtener_libro_diario(fecha):
 
 def obtener_libro_diario_por_fecha(fecha):
     conexion = obtener_conexion()
-    movimientos = []
+    movimientos_agrupados = []
     total_debe = 0
     total_haber = 0
-
     with conexion.cursor(cursor_factory=DictCursor) as cursor:
         cursor.execute("""
             SELECT
@@ -1290,19 +1289,36 @@ def obtener_libro_diario_por_fecha(fecha):
             FROM asientos_contables ac
             JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
             WHERE ac.fecha::date = %s::date
-            ORDER BY fecha, numero_correlativo, ac.id;
+            ORDER BY numero_correlativo, ac.id;
         """, (fecha,))
-
         movimientos = cursor.fetchall()
 
+        # Agrupar movimientos por numero_correlativo
+        agrupado = {}
         for movimiento in movimientos:
-            total_debe += movimiento['debe'] or 0
-            total_haber += movimiento['haber'] or 0
+            numero_correlativo = movimiento["numero_correlativo"]
+            if numero_correlativo not in agrupado:
+                agrupado[numero_correlativo] = {
+                    "numero_correlativo": numero_correlativo,
+                    "fecha": movimiento["fecha"],
+                    "glosa": movimiento["glosa"],
+                    "codigo_del_libro": movimiento["codigo_del_libro"],
+                    "numero_correlativo_documento": movimiento["numero_correlativo_documento"],
+                    "numero_documento_sustentatorio": movimiento["numero_documento_sustentatorio"],
+                    "cuentas": []
+                }
+            agrupado[numero_correlativo]["cuentas"].append({
+                "codigo_cuenta": movimiento["codigo_cuenta"],
+                "denominacion": movimiento["denominacion"],
+                "debe": movimiento["debe"],
+                "haber": movimiento["haber"]
+            })
+            total_debe += movimiento["debe"] or 0
+            total_haber += movimiento["haber"] or 0
 
+        movimientos_agrupados = list(agrupado.values())
     conexion.close()
-    return movimientos, total_debe, total_haber
-
-
+    return movimientos_agrupados, total_debe, total_haber
 
 def obtener_movimientos_libro_diario(fecha):
     conexion = obtener_conexion()  # Asegúrate de que esta función esté correctamente implementada

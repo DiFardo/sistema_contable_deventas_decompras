@@ -43,7 +43,8 @@ def obtener_usuario(dni):
             SELECT u.id AS usuario_id, u.dni, u.pass, u.token, 
                    CONCAT(p.nombre, ' ', p.apellido) AS nombre_completo, 
                    r.nombre AS rol_nombre, 
-                   p.imagen  
+                   p.imagen,
+                   r.id  
             FROM usuarios u
             JOIN personas p ON u.id_persona = p.id
             LEFT JOIN roles r ON p.id_rol = r.id
@@ -56,7 +57,7 @@ def obtener_usuario(dni):
 def obtener_usuario_idrol(dni):
     conexion = obtener_conexion()
     usuario = None
-    with conexion.cursor(cursor_factory=RealDictCursor) as cursor:  # Usa RealDictCursor
+    with conexion.cursor(cursor_factory=RealDictCursor) as cursor:
         cursor.execute(
             """
             SELECT u.id AS usuario_id, u.dni, u.pass, u.token, 
@@ -69,7 +70,7 @@ def obtener_usuario_idrol(dni):
             WHERE u.dni = %s
             """, (dni,)
         )
-        usuario = cursor.fetchone()  # Devuelve un diccionario
+        usuario = cursor.fetchone()
     conexion.close()
     return usuario
 

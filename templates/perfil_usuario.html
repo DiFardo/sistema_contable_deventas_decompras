@@ -98,7 +98,8 @@
         color: #383c4c;
     }
 
-    .form-control[disabled], .form-control[readonly] {
+    .form-control[disabled],
+    .form-control[readonly] {
         background-color: #e9ecef;
         opacity: 1;
     }
@@ -127,9 +128,11 @@
         .profile-card {
             flex-direction: row;
         }
+
         .profile-sidebar {
             width: 30%;
         }
+
         .profile-content {
             width: 70%;
         }
@@ -142,11 +145,11 @@
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
                 {% for crumb in breadcrumbs %}
-                    {% if loop.last %}
-                        <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
-                    {% else %}
-                        <li class="breadcrumb-item"><a href="{{ crumb.url }}">{{ crumb.name }}</a></li>
-                    {% endif %}
+                {% if loop.last %}
+                <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
+                {% else %}
+                <li class="breadcrumb-item"><a href="{{ crumb.url }}">{{ crumb.name }}</a></li>
+                {% endif %}
                 {% endfor %}
             </ol>
         </nav>
@@ -155,18 +158,18 @@
                 <!-- Sidebar Profile Section -->
                 <div class="profile-sidebar">
                     <h4 id="displayName">{{ perfil[0] }} {{ perfil[1] }}</h4>
-                    
+
                     <!-- Mostrar la imagen de perfil si existe -->
                     {% if perfil[4] %}
-                        <img id="profileImage" src="{{ url_for('static', filename='img/perfiles/' + perfil[4]) }}" alt="User Photo">
+                    <img id="profileImage" src="{{ url_for('static', filename='img/perfiles/' + perfil[4]) }}" alt="User Photo">
                     {% else %}
-                        <img id="profileImage" src="https://via.placeholder.com/120" alt="User Photo">
+                    <img id="profileImage" src="https://via.placeholder.com/120" alt="User Photo">
                     {% endif %}
-                    
+
                     <form id="form-imagen" action="{{ url_for('subir_imagen_perfil') }}" method="POST" enctype="multipart/form-data">
-                        <input type="file" name="imagen_perfil" id="editar-imagen" style="display:none;" onchange="this.form.submit()">
+                        <input type="file" name="imagen_perfil" id="editar-imagen" style="display:none;" accept="image/*" onchange="validateImage(this)">
                     </form>
-                    
+
                     <button class="btn btn-upload mt-2" onclick="document.getElementById('editar-imagen').click()">Cargar nueva foto</button>
                     <p class="text-muted mt-3">{{ perfil[3] }}</p> <!-- Mostrar rol -->
                 </div>
@@ -189,26 +192,25 @@
                                 <div class="row">
                                     <div class="col-md-6 position-relative">
                                         <label for="firstName">Nombres</label>
-                                        <input type="text" class="form-control" id="firstName" name="nombres" value="{{ perfil[0] }}" readonly onblur="disableEdit('firstName')">
+                                        <input type="text" class="form-control" id="firstName" name="nombres" value="{{ perfil[0] }}" readonly onblur="disableEdit('firstName')" required maxlength="50">
                                         <span class="material-icons-round edit-icon" onclick="enableEdit('firstName')">edit</span>
                                     </div>
                                     <div class="col-md-6 position-relative">
                                         <label for="lastName">Apellidos</label>
-                                        <input type="text" class="form-control" id="lastName" name="apellidos" value="{{ perfil[1] }}" readonly onblur="disableEdit('lastName')">
+                                        <input type="text" class="form-control" id="lastName" name="apellidos" value="{{ perfil[1] }}" readonly onblur="disableEdit('lastName')" required maxlength="50">
                                         <span class="material-icons-round edit-icon" onclick="enableEdit('lastName')">edit</span>
                                     </div>
                                 </div>
                                 <div class="row mt-3">
                                     <div class="col-md-6 position-relative">
                                         <label for="username">DNI</label>
-                                        <input type="text" class="form-control" id="username" value="{{ perfil[2] }}" readonly onblur="disableEdit('username')">
-                                        <span class="material-icons-round edit-icon" onclick="enableEdit('username')">edit</span>
+                                        <input type="text" class="form-control" id="username" value="{{ perfil[2] }}" readonly>
                                     </div>
                                 </div>
                                 <button type="submit" class="btn btn-update mt-3">Actualizar información</button>
                             </form>
                         </div>
-                        
+
                         <!-- Funciones del rol -->
                         <div class="tab-pane fade" id="funciones" role="tabpanel" aria-labelledby="funciones-tab">
                             <h5>Funciones del rol</h5>
@@ -221,8 +223,8 @@
                 </div>
             </div>
         </div>
-    </div>
-</div>
+    </div> <!-- main-content -->
+</div> <!-- content -->
 
 <!-- Include JavaScript Files -->
 <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
@@ -246,5 +248,48 @@
         const field = document.getElementById(fieldId);
         field.setAttribute("readonly", "true");
     }
+
+    function validateImage(input) {
+        const file = input.files[0];
+        const maxSize = 2 * 1024 * 1024; // 2 MB
+        if (file) {
+            if (!file.type.startsWith('image/')) {
+                alert('Por favor, seleccione un archivo de imagen válido.');
+                input.value = '';
+                return;
+            }
+            if (file.size > maxSize) {
+                alert('La imagen debe ser menor de 2 MB.');
+                input.value = '';
+                return;
+            }
+            // Preview the image
+            const image = document.getElementById("profileImage");
+            image.src = URL.createObjectURL(file);
+            // Submit the form
+            input.form.submit();
+        }
+    }
+
+    function validateProfileForm(event) {
+        const firstName = document.getElementById('firstName').value.trim();
+        const lastName = document.getElementById('lastName').value.trim();
+
+        if (firstName === '' || lastName === '') {
+            alert('Por favor, complete todos los campos requeridos.');
+            event.preventDefault();
+            return false;
+        }
+
+        if (firstName.length > 50 || lastName.length > 50) {
+            alert('Los nombres y apellidos deben tener un máximo de 50 caracteres.');
+            event.preventDefault();
+            return false;
+        }
+
+        return true;
+    }
+
+    document.getElementById('profileForm').addEventListener('submit', validateProfileForm);
 </script>
 {% endblock %}

@@ -160,22 +160,9 @@ def libro_diario():
 @role_required(1,3)
 def libro_diario_datos():
     fecha = request.args.get("fecha")
-    movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha)
-    filas = []
-    for movimiento in movimientos:
-        filas.append({
-            "numero_correlativo": movimiento["numero_correlativo"],
-            "fecha": movimiento["fecha"],
-            "glosa": movimiento["glosa"],
-            "codigo_del_libro": movimiento["codigo_del_libro"],
-            "numero_correlativo_documento": movimiento["numero_correlativo_documento"],
-            "numero_documento_sustentatorio": movimiento["numero_documento_sustentatorio"],
-            "codigo_cuenta": movimiento["codigo_cuenta"],
-            "denominacion": movimiento["denominacion"],
-            "debe": movimiento["debe"],
-            "haber": movimiento["haber"]
-        })
-    return jsonify(filas=filas, total_debe=total_debe, total_haber=total_haber)
+    grouped_movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha)
+    return jsonify(filas=grouped_movimientos, total_debe=total_debe, total_haber=total_haber)
+
 
 
 ################################################################################################
@@ -987,6 +974,7 @@ def perfil_usuario():
 
 @app.route('/agregar_usuario', methods=['POST'])
 @jwt_required()
+@role_required(3)
 def agregar_usuario():
     dni = request.form['dni']
     nombre = request.form['nombre']
@@ -1002,6 +990,7 @@ def agregar_usuario():
 
 @app.route('/editar_usuario', methods=['POST'])
 @jwt_required()
+@role_required(3)
 def editar_usuario():
     dni = request.form['dni']
     nombre = request.form['nombre']
@@ -1016,6 +1005,7 @@ def editar_usuario():
 
 @app.route('/eliminar_usuario', methods=['POST'])
 @jwt_required()
+@role_required(3)
 def eliminar_usuario():
     dni = request.form['dni']
     success = controlador_usuarios.eliminar_usuario(dni)
@@ -1027,6 +1017,7 @@ def eliminar_usuario():
 
 @app.route('/personal')
 @jwt_required()
+@role_required(3)
 def personal():
     dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
@@ -1048,18 +1039,6 @@ def personal():
 def verificar_dni_route(dni):
     existe = controlador_usuarios.verificar_dni(dni)
     return jsonify({'existe': existe})
-
-def cargar_usuario():
-    if request.endpoint in app.view_functions and 'static' not in request.path:
-        if get_jwt_identity():
-            dni = get_jwt_identity()
-            usuario = controlador_usuarios.obtener_usuario(dni)
-            if usuario:
-                g.usuario = usuario
-            else:
-                g.usuario = None
-        else:
-            g.usuario = None
 
 @app.context_processor
 def contexto_global():
@@ -1113,16 +1092,16 @@ def custom_invalid_token_response(err_str):
 def get_rutas():
     with app.app_context():
         return [
-            {"nombre": "Inicio", "url": url_for('index')},
-            {"nombre": "Perfil de Usuario", "url": url_for('perfil_usuario')},
-            {"nombre": "Libro Diario", "url": url_for('libro_diario')},
-            {"nombre": "Libro Mayor", "url": url_for('libro_mayor')},
-            {"nombre": "Libro Caja y Bancos", "url": url_for('libro_caja')},
-            {"nombre": "Registro de Ventas", "url": url_for('registro_ventas')},
-            {"nombre": "Registro de Compras", "url": url_for('registro_compras')},
-            {"nombre": "Productos", "url": url_for('productos')},
-            {"nombre": "Cuentas Contables", "url": url_for('cuentas')},
-            # Agrega más rutas aquí
+            {"nombre": "Inicio", "url": url_for('index'), "roles": "all"},
+            {"nombre": "Perfil de Usuario", "url": url_for('perfil_usuario'), "roles": "all"},
+            {"nombre": "Libro Diario", "url": url_for('libro_diario'), "roles": [1,3]},
+            {"nombre": "Libro Mayor", "url": url_for('libro_mayor'), "roles": [1,3]},
+            {"nombre": "Libro Caja y Bancos", "url": url_for('libro_caja'), "roles": [1,3]},
+            {"nombre": "Registro de Ventas", "url": url_for('registro_ventas'), "roles": [1,3]},
+            {"nombre": "Registro de Compras", "url": url_for('registro_compras'), "roles": [1,3]},
+            {"nombre": "Transaccional de compra y venta", "url": url_for('productos'), "roles": [2,3]},
+            {"nombre": "Cuentas Contables", "url": url_for('cuentas'), "roles": [1,3]},
+            {"nombre": "Personal", "url": url_for('personal'), "roles": [3]},
         ]
 
 @app.route('/buscar')
@@ -1130,9 +1109,16 @@ def get_rutas():
 def buscar():
     dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
+    if not usuario:
+        flash("Usuario no encontrado.")
+        return redirect(url_for('login'))
+    rol_id = usuario[7]
     term = request.args.get('term', '').lower()
     rutas = get_rutas()
-    resultados = [ruta for ruta in rutas if term in ruta['nombre'].lower()]
+    resultados = [
+        ruta for ruta in rutas
+        if term in ruta['nombre'].lower() and (ruta['roles'] == "all" or rol_id in ruta['roles'])
+    ]
     return render_template('buscar.html', term=term, resultados=resultados, usuario=usuario)
 
 @app.errorhandler(404)
