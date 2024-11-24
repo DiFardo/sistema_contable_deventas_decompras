@@ -245,12 +245,15 @@
       filtroPeriodo.addEventListener("change", cargarTabla);
       filtroCuenta.addEventListener("change", cargarTabla);
 
-        // Activar búsqueda dinámica
-        document.getElementById("search-input").addEventListener("input", filtrarTabla);
+      document.getElementById("search-input").addEventListener("input", filtrarTabla);
+      document.getElementById("records-per-page").addEventListener("input", function () {
+        rowsPerPage = parseInt(this.value);
+        currentPage = 1;
+        updatePagination();
+        showPage(currentPage);
+      });
 
-        if (filtroPeriodo.value && filtroCuenta.value) {
-            cargarTabla();
-        }
+      cargarTabla();
     });
 
     function cargarTabla() {
@@ -265,28 +268,41 @@
         data: { periodo, cuenta },
         success: function (data) {
           let filas = "";
+          let totalDebe = 0;
+          let totalHaber = 0;
+
           data.movimientos.forEach(function (movimiento) {
             const fechaFormatted = new Date(movimiento.fecha).toLocaleDateString();
-            const deudorFormatted = movimiento.deudor ? movimiento.deudor.toLocaleString('es-PE', { minimumFractionDigits: 2 }) : "-";
-            const acreedorFormatted = movimiento.acreedor ? movimiento.acreedor.toLocaleString('es-PE', { minimumFractionDigits: 2 }) : "-";
+            const deudorFormatted = movimiento.deudor
+              ? movimiento.deudor.toLocaleString('es-PE', { minimumFractionDigits: 2 })
+              : "-";
+            const acreedorFormatted = movimiento.acreedor
+              ? movimiento.acreedor.toLocaleString('es-PE', { minimumFractionDigits: 2 })
+              : "-";
+
+            // Acumular los totales
+            if (movimiento.deudor) totalDebe += parseFloat(movimiento.deudor);
+            if (movimiento.acreedor) totalHaber += parseFloat(movimiento.acreedor);
 
             filas += `
-                        <tr>
-                            <td class="centered">${fechaFormatted}</td>
-                            <td class="w-correlativo centered">${movimiento.numero_correlativo}</td>
-                            <td>${movimiento.glosa}</td>
-                            <td class="text-right">${deudorFormatted}</td>
-                            <td class="text-right">${acreedorFormatted}</td>
-                        </tr>
-                    `;
+              <tr>
+                <td class="centered">${fechaFormatted}</td>
+                <td class="w-correlativo centered">${movimiento.numero_correlativo}</td>
+                <td>${movimiento.glosa}</td>
+                <td class="text-end">${deudorFormatted}</td>
+                <td class="text-end">${acreedorFormatted}</td>
+              </tr>`;
           });
 
           $("#tabla-cuerpo").html(filas);
-          $("#total-debe").text(data.total_debe.toLocaleString('es-PE', { minimumFractionDigits: 2 }) || "-");
-          $("#total-haber").text(data.total_haber.toLocaleString('es-PE', { minimumFractionDigits: 2 }) || "-");
+
+          // Actualizar los totales en el pie de la tabla
+          $("#total-debe").text(totalDebe.toLocaleString('es-PE', { minimumFractionDigits: 2 }));
+          $("#total-haber").text(totalHaber.toLocaleString('es-PE', { minimumFractionDigits: 2 }));
 
           totalPages = Math.ceil(data.movimientos.length / rowsPerPage);
           if (totalPages === 0) totalPages = 1;
+          updatePagination();
           showPage(currentPage);
         },
         complete: function () {
@@ -299,8 +315,8 @@
       });
     }
 
-    function showPage(page) {
-      const rows = document.querySelectorAll("#tabla-cuerpo tr");
+    function showPage(page, rowsToShow = null) {
+      const rows = rowsToShow || document.querySelectorAll("#tabla-cuerpo tr");
       const start = (page - 1) * rowsPerPage;
       const end = start + rowsPerPage;
 
@@ -308,72 +324,81 @@
         row.style.display = index >= start && index < end ? "" : "none";
       });
 
-      updatePagination();
+      currentPage = page;
     }
 
     function updatePagination() {
       const pagination = document.getElementById("pagination");
+      const rows = document.querySelectorAll("#tabla-cuerpo tr");
+      const totalRows = rows.length;
+      totalPages = Math.ceil(totalRows / rowsPerPage);
+
       pagination.innerHTML = `
-            <li class="page-item ${currentPage === 1 ? "disabled" : ""}">
-              <a class="page-link" href="#" aria-label="Previous" id="prev-page">
-                <span aria-hidden="true">&laquo;</span>
-              </a>
-            </li>
-        `;
+        <li class="page-item ${currentPage === 1 ? "disabled" : ""}">
+          <a class="page-link" href="#" aria-label="Previous" id="prev-page">
+            <span aria-hidden="true">&laquo;</span>
+          </a>
+        </li>`;
 
-      const maxPagesToShow = 5;
-      const startPage = Math.max(currentPage - 2, 1);
-      const endPage = Math.min(startPage + maxPagesToShow - 1, totalPages);
-
-      for (let i = startPage; i <= endPage; i++) {
+      for (let i = 1; i <= totalPages; i++) {
         pagination.innerHTML += `
-                <li class="page-item ${i === currentPage ? "active" : ""}">
-                    <a class="page-link" href="#" data-page="${i}">${i}</a>
-                </li>
-            `;
+          <li class="page-item ${i === currentPage ? "active" : ""}">
+            <a class="page-link" href="#" data-page="${i}">${i}</a>
+          </li>`;
       }
 
       pagination.innerHTML += `
-            <li class="page-item ${currentPage === totalPages ? "disabled" : ""}">
-                <a class="page-link" href="#" aria-label="Next" id="next-page">
-                    <span aria-hidden="true">&raquo;</span>
-                </a>
-            </li>
-        `;
+        <li class="page-item ${currentPage === totalPages ? "disabled" : ""}">
+          <a class="page-link" href="#" aria-label="Next" id="next-page">
+            <span aria-hidden="true">&raquo;</span>
+          </a>
+        </li>`;
 
       document.getElementById("prev-page").addEventListener("click", function (e) {
         e.preventDefault();
         if (currentPage > 1) {
-          currentPage--;
-          showPage(currentPage);
+          showPage(currentPage - 1);
         }
       });
 
       document.getElementById("next-page").addEventListener("click", function (e) {
         e.preventDefault();
         if (currentPage < totalPages) {
-          currentPage++;
-          showPage(currentPage);
+          showPage(currentPage + 1);
         }
       });
 
       document.querySelectorAll(".page-link[data-page]").forEach(link => {
         link.addEventListener("click", function (e) {
           e.preventDefault();
-          currentPage = parseInt(this.getAttribute("data-page"));
-          showPage(currentPage);
+          showPage(parseInt(this.getAttribute("data-page")));
         });
       });
     }
 
     function filtrarTabla() {
-        const searchTerm = document.getElementById("search-input").value.toLowerCase();
-        const rows = document.querySelectorAll("#tabla-cuerpo tr");
-        rows.forEach(row => {
-            const cells = row.querySelectorAll("td");
-            const rowText = Array.from(cells).map(cell => cell.textContent.toLowerCase()).join(" ");
-            row.style.display = rowText.includes(searchTerm) ? "" : "none";
-        });
+      const searchTerm = document.getElementById("search-input").value.toLowerCase();
+      const rows = document.querySelectorAll("#tabla-cuerpo tr");
+
+      // Aplicar el filtro a las filas
+      const filteredRows = Array.from(rows).filter(row => {
+        const cells = row.querySelectorAll("td");
+        const rowText = Array.from(cells).map(cell => cell.textContent.toLowerCase()).join(" ");
+        const matches = rowText.includes(searchTerm);
+        row.style.display = matches ? "" : "none";
+        return matches;
+      });
+
+      // Actualizar variables de paginación
+      const totalFilteredRows = filteredRows.length;
+      totalPages = Math.ceil(totalFilteredRows / rowsPerPage);
+
+      // Mostrar la primera página del resultado filtrado
+      currentPage = 1;
+      showPage(currentPage, filteredRows);
+
+      // Actualizar la paginación
+      updatePagination(filteredRows);
     }
 
     function exportarLibroMayor() {

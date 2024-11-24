@@ -73,6 +73,13 @@
 
 <div id="content">
   <div class="main-content">
+    <!-- Spinner para pantalla de carga -->
+    <div class="spinner-wrapper" id="spinner-wrapper">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+    </div>
+
     <!-- Breadcrumb dinámico -->
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb">
@@ -115,7 +122,7 @@
         <div class="row justify-content-end align-items-center">
           <div class="col-lg-6 col-md-6 col-sm-12 d-flex justify-content-end">
             <button class="btn btn-danger me-2 d-flex align-items-center" onclick="abrirNuevaPaginaImprimirCaja()" style="background-color: #ff5733;">
-              <i class="material-icons me-1">visibility</i> <!-- Cambiado el icono a "visibility" -->
+              <i class="material-icons me-1">visibility</i>
               <span>Vista previa</span>
             </button>
             <button class="btn btn-success d-flex align-items-center" onclick="exportarLibroCajaBancos()">
@@ -127,7 +134,7 @@
       </div>
 
       <!-- Estructura de la tabla -->
-      <table id="tabla-cuerpo" class="table table-bordered table-striped table-hover">
+      <table class="table table-bordered table-striped table-hover">
         <thead>
             <tr>
                 <th>NÚMERO CORRELATIVO</th>
@@ -139,35 +146,17 @@
                 <th class="text-right">ACREEDOR</th>
             </tr>
         </thead>
-        <tbody>
-            {% for movimiento in movimientos %}
-            <tr>
-                <td rowspan="{{ movimiento.cuentas|length }}" class="text-center">{{ movimiento.numero_correlativo }}</td>
-                <td rowspan="{{ movimiento.cuentas|length }}" class="text-center">{{ movimiento.fecha_operacion }}</td>
-                <td rowspan="{{ movimiento.cuentas|length }}">{{ movimiento.descripcion_operacion }}</td>
-                <td>{{ movimiento.cuentas[0].codigo_cuenta_asociada }}</td>
-                <td>{{ movimiento.cuentas[0].denominacion_cuenta_asociada }}</td>
-                <td class="text-right">{{ movimiento.cuentas[0].saldo_deudor if movimiento.cuentas[0].saldo_deudor else "-" }}</td>
-                <td class="text-right">{{ movimiento.cuentas[0].saldo_acreedor if movimiento.cuentas[0].saldo_acreedor else "-" }}</td>
-            </tr>
-            {% for cuenta in movimiento.cuentas[1:] %}
-            <tr>
-                <td>{{ cuenta.codigo_cuenta_asociada }}</td>
-                <td>{{ cuenta.denominacion_cuenta_asociada }}</td>
-                <td class="text-right">{{ cuenta.saldo_deudor if cuenta.saldo_deudor else "-" }}</td>
-                <td class="text-right">{{ cuenta.saldo_acreedor if cuenta.saldo_acreedor else "-" }}</td>
-            </tr>
-            {% endfor %}
-            {% endfor %}
+        <tbody id="tabla-cuerpo">
+            <!-- Las filas dinámicas se generarán aquí -->
         </tbody>
         <tfoot>
             <tr>
                 <td colspan="5" class="text-end"><strong>TOTALES</strong></td>
-                <td class="text-end">{{ total_deudor if total_deudor else "-" }}</td>
-                <td class="text-end">{{ total_acreedor if total_acreedor else "-" }}</td>
+                <td class="text-end" id="total-deudor">-</td>
+                <td class="text-end" id="total-acreedor">-</td>
             </tr>
         </tfoot>
-    </table>
+      </table>
 
       <!-- Controles de paginación y selector de número de registros -->
       <div class="d-flex justify-content-between align-items-center mt-3">
@@ -197,24 +186,221 @@
   <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='js/tabla_cuentas.js') }}"></script>
   <script src="{{ url_for('static', filename='js/paginacion_libros.js') }}"></script>
 
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const filtroPeriodo = document.getElementById("filtro-periodo");
-        
-        // Establece el límite máximo en el mes y año actual
-        const today = new Date();
-        const maxPeriod = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-        filtroPeriodo.max = maxPeriod;
+    let currentPage = 1;
+    let rowsPerPage = parseInt(document.getElementById("records-per-page").value);
+    let totalRows = 0;
+    let totalPages = 0;
+    const spinnerWrapper = document.getElementById("spinner-wrapper");
+    let allData = [];
+    let filteredData = [];
+    let totalDeudor = 0;
+    let totalAcreedor = 0;
 
-        filtroPeriodo.addEventListener("change", function () {
-            const periodo = filtroPeriodo.value;
-            if (periodo) {
-                // Recarga la página con el nuevo período como parámetro
-                window.location.href = `/libro_caja?periodo=${periodo}`;
+    function getTodayMonth() {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        return `${year}-${month}`;
+    }
+
+    function cargarTabla(periodo) {
+        spinnerWrapper.style.display = "block";
+        $.ajax({
+            url: "/libro_caja_datos",
+            type: "GET",
+            data: { periodo: periodo },
+            success: function (data) {
+                allData = [];
+                totalDeudor = parseFloat(data.total_deudor) || 0;
+                totalAcreedor = parseFloat(data.total_acreedor) || 0;
+                data.filas.forEach(function (movimiento) {
+                    movimiento.cuentas.forEach((cuenta, index) => {
+                        allData.push({
+                            movimiento: movimiento,
+                            cuenta: cuenta,
+                            isFirstCuenta: index === 0,
+                            totalCuentas: movimiento.cuentas.length
+                        });
+                    });
+                });
+                document.getElementById("total-deudor").textContent = totalDeudor.toFixed(2);
+                document.getElementById("total-acreedor").textContent = totalAcreedor.toFixed(2);
+                filteredData = allData.slice();
+                totalRows = filteredData.length;
+                totalPages = Math.ceil(totalRows / rowsPerPage);
+                currentPage = 1;
+                showPage(currentPage);
+            },
+            error: function (error) {
+                console.error("Error al cargar los datos:", error);
+            },
+            complete: function () {
+                spinnerWrapper.style.display = "none";
             }
         });
+    }
+
+    function filtrarTabla() {
+        const searchTerm = document.getElementById("search-input").value.toLowerCase();
+        filteredData = allData.filter(dataItem => {
+            const { movimiento, cuenta } = dataItem;
+            const rowText = [
+                movimiento.numero_correlativo,
+                movimiento.fecha_operacion,
+                movimiento.descripcion_operacion,
+                cuenta.codigo_cuenta_asociada,
+                cuenta.denominacion_cuenta_asociada,
+                cuenta.saldo_deudor,
+                cuenta.saldo_acreedor
+            ].join(' ').toLowerCase();
+            return rowText.includes(searchTerm);
+        });
+        totalRows = filteredData.length;
+        totalPages = Math.ceil(totalRows / rowsPerPage);
+        currentPage = 1;
+        showPage(currentPage);
+    }
+
+    function showPage(page) {
+        const start = (page - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+        const pageData = filteredData.slice(start, end);
+        let html = "";
+        let currentMovimientoId = null;
+        let rowspanRemaining = 0;
+
+        pageData.forEach((dataItem, index) => {
+            const { movimiento, cuenta, isFirstCuenta, totalCuentas } = dataItem;
+            let row = "<tr>";
+            if (movimiento.numero_correlativo !== currentMovimientoId) {
+                currentMovimientoId = movimiento.numero_correlativo;
+                // Calcula el número de cuentas en la página actual para el rowspan
+                const cuentasEnPagina = pageData.filter(item => item.movimiento.numero_correlativo === currentMovimientoId).length;
+                row += `
+                    <td rowspan="${cuentasEnPagina}" class="text-center">${movimiento.numero_correlativo || "-"}</td>
+                    <td rowspan="${cuentasEnPagina}" class="text-center">${movimiento.fecha_operacion || "-"}</td>
+                    <td rowspan="${cuentasEnPagina}">${movimiento.descripcion_operacion || "-"}</td>
+                `;
+            }
+            row += `
+                <td>${cuenta.codigo_cuenta_asociada || "-"}</td>
+                <td>${cuenta.denominacion_cuenta_asociada || "-"}</td>
+                <td class="text-right">${cuenta.saldo_deudor !== 0 ? cuenta.saldo_deudor : "-"}</td>
+                <td class="text-right">${cuenta.saldo_acreedor !== 0 ? cuenta.saldo_acreedor : "-"}</td>
+            </tr>`;
+            html += row;
+        });
+        document.getElementById("tabla-cuerpo").innerHTML = html;
+        updatePagination();
+    }
+
+    function updatePagination() {
+        const pagination = document.getElementById("pagination");
+        pagination.innerHTML = "";
+
+        if (totalPages <= 1) {
+            return;
+        }
+
+        pagination.innerHTML = `
+            <li class="page-item ${currentPage === 1 ? "disabled" : ""}">
+                <a class="page-link" href="#" aria-label="Previous" id="prev-page">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+        `;
+
+        const maxPagesToShow = 5;
+        let startPage = Math.max(currentPage - 2, 1);
+        let endPage = Math.min(startPage + maxPagesToShow - 1, totalPages);
+
+        if (endPage - startPage < maxPagesToShow - 1) {
+            startPage = Math.max(endPage - maxPagesToShow + 1, 1);
+        }
+
+        if (startPage > 1) {
+            pagination.innerHTML += `<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>`;
+            if (startPage > 2) {
+                pagination.innerHTML += `<li class="page-item disabled"><a class="page-link" href="#">...</a></li>`;
+            }
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            const activeClass = i === currentPage ? "active" : "";
+            pagination.innerHTML += `
+                <li class="page-item ${activeClass}">
+                    <a class="page-link" href="#" data-page="${i}">${i}</a>
+                </li>
+            `;
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                pagination.innerHTML += `<li class="page-item disabled"><a class="page-link" href="#">...</a></li>`;
+            }
+            pagination.innerHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`;
+        }
+
+        pagination.innerHTML += `
+            <li class="page-item ${currentPage === totalPages ? "disabled" : ""}">
+                <a class="page-link" href="#" aria-label="Next" id="next-page">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        `;
+
+        document.getElementById("prev-page").addEventListener("click", function(e) {
+            e.preventDefault();
+            if (currentPage > 1) {
+                currentPage--;
+                showPage(currentPage);
+            }
+        });
+
+        document.getElementById("next-page").addEventListener("click", function(e) {
+            e.preventDefault();
+            if (currentPage < totalPages) {
+                currentPage++;
+                showPage(currentPage);
+            }
+        });
+
+        document.querySelectorAll(".page-link[data-page]").forEach(link => {
+            link.addEventListener("click", function(e) {
+                e.preventDefault();
+                currentPage = parseInt(e.target.getAttribute("data-page"));
+                showPage(currentPage);
+            });
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const filtroPeriodo = document.getElementById("filtro-periodo");
+        filtroPeriodo.max = getTodayMonth();
+
+        const recordsInput = document.getElementById("records-per-page");
+
+        filtroPeriodo.addEventListener("change", function () {
+            currentPage = 1;
+            cargarTabla(filtroPeriodo.value);
+        });
+
+        recordsInput.addEventListener("input", function () {
+            rowsPerPage = parseInt(this.value);
+            totalPages = Math.ceil(filteredData.length / rowsPerPage);
+            currentPage = 1;
+            showPage(currentPage);
+        });
+
+        document.getElementById("search-input").addEventListener("input", filtrarTabla);
+
+        if (filtroPeriodo.value) {
+            cargarTabla(filtroPeriodo.value);
+        }
     });
 
     function exportarLibroCajaBancos() {
@@ -224,26 +410,23 @@
             return;
         }
 
-        // Redirecciona a la ruta con el parámetro de periodo
         const url = `/exportar-libro-caja-bancos?periodo=${encodeURIComponent(periodo)}`;
         window.location.href = url;
     }
 
     function abrirNuevaPaginaImprimirCaja() {
-    const periodo = document.getElementById('filtro-periodo').value;
-    if (!periodo) {
-        alert('Por favor, selecciona un periodo antes de continuar.');
-        return;
-    }
+        const periodo = document.getElementById('filtro-periodo').value;
+        if (!periodo) {
+            alert('Por favor, selecciona un periodo antes de continuar.');
+            return;
+        }
 
-    // Redirige a la nueva ruta con el parámetro de periodo
-    const url = `/libro_caja_imprimir?periodo=${encodeURIComponent(periodo)}`;
-    const nuevaVentana = window.open(url, '_blank');
-    if (!nuevaVentana) {
-        alert('Por favor, permite que el navegador abra ventanas emergentes.');
+        const url = `/libro_caja_imprimir?periodo=${encodeURIComponent(periodo)}`;
+        const nuevaVentana = window.open(url, '_blank');
+        if (!nuevaVentana) {
+            alert('Por favor, permite que el navegador abra ventanas emergentes.');
+        }
     }
-}
-
   </script>
 </div>
 {% endblock %}

@@ -184,7 +184,11 @@
     let rowsPerPage = parseInt(document.getElementById("records-per-page").value);
     let totalRows = 0;
     let totalPages = 0;
-    const spinnerWrapper = document.getElementById("spinner-wrapper"); // Referencia al spinner
+    const spinnerWrapper = document.getElementById("spinner-wrapper");
+    let allData = [];
+    let filteredData = [];
+    let totalDebe = 0;
+    let totalHaber = 0;
 
     function getTodayDate() {
         const today = new Date();
@@ -195,100 +199,105 @@
     }
 
     function cargarTabla(fecha) {
-        spinnerWrapper.style.display = "block"; // Mostrar el spinner
+        spinnerWrapper.style.display = "block";
         $.ajax({
             url: "/libro_diario_datos",
             type: "GET",
             data: { fecha: fecha },
             success: function (data) {
-                let filas = "";
+                allData = [];
+                totalDebe = 0;
+                totalHaber = 0;
                 data.filas.forEach(function (movimiento) {
-                    filas += `
-                        <tr>
-                            <td rowspan="${movimiento.cuentas.length}" class="text-center">${movimiento.numero_correlativo || "-"}</td>
-                            <td rowspan="${movimiento.cuentas.length}" class="text-center">${movimiento.fecha || "-"}</td>
-                            <td rowspan="${movimiento.cuentas.length}">${movimiento.glosa || "-"}</td>
-                            <td rowspan="${movimiento.cuentas.length}" class="text-center">${movimiento.codigo_del_libro || "-"}</td>
-                            <td rowspan="${movimiento.cuentas.length}" class="text-center">${movimiento.numero_correlativo_documento || "-"}</td>
-                            <td rowspan="${movimiento.cuentas.length}" class="text-center">${movimiento.numero_documento_sustentatorio || "-"}</td>
-                    `;
                     movimiento.cuentas.forEach((cuenta, index) => {
-                        if (index === 0) {
-                            filas += `
-                                <td>${cuenta.codigo_cuenta || "-"}</td>
-                                <td>${cuenta.denominacion || "-"}</td>
-                                <td class="text-right">${cuenta.debe || "-"}</td>
-                                <td class="text-right">${cuenta.haber || "-"}</td>
-                            </tr>
-                            `;
-                        } else {
-                            filas += `
-                                <tr>
-                                    <td>${cuenta.codigo_cuenta || "-"}</td>
-                                    <td>${cuenta.denominacion || "-"}</td>
-                                    <td class="text-right">${cuenta.debe || "-"}</td>
-                                    <td class="text-right">${cuenta.haber || "-"}</td>
-                                </tr>
-                            `;
-                        }
+                        allData.push({
+                            movimiento: movimiento,
+                            cuenta: cuenta,
+                            isFirstCuenta: index === 0,
+                            totalCuentas: movimiento.cuentas.length
+                        });
+                        totalDebe += parseFloat(cuenta.debe || 0);
+                        totalHaber += parseFloat(cuenta.haber || 0);
                     });
                 });
-
-                $("#tabla-cuerpo").html(filas);
-
-                // Actualizar totales
-                document.getElementById("total-debe").textContent = data.total_debe || "-";
-                document.getElementById("total-haber").textContent = data.total_haber || "-";
-
-                // **Actualizar totalRows y totalPages**
-                totalRows = document.querySelectorAll("#tabla-cuerpo tr").length;
+                document.getElementById("total-debe").textContent = totalDebe.toFixed(2);
+                document.getElementById("total-haber").textContent = totalHaber.toFixed(2);
+                filteredData = allData.slice();
+                totalRows = filteredData.length;
                 totalPages = Math.ceil(totalRows / rowsPerPage);
-                currentPage = 1; // Reiniciar a la primera página
+                currentPage = 1;
                 showPage(currentPage);
             },
             error: function (error) {
                 console.error("Error al cargar los datos:", error);
             },
             complete: function () {
-                spinnerWrapper.style.display = "none"; // Ocultar el spinner al finalizar la carga
+                spinnerWrapper.style.display = "none";
             }
         });
     }
 
     function filtrarTabla() {
         const searchTerm = document.getElementById("search-input").value.toLowerCase();
-        const rows = document.querySelectorAll("#tabla-cuerpo tr");
-        let visibleRows = 0;
-
-        rows.forEach(row => {
-            const cells = row.querySelectorAll("td");
-            const rowText = Array.from(cells).map(cell => cell.textContent.toLowerCase()).join(" ");
-            const match = rowText.includes(searchTerm);
-            row.style.display = match ? "" : "none";
-            if (match) visibleRows++;
+        filteredData = allData.filter(dataItem => {
+            const { movimiento, cuenta } = dataItem;
+            const rowText = [
+                movimiento.numero_correlativo,
+                movimiento.fecha,
+                movimiento.glosa,
+                movimiento.codigo_del_libro,
+                movimiento.numero_correlativo_documento,
+                movimiento.numero_documento_sustentatorio,
+                cuenta.codigo_cuenta,
+                cuenta.denominacion,
+                cuenta.debe,
+                cuenta.haber
+            ].join(' ').toLowerCase();
+            return rowText.includes(searchTerm);
         });
-
-        totalRows = visibleRows;
+        totalRows = filteredData.length;
         totalPages = Math.ceil(totalRows / rowsPerPage);
         currentPage = 1;
+        totalDebe = filteredData.reduce((sum, dataItem) => sum + parseFloat(dataItem.cuenta.debe || 0), 0);
+        totalHaber = filteredData.reduce((sum, dataItem) => sum + parseFloat(dataItem.cuenta.haber || 0), 0);
+        document.getElementById("total-debe").textContent = totalDebe.toFixed(2);
+        document.getElementById("total-haber").textContent = totalHaber.toFixed(2);
         showPage(currentPage);
     }
 
     function showPage(page) {
-        const rows = document.querySelectorAll("#tabla-cuerpo tr");
-        let visibleRowIndex = -1;
         const start = (page - 1) * rowsPerPage;
         const end = start + rowsPerPage;
-
-        rows.forEach((row) => {
-            if (row.style.display === "none") {
-                // Row is hidden by filter, so skip it
-                return;
+        const pageData = filteredData.slice(start, end);
+        let html = "";
+        let currentMovimientoId = null;
+        let rowspanRemaining = 0;
+        pageData.forEach((dataItem, index) => {
+            const { movimiento, cuenta, isFirstCuenta, totalCuentas } = dataItem;
+            let row = "<tr>";
+            if (movimiento.numero_correlativo !== currentMovimientoId) {
+                currentMovimientoId = movimiento.numero_correlativo;
+                rowspanRemaining = pageData.filter(
+                    item => item.movimiento.numero_correlativo === currentMovimientoId
+                ).length;
+                row += `
+                    <td rowspan="${rowspanRemaining}" class="text-center">${movimiento.numero_correlativo || "-"}</td>
+                    <td rowspan="${rowspanRemaining}" class="text-center">${movimiento.fecha || "-"}</td>
+                    <td rowspan="${rowspanRemaining}">${movimiento.glosa || "-"}</td>
+                    <td rowspan="${rowspanRemaining}" class="text-center">${movimiento.codigo_del_libro || "-"}</td>
+                    <td rowspan="${rowspanRemaining}" class="text-center">${movimiento.numero_correlativo_documento || "-"}</td>
+                    <td rowspan="${rowspanRemaining}" class="text-center">${movimiento.numero_documento_sustentatorio || "-"}</td>
+                `;
             }
-            visibleRowIndex++;
-            row.style.display = (visibleRowIndex >= start && visibleRowIndex < end) ? "" : "none";
+            row += `
+                <td>${cuenta.codigo_cuenta || "-"}</td>
+                <td>${cuenta.denominacion || "-"}</td>
+                <td class="text-right">${cuenta.debe || "-"}</td>
+                <td class="text-right">${cuenta.haber || "-"}</td>
+            </tr>`;
+            html += row;
         });
-
+        document.getElementById("tabla-cuerpo").innerHTML = html;
         updatePagination();
     }
 
@@ -297,7 +306,6 @@
         pagination.innerHTML = "";
 
         if (totalPages <= 1) {
-            // No need to show pagination if there's only one page
             return;
         }
 

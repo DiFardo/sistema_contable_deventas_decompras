@@ -457,9 +457,6 @@ def libro_mayor_datos():
         "total_haber": total_acreedor   
     })
 
-
-
-
 @app.route("/exportar-todas-las-cuentas", methods=["GET"])
 @jwt_required()
 @role_required(1,3)
@@ -512,6 +509,23 @@ def libro_caja():
         breadcrumbs=breadcrumbs,
         usuario=usuario
     )
+
+@app.route("/libro_caja_datos")
+@jwt_required()
+def libro_caja_datos():
+    periodo = request.args.get("periodo")
+    if not periodo:
+        return jsonify(filas=[], total_deudor=0, total_acreedor=0)
+
+    try:
+        año, mes = periodo.split("-")
+        año = int(año)
+        mes = int(mes)
+    except ValueError:
+        return jsonify(filas=[], total_deudor=0, total_acreedor=0)
+
+    movimientos_agrupados, total_deudor, total_acreedor = controlador_plantillas.obtener_libro_caja(mes, año)
+    return jsonify(filas=movimientos_agrupados, total_deudor=total_deudor, total_acreedor=total_acreedor)
 
 ##################################################################################################
 @app.route('/exportar-libro-caja-pdf', methods=['GET'])
