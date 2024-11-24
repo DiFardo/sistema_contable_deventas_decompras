@@ -288,7 +288,6 @@
             
             if (movimiento.numero_correlativo !== currentMovimientoId) {
                 currentMovimientoId = movimiento.numero_correlativo;
-                // Calcula el número de cuentas en la página actual para el rowspan
                 const cuentasEnPagina = pageData.filter(item => item.movimiento.numero_correlativo === currentMovimientoId).length;
                 row += `
                     <td rowspan="${cuentasEnPagina}" class="text-center">${movimiento.numero_correlativo}</td>
