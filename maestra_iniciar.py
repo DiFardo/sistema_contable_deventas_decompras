@@ -487,31 +487,23 @@ def libro_caja():
     usuario = controlador_usuarios.obtener_usuario(dni)
     periodo = request.args.get("periodo", None)
     mes = año = None
-
-    # Extraer mes y año si el periodo está presente
     if periodo:
         try:
             año, mes = periodo.split("-")
-            # Verificar que mes y año son válidos
             if not (mes.isdigit() and año.isdigit()):
                 raise ValueError("Invalid month or year format")
-            print("Periodo extraído correctamente:", "Mes:", mes, "Año:", año)  # Mensaje de depuración
+            print("Periodo extraído correctamente:", "Mes:", mes, "Año:", año)
         except ValueError:
             mes = año = None
-            print("Formato de periodo incorrecto")  # Mensaje de depuración
-    
-    # Llamar a la función obtener_libro_caja solo si mes y año están definidos
+            print("Formato de periodo incorrecto")
     if mes and año:
         movimientos, total_deudor, total_acreedor = controlador_plantillas.obtener_libro_caja(mes, año)
     else:
         movimientos, total_deudor, total_acreedor = [], 0, 0
-
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Libro Caja y Bancos', 'url': '/libro_caja'}
     ]
-
-    # Renderizar la plantilla con los datos obtenidos
     return render_template(
         "libro_caja.html",
         movimientos=movimientos,

@@ -119,73 +119,61 @@
               <span>Vista previa</span>
             </button>
             <button class="btn btn-success d-flex align-items-center" onclick="exportarLibroCajaBancos()">
-              <i class="material-icons me-1">picture_as_pdf</i>
+              <i class="material-icons me-1">file_download</i>
               <span>Exportar</span>
             </button>
           </div>
         </div>
       </div>
-      
-      
 
       <!-- Estructura de la tabla -->
-      <table class="table table-bordered table-striped table-hover">
+      <table id="tabla-cuerpo" class="table table-bordered table-striped table-hover">
         <thead>
-          <tr>
-            <th>NÚMERO CORRELATIVO</th>
-            <th class="text-center">FECHA DE LA OPERACIÓN</th>
-            <th>DESCRIPCIÓN DE LA OPERACIÓN</th>
-            <th>CÓDIGO</th>
-            <th>DENOMINACIÓN</th>
-            <th class="text-right">DEUDOR</th>
-            <th class="text-right">ACREEDOR</th>
-          </tr>
+            <tr>
+                <th>NÚMERO CORRELATIVO</th>
+                <th class="text-center">FECHA DE LA OPERACIÓN</th>
+                <th>DESCRIPCIÓN DE LA OPERACIÓN</th>
+                <th>CÓDIGO</th>
+                <th>DENOMINACIÓN</th>
+                <th class="text-right">DEUDOR</th>
+                <th class="text-right">ACREEDOR</th>
+            </tr>
         </thead>
-        <tbody id="tabla-cuerpo">
-          {% set last_correlativo = None %}
-          {% for movimiento in movimientos %}
-          <tr>
-              {% if movimiento.saldo_deudor is not none and movimiento.saldo_acreedor is not none and (movimiento.saldo_deudor != 0 or movimiento.saldo_acreedor != 0) %}
-                  <!-- Mostrar solo valores de Deudor y Acreedor -->
-                  <td></td>
-                  <td></td>
-                  <td></td>
-                  <td>{{ movimiento.codigo_cuenta_asociada or "-" }}</td>
-                  <td>{{ movimiento.denominacion_cuenta_asociada or "-" }}</td>
-                  <td class="text-right">{{ movimiento.saldo_deudor or "-" }}</td>
-                  <td class="text-right">{{ movimiento.saldo_acreedor or "-" }}</td>
-              {% else %}
-                  <!-- Mostrar todos los campos excepto Deudor y Acreedor -->
-                  {% if movimiento.numero_correlativo != last_correlativo %}
-                      <td class="text-center">{{ movimiento.numero_correlativo }}</td>
-                      {% set last_correlativo = movimiento.numero_correlativo %}
-                  {% else %}
-                      <td>-</td>
-                  {% endif %}
-                  <td class="text-center">{{ movimiento.fecha_operacion or "-" }}</td>
-                  <td>{{ movimiento.descripcion_operacion or "-" }}</td>
-                  <td>{{ movimiento.codigo_cuenta_asociada or "-" }}</td>
-                  <td>{{ movimiento.denominacion_cuenta_asociada or "-" }}</td>
-                  <td class="text-right"></td>
-                  <td class="text-right"></td>
-              {% endif %}
-          </tr>
-          {% endfor %}
-      </tbody>      
+        <tbody>
+            {% for movimiento in movimientos %}
+            <tr>
+                <td rowspan="{{ movimiento.cuentas|length }}" class="text-center">{{ movimiento.numero_correlativo }}</td>
+                <td rowspan="{{ movimiento.cuentas|length }}" class="text-center">{{ movimiento.fecha_operacion }}</td>
+                <td rowspan="{{ movimiento.cuentas|length }}">{{ movimiento.descripcion_operacion }}</td>
+                <td>{{ movimiento.cuentas[0].codigo_cuenta_asociada }}</td>
+                <td>{{ movimiento.cuentas[0].denominacion_cuenta_asociada }}</td>
+                <td class="text-right">{{ movimiento.cuentas[0].saldo_deudor if movimiento.cuentas[0].saldo_deudor else "-" }}</td>
+                <td class="text-right">{{ movimiento.cuentas[0].saldo_acreedor if movimiento.cuentas[0].saldo_acreedor else "-" }}</td>
+            </tr>
+            {% for cuenta in movimiento.cuentas[1:] %}
+            <tr>
+                <td>{{ cuenta.codigo_cuenta_asociada }}</td>
+                <td>{{ cuenta.denominacion_cuenta_asociada }}</td>
+                <td class="text-right">{{ cuenta.saldo_deudor if cuenta.saldo_deudor else "-" }}</td>
+                <td class="text-right">{{ cuenta.saldo_acreedor if cuenta.saldo_acreedor else "-" }}</td>
+            </tr>
+            {% endfor %}
+            {% endfor %}
+        </tbody>
         <tfoot>
-          <tr>
-            <td colspan="5" class="text-end"><strong>TOTALES</strong></td>
-            <td class="text-end">{{ total_deudor }}</td>
-            <td class="text-end">{{ total_acreedor }}</td>
-          </tr>
+            <tr>
+                <td colspan="5" class="text-end"><strong>TOTALES</strong></td>
+                <td class="text-end">{{ total_deudor if total_deudor else "-" }}</td>
+                <td class="text-end">{{ total_acreedor if total_acreedor else "-" }}</td>
+            </tr>
         </tfoot>
-      </table>
+    </table>
 
       <!-- Controles de paginación y selector de número de registros -->
       <div class="d-flex justify-content-between align-items-center mt-3">
         <div class="d-flex me-3">
           <label for="records-per-page" class="me-2">Registros por página:</label>
-          <input type="number" id="records-per-page" class="form-control" value="9" min="1" max="100" style="width: 80px;">
+          <input type="number" id="records-per-page" class="form-control" value="7" min="1" max="100" style="width: 80px;">
         </div>
         <nav aria-label="Page navigation example align-items-center">
           <ul class="pagination" id="pagination">
