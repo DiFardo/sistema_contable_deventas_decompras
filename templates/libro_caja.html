@@ -200,6 +200,15 @@
     let totalDeudor = 0;
     let totalAcreedor = 0;
 
+    function formatValue(value) {
+        const numericValue = Number(value);
+        console.log(`Original value: ${value}, Numeric value: ${numericValue}`);
+        if (numericValue === 0 || isNaN(numericValue) || value === null || value === undefined) {
+            return "-";
+        }
+        return value;
+    }
+
     function getTodayMonth() {
         const today = new Date();
         const year = today.getFullYear();
@@ -227,8 +236,9 @@
                         });
                     });
                 });
-                document.getElementById("total-deudor").textContent = totalDeudor.toFixed(2);
-                document.getElementById("total-acreedor").textContent = totalAcreedor.toFixed(2);
+                // Aplicar formatValue a los totales
+                document.getElementById("total-deudor").textContent = formatValue(totalDeudor.toFixed(2));
+                document.getElementById("total-acreedor").textContent = formatValue(totalAcreedor.toFixed(2));
                 filteredData = allData.slice();
                 totalRows = filteredData.length;
                 totalPages = Math.ceil(totalRows / rowsPerPage);
@@ -265,38 +275,38 @@
         showPage(currentPage);
     }
 
-  function showPage(page) {
-      const start = (page - 1) * rowsPerPage;
-      const end = start + rowsPerPage;
-      const pageData = filteredData.slice(start, end);
-      let html = "";
-      let currentMovimientoId = null;
-      let rowspanRemaining = 0;
+    function showPage(page) {
+        const start = (page - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+        const pageData = filteredData.slice(start, end);
+        let html = "";
+        let currentMovimientoId = null;
 
-      pageData.forEach((dataItem, index) => {
-          const { movimiento, cuenta, isFirstCuenta, totalCuentas } = dataItem;
-          let row = "<tr>";
-          if (movimiento.numero_correlativo !== currentMovimientoId) {
-              currentMovimientoId = movimiento.numero_correlativo;
-              // Calcula el número de cuentas en la página actual para el rowspan
-              const cuentasEnPagina = pageData.filter(item => item.movimiento.numero_correlativo === currentMovimientoId).length;
-              row += `
-                  <td rowspan="${cuentasEnPagina}" class="text-center">${movimiento.numero_correlativo || "-"}</td>
-                  <td rowspan="${cuentasEnPagina}" class="text-center">${movimiento.fecha_operacion || "-"}</td>
-                  <td rowspan="${cuentasEnPagina}">${movimiento.descripcion_operacion || "-"}</td>
-              `;
-          }
-          row += `
-              <td>${cuenta.codigo_cuenta_asociada || "-"}</td>
-              <td>${cuenta.denominacion_cuenta_asociada || "-"}</td>
-              <td class="text-right">${cuenta.saldo_deudor !== 0 ? cuenta.saldo_deudor : "-"}</td>
-              <td class="text-right">${cuenta.saldo_acreedor !== 0 ? cuenta.saldo_acreedor : "-"}</td>
-          </tr>`;
-          html += row;
-      });
-      document.getElementById("tabla-cuerpo").innerHTML = html;
-      updatePagination();
-  }
+        pageData.forEach((dataItem) => {
+            const { movimiento, cuenta, isFirstCuenta } = dataItem;
+            let row = "<tr>";
+            
+            if (movimiento.numero_correlativo !== currentMovimientoId) {
+                currentMovimientoId = movimiento.numero_correlativo;
+                // Calcula el número de cuentas en la página actual para el rowspan
+                const cuentasEnPagina = pageData.filter(item => item.movimiento.numero_correlativo === currentMovimientoId).length;
+                row += `
+                    <td rowspan="${cuentasEnPagina}" class="text-center">${movimiento.numero_correlativo}</td>
+                    <td rowspan="${cuentasEnPagina}" class="text-center">${movimiento.fecha_operacion}</td>
+                    <td rowspan="${cuentasEnPagina}">${movimiento.descripcion_operacion}</td>
+                `;
+            }
+            row += `
+                <td>${cuenta.codigo_cuenta_asociada}</td>
+                <td>${cuenta.denominacion_cuenta_asociada}</td>
+                <td class="text-right">${formatValue(cuenta.saldo_deudor)}</td>
+                <td class="text-right">${formatValue(cuenta.saldo_acreedor)}</td>
+            </tr>`;
+            html += row;
+        });
+        document.getElementById("tabla-cuerpo").innerHTML = html;
+        updatePagination();
+    }
 
     function updatePagination() {
         const pagination = document.getElementById("pagination");
@@ -427,6 +437,6 @@
             alert('Por favor, permite que el navegador abra ventanas emergentes.');
         }
     }
-  </script>
+</script>
 </div>
 {% endblock %}
