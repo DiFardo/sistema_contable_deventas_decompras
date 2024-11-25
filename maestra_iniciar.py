@@ -206,20 +206,31 @@ def actualizar_perfil():
     flash("Perfil actualizado correctamente.")
     return redirect(url_for('perfil_usuario'))
 
+
 @app.route("/libro_diario", methods=["GET"])
 @jwt_required()
-@role_required(1,3)
+@role_required(1, 3)
 def libro_diario():
     dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
-    fecha = request.args.get("fecha", None)
-    movimientos, total_debe, total_haber = (
-        controlador_plantillas.obtener_libro_diario_por_fecha(fecha) if fecha else ([], 0, 0)
-    )
+
+    # Obtener fechas de los filtros
+    fecha_inicio = request.args.get("fecha_inicio", None)
+    fecha_fin = request.args.get("fecha_fin", None)
+
+    # Obtener movimientos basados en los filtros
+    if fecha_inicio and fecha_fin:
+        movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha_inicio, fecha_fin)
+    elif fecha_inicio:
+        movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha_inicio)
+    else:
+        movimientos, total_debe, total_haber = [], 0, 0
+
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Libro diario', 'url': '/libro_diario'}
     ]
+
     return render_template(
         "libro_diario.html",
         movimientos=movimientos,
@@ -229,13 +240,26 @@ def libro_diario():
         usuario=usuario
     )
 
-@app.route("/libro_diario_datos")
+
+
+@app.route("/libro_diario_datos", methods=["GET"])
 @jwt_required()
-@role_required(1,3)
+@role_required(1, 3)
 def libro_diario_datos():
-    fecha = request.args.get("fecha")
-    grouped_movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha)
+    # Obtener fechas desde los parámetros
+    fecha_inicio = request.args.get("fecha_inicio", None)
+    fecha_fin = request.args.get("fecha_fin", None)
+
+    # Obtener movimientos basados en los filtros
+    if fecha_inicio and fecha_fin:
+        grouped_movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha_inicio, fecha_fin)
+    elif fecha_inicio:
+        grouped_movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha_inicio)
+    else:
+        grouped_movimientos, total_debe, total_haber = [], 0, 0
+
     return jsonify(filas=grouped_movimientos, total_debe=total_debe, total_haber=total_haber)
+
 
 
 
@@ -246,38 +270,51 @@ def libro_diario_datos():
 
 @app.route("/libro_diario_imprimir", methods=["GET"])
 @jwt_required()
-@role_required(1,3)
+@role_required(1, 3)
 def libro_diario_imprimir():
+    """
+    Genera una vista imprimible del libro diario, ya sea para una fecha específica
+    o un rango de fechas definido por `fecha_inicio` y `fecha_fin`.
+    """
     token = request.cookies.get('token')
     dni = request.cookies.get('dni')
     usuario = controlador_usuarios.obtener_usuario(dni)
-    fecha = request.args.get("fecha", None)
 
-    # Verificar si la fecha está presente
-    if not fecha:
-        print("No se proporcionó una fecha válida")  # Mensaje de depuración
-        movimientos, total_debe, total_haber = [], 0, 0
+    # Obtener fechas desde los parámetros
+    fecha_inicio = request.args.get("fecha_inicio", None)
+    fecha_fin = request.args.get("fecha_fin", None)
+
+    # Validar fechas y obtener movimientos
+    if fecha_inicio and fecha_fin:
+        # Rango de fechas
+        movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha_inicio, fecha_fin)
+    elif fecha_inicio:
+        # Una única fecha
+        movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha_inicio)
     else:
-        # Obtener los movimientos del libro diario para la fecha proporcionada
-        movimientos, total_debe, total_haber = controlador_plantillas.obtener_movimientos_libro_diario(fecha)
-        print(f"Movimientos obtenidos: {len(movimientos)}")  # Mensaje de depuración
+        # Sin fechas válidas
+        print("No se proporcionó una fecha o rango de fechas válido")  # Mensaje de depuración
+        movimientos, total_debe, total_haber = [], 0, 0
 
+    # Preparar el historial de navegación
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Libro Diario', 'url': '/libro_diario'},
         {'name': 'Imprimir', 'url': ''}
     ]
 
-    # Renderizar la plantilla con los datos obtenidos
+    # Renderizar la plantilla para impresión
     return render_template(
         "libro_diario_imprimir.html",
         movimientos=movimientos,
         total_debe=total_debe,
         total_haber=total_haber,
-        fecha=fecha,
+        fecha_inicio=fecha_inicio,
+        fecha_fin=fecha_fin,
         breadcrumbs=breadcrumbs,
         usuario=usuario
     )
+
 
 @app.route("/libro_caja_imprimir", methods=["GET"])
 @jwt_required()
@@ -602,6 +639,38 @@ def libro_caja_datos():
     return jsonify(filas=movimientos_agrupados, total_deudor=total_deudor, total_acreedor=total_acreedor)
 
 ##################################################################################################
+@app.route('/exportar-libro-diario-pdf', methods=['GET'])
+@jwt_required()
+@role_required(1, 3)
+def exportar_libro_diario_pdf():
+    fecha_inicio = request.args.get('fecha_inicio')
+    fecha_fin = request.args.get('fecha_fin')
+
+    if not fecha_inicio:
+        return jsonify({'error': 'El parámetro "fecha_inicio" es requerido.'}), 400
+
+    try:
+        datetime.datetime.strptime(fecha_inicio, '%Y-%m-%d')
+    except ValueError:
+        return jsonify({'error': 'El formato de "fecha_inicio" es incorrecto. Debe ser "YYYY-MM-DD".'}), 400
+
+    if fecha_fin:
+        try:
+            datetime.datetime.strptime(fecha_fin, '%Y-%m-%d')
+        except ValueError:
+            return jsonify({'error': 'El formato de "fecha_fin" es incorrecto. Debe ser "YYYY-MM-DD".'}), 400
+
+    try:
+        if fecha_fin:
+            return controlador_plantillas.generar_libro_diario_pdf_horizontal(fecha_inicio, fecha_fin)
+        else:
+            return controlador_plantillas.generar_libro_diario_pdf_horizontal(fecha_inicio)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+
+
 @app.route('/exportar-libro-caja-pdf', methods=['GET'])
 @jwt_required()
 @role_required(1,3)
@@ -798,20 +867,7 @@ def exportar_libro_diario():
         return jsonify({'error': 'El formato de la fecha es incorrecto. Debe ser "YYYY-MM-DD".'}), 400
     return controlador_plantillas.generar_libro_diario_excel(fecha)
 
-@app.route('/exportar-libro-diario-pdf', methods=['GET'])
-@jwt_required()
-@role_required(1,3)
-def exportar_libro_diario_pdf():
-    fecha = request.args.get('fecha')
-    if not fecha:
-        return jsonify({'error': 'El parámetro "fecha" es requerido.'}), 400
 
-    try:
-        datetime.datetime.strptime(fecha, '%Y-%m-%d')
-    except ValueError:
-        return jsonify({'error': 'El formato de la fecha es incorrecto. Debe ser "YYYY-MM-DD".'}), 400
-
-    return controlador_plantillas.generar_libro_diario_pdf_horizontal(fecha)
 
 @app.route("/asientos_contables")
 @jwt_required()
@@ -904,6 +960,16 @@ def procesar_logout():
 @jwt_required()
 @role_required(1,3)
 def cuentas():
+    dni = get_jwt_identity()
+    usuario = controlador_usuarios.obtener_usuario(dni)
+        # Obtener rol del usuario
+    rol_nombre = usuario[5]  # Asumiendo que el nombre del rol está en la posición 5 del usuario
+
+    # Obtener notificaciones solo para Administrador y Contador
+    if rol_nombre in ["Administrador", "Contador"]:
+        notificaciones = controlador_usuarios.obtener_notificaciones(rol_nombre)
+    else:
+        notificaciones = []
     cuentas_data = obtener_todas_cuentas()  # Llama a la función para obtener los datos de las cuentas
     dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)  # Obtener el usuario con DNI desde la base de datos
@@ -912,7 +978,7 @@ def cuentas():
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Cuentas contables', 'url': '/cuentas'}
     ]
-    return render_template("cuentas.html", cuentas=cuentas_data, breadcrumbs=breadcrumbs, usuario=usuario)  # Pasar el usuario a la plantilla
+    return render_template("cuentas.html", cuentas=cuentas_data, breadcrumbs=breadcrumbs, usuario=usuario , notificaciones=notificaciones)  # Pasar el usuario a la plantilla
     
 # Endpoint para obtener cuentas por categoría
 @app.route("/cuentas/por_categoria", methods=["POST"])
