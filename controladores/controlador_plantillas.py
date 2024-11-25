@@ -1730,12 +1730,6 @@ def generar_libro_mayor_pdf(mes, año, cuenta):
             cursor.close()
             conexion.close()
 
-
-
-
-
-
-
 def generar_libro_caja_excel(mes, anio):
     try:
         mes = int(mes)
