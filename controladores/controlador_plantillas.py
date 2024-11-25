@@ -199,7 +199,7 @@ def generar_registro_compra_excel(mes, anio):
             WHERE EXTRACT(MONTH FROM c.fecha) = %s AND EXTRACT(YEAR FROM c.fecha) = %s
             GROUP BY c.serie_comprobante, c.numero_comprobante, c.tipo_documento, 
                      c.numero_documento, c.nombre_proveedor, c.tipo_comprobante, c.fecha
-            ORDER BY c. fecha, c.serie_comprobante, c.numero_comprobante;
+            ORDER BY c.fecha, c.serie_comprobante, c.numero_comprobante;
         """
         cursor.execute(consulta, (mes, anio))
 
@@ -357,7 +357,7 @@ def generar_libro_diario_excel(fecha):
             FROM asientos_contables ac
             JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
             WHERE ac.fecha::date = %s::date
-            ORDER BY numero_correlativo, ac.id;
+            ORDER BY fecha, numero_correlativo, ac.id;
         """
         cursor.execute(consulta, (fecha,))
         resultados = cursor.fetchall()
@@ -497,7 +497,7 @@ def generar_libro_diario_pdf_horizontal(fecha):
             FROM asientos_contables ac
             JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
             WHERE ac.fecha::date = %s::date
-            ORDER BY numero_correlativo, ac.id;
+            ORDER BY fecha, numero_correlativo, ac.id;
         """
         cursor.execute(consulta, (fecha,))
         resultados = cursor.fetchall()
@@ -625,7 +625,7 @@ def generar_libro_caja_pdf_horizontal(mes, año):
             FROM asientos_contables ac
             JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
             WHERE EXTRACT(MONTH FROM ac.fecha) = %s AND EXTRACT(YEAR FROM ac.fecha) = %s
-            ORDER BY numero_correlativo, ac.id;
+            ORDER BY fecha_operacion, numero_correlativo, ac.id;
         """
         cursor.execute(consulta, (mes, año))
         resultados = cursor.fetchall()
@@ -907,7 +907,7 @@ def obtener_registro_ventas(mes, año):
             WHERE EXTRACT(MONTH FROM v.fecha) = %s AND EXTRACT(YEAR FROM v.fecha) = %s
             GROUP BY v.serie_comprobante, v.numero_comprobante, v.tipo_documento, 
                      v.numero_documento, v.usuario, v.tipo_comprobante, v.fecha
-            ORDER BY v. fecha, v.serie_comprobante, v.numero_comprobante;
+            ORDER BY v.fecha, v.serie_comprobante, v.numero_comprobante;
         """, (mes, año))
 
         registros = cursor.fetchall()
@@ -1247,7 +1247,7 @@ def obtener_libro_diario(fecha):
             FROM asientos_contables ac
             JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
             WHERE ac.fecha::date = %s::date
-            ORDER BY numero_correlativo, ac.id;
+            ORDER BY fecha, numero_correlativo, ac.id;
         """, (fecha,))
         
         movimientos = cursor.fetchall()
@@ -1262,10 +1262,9 @@ def obtener_libro_diario(fecha):
 
 def obtener_libro_diario_por_fecha(fecha):
     conexion = obtener_conexion()
-    movimientos = []
+    movimientos_agrupados = []
     total_debe = 0
     total_haber = 0
-
     with conexion.cursor(cursor_factory=DictCursor) as cursor:
         cursor.execute("""
             SELECT
@@ -1292,21 +1291,153 @@ def obtener_libro_diario_por_fecha(fecha):
             WHERE ac.fecha::date = %s::date
             ORDER BY numero_correlativo, ac.id;
         """, (fecha,))
-
         movimientos = cursor.fetchall()
-
+        agrupado = {}
         for movimiento in movimientos:
-            total_debe += movimiento['debe'] or 0
-            total_haber += movimiento['haber'] or 0
-
+            numero_correlativo = movimiento["numero_correlativo"]
+            if numero_correlativo not in agrupado:
+                agrupado[numero_correlativo] = {
+                    "numero_correlativo": numero_correlativo,
+                    "fecha": movimiento["fecha"],
+                    "glosa": movimiento["glosa"],
+                    "codigo_del_libro": movimiento["codigo_del_libro"],
+                    "numero_correlativo_documento": movimiento["numero_correlativo_documento"],
+                    "numero_documento_sustentatorio": movimiento["numero_documento_sustentatorio"],
+                    "cuentas": []
+                }
+            agrupado[numero_correlativo]["cuentas"].append({
+                "codigo_cuenta": movimiento["codigo_cuenta"],
+                "denominacion": movimiento["denominacion"],
+                "debe": movimiento["debe"],
+                "haber": movimiento["haber"]
+            })
+            total_debe += movimiento["debe"] or 0
+            total_haber += movimiento["haber"] or 0
+        movimientos_agrupados = list(agrupado.values())
     conexion.close()
-    return movimientos, total_debe, total_haber
+    return movimientos_agrupados, total_debe, total_haber
 
+
+def generar_libro_diario_pdf_horizontal(fecha):
+    try:
+        # Obtener los datos agrupados del libro diario
+        movimientos_agrupados, total_debe, total_haber = obtener_libro_diario_por_fecha(fecha)
+
+        if not movimientos_agrupados:
+            return jsonify({'error': 'No se encontraron datos para la fecha seleccionada.'}), 404
+
+        # Crear buffer para el PDF
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=landscape(A4),  # Configuración horizontal
+            rightMargin=10, leftMargin=10, topMargin=20, bottomMargin=20
+        )
+
+        # Crear estilos
+        styles = getSampleStyleSheet()
+        style_title = styles["Title"]
+        style_normal = styles["Normal"]
+        style_normal.fontSize = 9
+        style_normal.leading = 11
+
+        # Agregar título
+        elementos = []
+        titulo = Paragraph(f"<b>Libro Diario - Fecha: {fecha}</b>", style_title)
+        elementos.append(titulo)
+        elementos.append(Spacer(1, 12))
+
+        # Crear la tabla con los encabezados
+        encabezados = [
+            "N°", "Fecha", "Descripción", "Código",
+            "N° Documento", "Código Cuenta", "Denominación", "Debe", "Haber"
+        ]
+        tabla_datos = [encabezados]
+
+        # Procesar los datos agrupados
+        for movimiento in movimientos_agrupados:
+            # Agregar fila principal del movimiento (encabezado del grupo)
+            primera_fila = [
+                movimiento["numero_correlativo"],  # N° Correlativo
+                movimiento["fecha"],  # Fecha
+                movimiento["glosa"],  # Descripción de la operación
+                movimiento["codigo_del_libro"] or "-",  # Código del libro
+                movimiento["numero_documento_sustentatorio"] or "-",  # N° Documento Sustentatorio
+                "",  # Código Cuenta (vacío en encabezado)
+                "",  # Denominación (vacío en encabezado)
+                "",  # Debe (vacío en encabezado)
+                ""   # Haber (vacío en encabezado)
+            ]
+            tabla_datos.append(primera_fila)
+
+            # Agregar las cuentas asociadas al movimiento
+            for idx, cuenta in enumerate(movimiento["cuentas"]):
+                if idx == 0:
+                    # Combinar la primera cuenta con la fila principal
+                    primera_fila[5] = cuenta["codigo_cuenta"] or "-"
+                    primera_fila[6] = cuenta["denominacion"] or "-"
+                    primera_fila[7] = f"{cuenta['debe']:,.2f}" if cuenta["debe"] else "-"
+                    primera_fila[8] = f"{cuenta['haber']:,.2f}" if cuenta["haber"] else "-"
+                else:
+                    # Añadir filas adicionales para las cuentas restantes
+                    tabla_datos.append([
+                        "",  # N° Correlativo (vacío para las cuentas)
+                        "",  # Fecha (vacío para las cuentas)
+                        "",  # Descripción de la operación (vacío para las cuentas)
+                        "",  # Código del libro (vacío para las cuentas)
+                        "",  # N° Documento Sustentatorio (vacío para las cuentas)
+                        cuenta["codigo_cuenta"] or "-",  # Código Cuenta
+                        cuenta["denominacion"] or "-",  # Denominación
+                        f"{cuenta['debe']:,.2f}" if cuenta["debe"] else "-",  # Debe
+                        f"{cuenta['haber']:,.2f}" if cuenta["haber"] else "-"  # Haber
+                    ])
+
+            # Agregar una fila vacía como separador entre números correlativos
+            tabla_datos.append([""] * 9)
+
+        # Agregar fila de totales
+        tabla_datos.append(["", "", "", "", "", "", "Totales", f"{total_debe:,.2f}", f"{total_haber:,.2f}"])
+
+        # Estilizar la tabla
+        tabla = Table(
+            tabla_datos,
+            colWidths=[40, 60, 100, 50, 90, 50, 250, 60, 60]  # Ajustar los anchos de columna
+        )
+        tabla.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),  # Fondo gris para encabezados
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),  # Texto blanco en encabezados
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),  # Alineación general centrada
+            ('ALIGN', (5, 1), (5, -1), 'LEFT'),  # Código Cuenta alineado a la izquierda
+            ('ALIGN', (6, 1), (6, -1), 'LEFT'),  # Denominación alineada a la izquierda
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),  # Encabezado en negrita
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),  # Cuerpo en fuente normal
+            ('FONTSIZE', (0, 1), (-1, -1), 9),  # Fuente más pequeña para el contenido
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),  # Espaciado inferior en encabezados
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),  # Líneas de cuadrícula
+            ('VALIGN', (6, 1), (6, -1), 'MIDDLE'),  # Alinear verticalmente la Denominación al centro
+            ('SPAN', (0, -1), (5, -1)),  # Fusionar celdas para "Totales"
+            ('ALIGN', (-2, 1), (-1, -1), 'RIGHT'),  # Debe y Haber alineados a la derecha
+        ]))
+        elementos.append(tabla)
+
+        # Generar el PDF
+        doc.build(elementos)
+        buffer.seek(0)
+
+        return send_file(
+            buffer,
+            as_attachment=True,
+            download_name=f"Libro_Diario_{fecha}.pdf",
+            mimetype="application/pdf"
+        )
+    except Exception as e:
+        print(f"Error al generar el PDF: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 def obtener_movimientos_libro_diario(fecha):
     conexion = obtener_conexion()  # Asegúrate de que esta función esté correctamente implementada
-    movimientos = []
+    movimientos_agrupados = []
     total_debe = 0
     total_haber = 0
 
@@ -1326,6 +1457,7 @@ def obtener_movimientos_libro_diario(fecha):
                         WHEN m.tipo_movimiento = 'Ventas' THEN 14
                         ELSE NULL
                     END AS codigo_del_libro,
+                    DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo_documento,
                     ac.numero_documento AS numero_documento_sustentatorio,
                     ac.codigo_cuenta,
                     ac.denominacion,
@@ -1339,17 +1471,39 @@ def obtener_movimientos_libro_diario(fecha):
 
             movimientos = cursor.fetchall()
 
-            # Calcula totales
+            agrupado = {}
             for movimiento in movimientos:
-                total_debe += movimiento['debe'] or 0
-                total_haber += movimiento['haber'] or 0
+                numero_correlativo = movimiento["numero_correlativo"]
+                if numero_correlativo not in agrupado:
+                    agrupado[numero_correlativo] = {
+                        "numero_correlativo": numero_correlativo,
+                        "fecha": movimiento["fecha"],
+                        "glosa": movimiento["glosa"],
+                        "codigo_del_libro": movimiento["codigo_del_libro"],
+                        "numero_correlativo_documento": movimiento["numero_correlativo_documento"],
+                        "numero_documento_sustentatorio": movimiento["numero_documento_sustentatorio"],
+                        "cuentas": []
+                    }
+                agrupado[numero_correlativo]["cuentas"].append({
+                    "codigo_cuenta": movimiento["codigo_cuenta"],
+                    "denominacion": movimiento["denominacion"],
+                    "debe": movimiento["debe"],
+                    "haber": movimiento["haber"]
+                })
+
+                # Calcula los totales
+                total_debe += movimiento["debe"] or 0
+                total_haber += movimiento["haber"] or 0
+
+            movimientos_agrupados = list(agrupado.values())
 
     except Exception as e:
         print(f"Error al obtener los movimientos del libro diario: {e}")
     finally:
         conexion.close()
 
-    return movimientos, total_debe, total_haber
+    return movimientos_agrupados, total_debe, total_haber
+
 
 
 def obtener_libro_caja(mes, año):
@@ -1386,7 +1540,7 @@ def obtener_libro_caja(mes, año):
                     (ac.codigo_cuenta LIKE '12%' OR ac.codigo_cuenta LIKE '42%')
                     AND EXTRACT(MONTH FROM ac.fecha) = {mes}
                     AND EXTRACT(YEAR FROM ac.fecha) = {año}
-                ORDER BY numero_correlativo, ac.id;
+                ORDER BY fecha_operacion, numero_correlativo, ac.id;
             """).format(mes=sql.Literal(mes), año=sql.Literal(año))
 
             cursor.execute(query)
@@ -1446,7 +1600,7 @@ def obtener_libro_mayor(mes, año, cuenta):
                 AND EXTRACT(YEAR FROM ac.fecha) = %s
                 AND ac.codigo_cuenta = %s
                 AND (ac.debe IS NOT NULL AND ac.debe != 0 OR ac.haber IS NOT NULL AND ac.haber != 0)
-                ORDER BY numero_correlativo, ac.id
+                ORDER BY fecha, numero_correlativo, ac.id
             ) AS subquery;
         """, (mes, año, cuenta))
         
@@ -1480,7 +1634,7 @@ def generar_libro_mayor_excel(mes, año, cuenta):
                 AND EXTRACT(YEAR FROM ac.fecha) = %s
                 AND ac.codigo_cuenta = %s
                 AND (ac.debe IS NOT NULL AND ac.debe != 0 OR ac.haber IS NOT NULL AND ac.haber != 0)
-                ORDER BY numero_correlativo, ac.id
+                ORDER BY fecha, numero_correlativo, ac.id
             ) AS subquery;
         """
         cursor.execute(consulta, (mes, año, cuenta))
@@ -1608,7 +1762,7 @@ def generar_libro_mayor_pdf(mes, año, cuenta):
                 AND EXTRACT(YEAR FROM ac.fecha) = %s
                 AND ac.codigo_cuenta = %s
                 AND (ac.debe IS NOT NULL AND ac.debe != 0 OR ac.haber IS NOT NULL AND ac.haber != 0)
-                ORDER BY numero_correlativo, ac.id
+                ORDER BY fecha, numero_correlativo, ac.id
             ) AS subquery;
         """
         cursor.execute(consulta, (mes, año, cuenta))
@@ -1740,7 +1894,7 @@ def generar_libro_caja_excel(mes, anio):
             (ac.codigo_cuenta LIKE '12%' OR ac.codigo_cuenta LIKE '42%')
             AND EXTRACT(MONTH FROM ac.fecha) = %s
             AND EXTRACT(YEAR FROM ac.fecha) = %s
-        ORDER BY numero_correlativo, ac.id;
+        ORDER BY fecha_operacion, numero_correlativo, ac.id;
         """
         cursor.execute(consulta, (mes, anio))
 
@@ -1897,7 +2051,7 @@ def generar_excel_todas_las_cuentas(mes, año):
                     AND EXTRACT(YEAR FROM ac.fecha) = %s
                     AND ac.codigo_cuenta = %s
                     AND (ac.debe IS NOT NULL AND ac.debe != 0 OR ac.haber IS NOT NULL AND ac.haber != 0)
-                    ORDER BY numero_correlativo, ac.id
+                    ORDER BY fecha, numero_correlativo, ac.id
                 ) AS subquery;
             """
             cursor.execute(consulta, (mes, año, codigo_cuenta))

@@ -118,42 +118,36 @@
           </div>
         </div>
       </div>
-      
-
+  
       <!-- Estructura de la tabla del Libro Diario -->
       <table class="table table-bordered table-striped table-hover">
         <thead>
-          <tr>
-            <th rowspan="2">NÚMERO CORRELATIVO</th>
-            <th rowspan="2">FECHA</th>
-            <th rowspan="2">DESCRIPCIÓN DE LA OPERACIÓN</th>
-            <th colspan="3">REFERENCIA DE LA OPERACIÓN</th>
-            <th colspan="2">CUENTA CONTABLE</th>
-            <th colspan="2">MOVIMIENTO</th>
-          </tr>
-          <tr>
-            <th>CÓDIGO DEL LIBRO</th>
-            <th>NÚMERO CORRELATIVO</th>
-            <th>NÚMERO DOCUMENTO SUSTENTATORIO</th>
-            <th>CÓDIGO</th>
-            <th>DENOMINACIÓN</th>
-            <th>DEBE</th>
-            <th>HABER</th>
-          </tr>
+            <tr>
+                <th>NÚMERO CORRELATIVO</th>
+                <th>FECHA</th>
+                <th>DESCRIPCIÓN DE LA OPERACIÓN</th>
+                <th>CÓDIGO DEL LIBRO</th>
+                <th>NÚMERO CORRELATIVO</th>
+                <th>NÚMERO DOCUMENTO SUSTENTATORIO</th>
+                <th>CÓDIGO</th>
+                <th>DENOMINACIÓN</th>
+                <th>DEBE</th>
+                <th>HABER</th>
+            </tr>
         </thead>
         <tbody id="tabla-cuerpo">
-          <!-- Aquí van las filas dinámicas de datos -->
+            <!-- Las filas dinámicas se generarán aquí -->
         </tbody>
         <tfoot>
-          <tr>
-              <td colspan="7"></td> <!-- Deja en blanco las primeras columnas hasta "Denominación" -->
-              <td><strong>TOTALES</strong></td> <!-- Coloca el texto "TOTALES" en la columna de "Denominación" -->
-              <td class="text-right" id="total-debe">-</td> <!-- Total de "Debe" -->
-              <td class="text-right" id="total-haber">-</td> <!-- Total de "Haber" -->
-          </tr>
-      </tfoot>
-      </table>
-
+            <tr>
+                <td colspan="7"></td> <!-- Deja en blanco las primeras columnas -->
+                <td><strong>TOTALES</strong></td>
+                <td class="text-right" id="total-debe">-</td>
+                <td class="text-right" id="total-haber">-</td>
+            </tr>
+        </tfoot>
+    </table>
+    
       <!-- Controles de paginación y selector de número de registros -->
       <div class="d-flex justify-content-between align-items-center mt-3">
         <div class="d-flex me-3">
@@ -208,37 +202,37 @@
                 data.filas.forEach(function (movimiento) {
                     filas += `
                         <tr>
-                            ${movimiento.debe === null && movimiento.haber === null ? `
-                                <td class="text-center">${movimiento.numero_correlativo || "-"}</td>
-                                <td class="text-center">${movimiento.fecha || "-"}</td>
-                                <td>${movimiento.glosa || "-"}</td>
-                                <td class="text-center">${movimiento.codigo_del_libro || "-"}</td>
-                                <td class="text-center">${movimiento.numero_correlativo_documento || "-"}</td>
-                                <td class="text-center">${movimiento.numero_documento_sustentatorio || "-"}</td>
-                                <td>${movimiento.codigo_cuenta || "-"}</td>
-                                <td>${movimiento.denominacion || "-"}</td>
-                                <td class="text-right"></td>
-                                <td class="text-right"></td>
-                            ` : `
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td>${movimiento.codigo_cuenta || "-"}</td>
-                                <td>${movimiento.denominacion || "-"}</td>
-                                <td class="text-right">${movimiento.debe || "-"}</td>
-                                <td class="text-right">${movimiento.haber || "-"}</td>
-                            `}
-                        </tr>
+                            <td rowspan="${movimiento.cuentas.length}" class="text-center">${movimiento.numero_correlativo || "-"}</td>
+                            <td rowspan="${movimiento.cuentas.length}" class="text-center">${movimiento.fecha || "-"}</td>
+                            <td rowspan="${movimiento.cuentas.length}">${movimiento.glosa || "-"}</td>
+                            <td rowspan="${movimiento.cuentas.length}" class="text-center">${movimiento.codigo_del_libro || "-"}</td>
+                            <td rowspan="${movimiento.cuentas.length}" class="text-center">${movimiento.numero_correlativo_documento || "-"}</td>
+                            <td rowspan="${movimiento.cuentas.length}" class="text-center">${movimiento.numero_documento_sustentatorio || "-"}</td>
                     `;
+                    movimiento.cuentas.forEach((cuenta, index) => {
+                        if (index === 0) {
+                            filas += `
+                                <td>${cuenta.codigo_cuenta || "-"}</td>
+                                <td>${cuenta.denominacion || "-"}</td>
+                                <td class="text-right">${cuenta.debe || "-"}</td>
+                                <td class="text-right">${cuenta.haber || "-"}</td>
+                            </tr>
+                            `;
+                        } else {
+                            filas += `
+                                <tr>
+                                    <td>${cuenta.codigo_cuenta || "-"}</td>
+                                    <td>${cuenta.denominacion || "-"}</td>
+                                    <td class="text-right">${cuenta.debe || "-"}</td>
+                                    <td class="text-right">${cuenta.haber || "-"}</td>
+                                </tr>
+                            `;
+                        }
+                    });
                 });
 
                 $("#tabla-cuerpo").html(filas);
 
-                totalPages = Math.ceil(data.filas.length / rowsPerPage);
-                showPage(currentPage);
                 document.getElementById("total-debe").textContent = data.total_debe || "-";
                 document.getElementById("total-haber").textContent = data.total_haber || "-";
             },

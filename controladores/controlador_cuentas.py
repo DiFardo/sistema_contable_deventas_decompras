@@ -307,12 +307,6 @@ def dar_baja_cuenta():
     finally:
         conexion.close()
 
-
-
-
-
-
-
 def eliminar_notificacion(notificacion_id):
     conexion = obtener_conexion()
     try:

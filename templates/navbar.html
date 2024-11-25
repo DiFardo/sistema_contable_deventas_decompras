@@ -124,25 +124,12 @@
 <body>
     <div class="wrapper sidebar-active">
         <div class="body-overlay"></div>
-
         <nav id="sidebar">
             <div class="sidebar-header">
-                <h3 id="sidebar-title">
-                    <span>
-                        {% if usuario[5] == "Contador" %}
-                        Módulo Contable
-                        {% elif usuario[5] == "Gestor de operaciones comerciales" %}
-                        Módulo de Ventas
-                        {% elif usuario[5] == "Administrador" %}
-                        Sistema General
-                        {% else %}
-                        Sistema
-                        {% endif %}
-                    </span>
-                </h3>
+                <h3 id="sidebar-title"><span>Sistema Contable</span></h3>
             </div>
             <ul id="navbar-options" class="list-unstyled components">
-                <!-- Inicio visible para todos -->
+                <!-- Inicio visible por defecto -->
                 <li class="nav-item">
                     <a href="{{ url_for('index') }}" class="dashboard">
                         <i class="material-icons">dashboard</i>
@@ -150,8 +137,8 @@
                     </a>
                 </li>
 
-                <!-- Configuración visible solo en Inicio y solo para Administrador -->
-                {% if request.endpoint == 'index' and usuario[5] == "Administrador" %}
+                <!-- Configuración visible solo en Inicio -->
+                {% if request.endpoint == 'index' and usuario and usuario[5] == 'Administrador' %}
                 <li class="nav-item">
                     <a href="#configuracionSubmenu" data-toggle="collapse" aria-expanded="false"
                         class="dropdown-toggle">
@@ -190,19 +177,6 @@
                         <li><a href="{{ url_for('registro_compras') }}"><i class="material-icons">receipt_long</i>
                                 Registro de compras</a></li>
                     </ul>
-                </li>
-                <!-- Opciones del Módulo de Ventas -->
-                <li class="nav-item ventas hidden">
-                    <a href="#">
-                        <i class="material-icons">shopping_cart</i>
-                        <span>Productos</span>
-                    </a>
-                </li>
-                <li class="nav-item clientes hidden">
-                    <a href="#">
-                        <i class="material-icons">people</i>
-                        <span>Clientes</span>
-                    </a>
                 </li>
             </ul>
         </nav>
@@ -243,9 +217,15 @@
                                             <a href="#" class="nav-link" id="notification-icon"
                                                 onclick="mostrarVentana('notificaciones')">
                                                 <span class="material-icons">notifications</span>
-                                                <span class="notification" id="notification-count">0</span>
+                                                {% if usuario[5] == 'Administrador' or usuario[5] == 'Contador' %}
+                                                {% if notificaciones and notificaciones|length > 0 %}
+                                                <span class="notification" id="notification-count">{{
+                                                    notificaciones|length }}</span>
+                                                {% endif %}
+                                                {% endif %}
                                             </a>
                                         </li>
+
 
                                         <!-- Icono de perfil -->
                                         {% if usuario %}
@@ -253,7 +233,7 @@
                                             <a href="#" class="nav-link d-flex align-items-center" id="profile-icon"
                                                 onclick="mostrarVentana('perfil')">
                                                 <div class="profile-image">
-                                                    <img src="{{ url_for('static', filename='img/perfiles/' + (usuario[7] if usuario[7] else 'perfil_defecto.png')) }}"
+                                                    <img src="{{ url_for('static', filename='img/perfiles/' + (usuario[6] if usuario[6] else 'perfil_defecto.png')) }}"
                                                         alt="Perfil">
                                                     <div class="active-status"></div>
                                                 </div>

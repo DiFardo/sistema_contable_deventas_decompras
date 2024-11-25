@@ -179,7 +179,6 @@
   <button class="open-configurator">
     <i class="material-icons">settings</i>
   </button>
-
   <!-- Panel lateral de configuración -->
   <div class="config-panel">
     <button class="close-config-panel">&times;</button>
@@ -204,8 +203,6 @@
       </div>
     </div>
   </div>
-
-
   <div class="modal fade" id="editAccountModal" tabindex="-1" aria-labelledby="editAccountModalLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -320,6 +317,35 @@
   <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/tabla_cuentas.js') }}"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+ document.addEventListener("DOMContentLoaded", function () {
+    const openConfiguratorButton = document.querySelector(".open-configurator");
+    const configPanel = document.querySelector(".config-panel");
+    const closeConfigPanelButton = document.querySelector(".close-config-panel");
+
+    // Abrir el panel de configuración
+    openConfiguratorButton.addEventListener("click", function () {
+        configPanel.classList.add("open"); // Añade la clase para abrir el panel
+    });
+
+    // Cerrar el panel de configuración
+    closeConfigPanelButton.addEventListener("click", function () {
+        configPanel.classList.remove("open"); // Elimina la clase para cerrar el panel
+    });
+
+    // Cerrar el panel al hacer clic fuera de él
+    document.addEventListener("click", function (event) {
+        if (
+            !configPanel.contains(event.target) && // Si no se hace clic dentro del panel
+            !event.target.closest(".open-configurator") // Si no se hace clic en el botón de apertura
+        ) {
+            configPanel.classList.remove("open");
+        }
+    });
+});
+
+
+  </script>
 
 </div>
 {% endblock %}
