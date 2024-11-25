@@ -59,7 +59,6 @@
     /* Color rojo para el spinner, con !important para prioridad */
   }
 
-
   @media print {
     body {
       visibility: hidden;
@@ -84,10 +83,10 @@
 </style>
 
 <div id="content">
-  <div class="main-content">
+  <div class="main-content position-relative">
     <!-- Spinner para pantalla de carga -->
     <div class="spinner-wrapper" id="spinner-wrapper">
-      <div class="spinner-border" role="status"> <!-- Eliminé "text-primary" para evitar conflictos de color -->
+      <div class="spinner-border" role="status">
         <span class="visually-hidden">Cargando...</span>
       </div>
     </div>
@@ -130,7 +129,7 @@
         </div>
       </div>
     </div>
-    <div class="table-wrapper">
+    <div class="table-wrapper position-relative">
       <div class="table-title">
         <div class="row justify-content-end align-items-center">
           <!-- Botones Alineados a la Derecha -->
@@ -174,9 +173,9 @@
         <tfoot>
           <tr>
             <td colspan="8" class="text-end"><strong>TOTALES</strong></td>
-            <td class="text-end" id="total-base-imponible"></td>
-            <td class="text-end" id="total-igv"></td>
-            <td class="text-end" id="total-total-comprobante"></td>
+            <td class="text-end" id="total-base-imponible">-</td>
+            <td class="text-end" id="total-igv">-</td>
+            <td class="text-end" id="total-total-comprobante">-</td>
           </tr>
         </tfoot>
       </table>
@@ -189,17 +188,8 @@
             style="width: 80px;">
         </div>
         <nav aria-label="Page navigation example align-items-center">
-          <ul class="pagination" id="pagination" class="pagination">
-            <li class="page-item">
-              <a class="page-link" href="#" aria-label="Previous" id="prev-page">
-                <span aria-hidden="true">&laquo;</span>
-              </a>
-            </li>
-            <li class="page-item">
-              <a class="page-link" href="#" aria-label="Next" id="next-page">
-                <span aria-hidden="true">&raquo;</span>
-              </a>
-            </li>
+          <ul class="pagination" id="pagination">
+            <!-- Páginas se generarán dinámicamente -->
           </ul>
         </nav>
       </div>
@@ -207,6 +197,7 @@
   </div>
 </div>
 
+<!-- Scripts al final de la página para mejorar la carga -->
 <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -214,197 +205,258 @@
 <script>
   let currentPage = 1;
   let rowsPerPage = parseInt(document.getElementById("records-per-page").value);
+  let totalRows = 0;
+  let totalPages = 0;
+  const spinnerWrapper = document.getElementById("spinner-wrapper");
+  let allData = [];
+  let filteredData = [];
+  let totalBaseImponible = 0;
+  let totalIGV = 0;
+  let totalTotalComprobante = 0;
 
-  document.addEventListener("DOMContentLoaded", function () {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const maxDate = `${year}-${month}`;
-    const filtroFecha = document.getElementById("filtro-fecha");
-    const spinnerWrapper = document.getElementById("spinner-wrapper"); // Referencia al spinner
-    filtroFecha.max = maxDate;
+  function formatValue(value) {
+      const numericValue = Number(value);
+      if (numericValue === 0 || isNaN(numericValue) || value === null || value === undefined) {
+          return "-";
+      }
+      return numericValue.toFixed(2);
+  }
 
-    filtroFecha.addEventListener("change", function () {
-      currentPage = 1;
-      cargarDatos(filtroFecha.value);
-    });
+  function getTodayMonth() {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      return `${year}-${month}`;
+  }
 
-    // Activar búsqueda dinámica
-    document.getElementById("search-input").addEventListener("input", filtrarTabla);
-
-    function cargarDatos(periodo) {
+  function cargarDatos(periodo) {
       const [year, month] = periodo.split("-");
       spinnerWrapper.style.display = "block"; // Mostrar el spinner
       $.ajax({
-        url: "/registro_ventas_datos",
-        type: "GET",
-        data: { month, year },
-        success: function (data) {
-          let filas = "";
-          data.registros.forEach(registro => {
-            filas += `
-              <tr>
-                <td class="w-correlativo centered">${registro.correlativo}</td>
-                <td class="centered">${registro.fecha_emision}</td>
-                <td class="centered">${registro.tipo_comprobante}</td>
-                <td class="centered">${registro.serie_comprobante}</td>
-                <td class="centered">${registro.numero_comprobante}</td>
-                <td class="centered">${registro.tipo_documento}</td>
-                <td class="centered">${registro.numero_documento}</td>
-                <td>${registro.usuario}</td>
-                <td class="text-end">${registro.base_imponible}</td>
-                <td class="text-end">${registro.igv}</td>
-                <td class="text-end">${registro.total_comprobante}</td>
-              </tr>
-            `;
-          });
-          $("#tabla-cuerpo").html(filas);
-          $("#total-base-imponible").text(data.total_base_imponible || "-");
-          $("#total-igv").text(data.total_igv || "-");
-          $("#total-total-comprobante").text(data.total_total_comprobante || "-");
-
-          totalPages = Math.ceil(data.registros.length / rowsPerPage);
-          showPage(currentPage);
-        },
-        error: function (error) {
-          console.error("Error al cargar los datos:", error);
-        },
-        complete: function () {
-          spinnerWrapper.style.display = "none"; // Ocultar el spinner cuando la carga finaliza
-        }
+          url: "/registro_ventas_datos",
+          type: "GET",
+          data: { month, year },
+          success: function (data) {
+              allData = data.registros.map(registro => ({
+                  correlativo: registro.correlativo,
+                  fecha_emision: registro.fecha_emision,
+                  tipo_comprobante: registro.tipo_comprobante,
+                  serie_comprobante: registro.serie_comprobante,
+                  numero_comprobante: registro.numero_comprobante,
+                  tipo_documento: registro.tipo_documento,
+                  numero_documento: registro.numero_documento,
+                  usuario: registro.usuario,
+                  base_imponible: parseFloat(registro.base_imponible) || 0,
+                  igv: parseFloat(registro.igv) || 0,
+                  total_comprobante: parseFloat(registro.total_comprobante) || 0
+              }));
+              calcularTotales();
+              filtrarTabla();
+          },
+          error: function (error) {
+              console.error("Error al cargar los datos:", error);
+          },
+          complete: function () {
+              spinnerWrapper.style.display = "none"; // Ocultar el spinner cuando la carga finaliza
+          }
       });
-    }
+  }
 
-    function showPage(page) {
-      const rows = document.querySelectorAll("#tabla-cuerpo tr");
+  function calcularTotales() {
+      totalBaseImponible = filteredData.reduce((acc, registro) => acc + registro.base_imponible, 0);
+      totalIGV = filteredData.reduce((acc, registro) => acc + registro.igv, 0);
+      totalTotalComprobante = filteredData.reduce((acc, registro) => acc + registro.total_comprobante, 0);
+
+      document.getElementById("total-base-imponible").textContent = formatValue(totalBaseImponible);
+      document.getElementById("total-igv").textContent = formatValue(totalIGV);
+      document.getElementById("total-total-comprobante").textContent = formatValue(totalTotalComprobante);
+  }
+
+  function filtrarTabla() {
+      const searchTerm = document.getElementById("search-input").value.toLowerCase();
+      filteredData = allData.filter(registro => {
+          return Object.values(registro).some(value =>
+              String(value).toLowerCase().includes(searchTerm)
+          );
+      });
+      totalRows = filteredData.length;
+      totalPages = Math.ceil(totalRows / rowsPerPage);
+      currentPage = 1;
+      calcularTotales();
+      showPage(currentPage);
+  }
+
+  function showPage(page) {
+      const tbody = document.getElementById("tabla-cuerpo");
+      tbody.innerHTML = "";
       const start = (page - 1) * rowsPerPage;
       const end = start + rowsPerPage;
+      const pageData = filteredData.slice(start, end);
 
-      rows.forEach((row, index) => {
-        row.style.display = index >= start && index < end ? "" : "none";
+      pageData.forEach(registro => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+              <td class="w-correlativo centered">${registro.correlativo}</td>
+              <td class="centered">${registro.fecha_emision}</td>
+              <td class="centered">${registro.tipo_comprobante}</td>
+              <td class="centered">${registro.serie_comprobante}</td>
+              <td class="centered">${registro.numero_comprobante}</td>
+              <td class="centered">${registro.tipo_documento}</td>
+              <td class="centered">${registro.numero_documento}</td>
+              <td>${registro.usuario}</td>
+              <td class="text-end">${formatValue(registro.base_imponible)}</td>
+              <td class="text-end">${formatValue(registro.igv)}</td>
+              <td class="text-end">${formatValue(registro.total_comprobante)}</td>
+          `;
+          tbody.appendChild(row);
       });
 
       updatePagination();
-    }
+  }
 
-    function updatePagination() {
+  function updatePagination() {
       const pagination = document.getElementById("pagination");
-      pagination.innerHTML = `
-        <li class="page-item ${currentPage === 1 ? "disabled" : ""}">
-          <a class="page-link" href="#" aria-label="Previous" id="prev-page">
-            <span aria-hidden="true">&laquo;</span>
-          </a>
-        </li>
+      pagination.innerHTML = "";
+
+      if (totalPages <= 1) {
+          return;
+      }
+
+      // Botón Previous
+      const prevClass = currentPage === 1 ? "disabled" : "";
+      pagination.innerHTML += `
+          <li class="page-item ${prevClass}">
+              <a class="page-link" href="#" aria-label="Previous" id="prev-page">
+                  <span aria-hidden="true">&laquo;</span>
+              </a>
+          </li>
       `;
 
+      // Páginas
       const maxPagesToShow = 5;
-      const startPage = Math.max(currentPage - 2, 1);
-      const endPage = Math.min(startPage + maxPagesToShow - 1, totalPages);
+      let startPage = Math.max(currentPage - 2, 1);
+      let endPage = Math.min(startPage + maxPagesToShow - 1, totalPages);
+
+      if (endPage - startPage < maxPagesToShow - 1) {
+          startPage = Math.max(endPage - maxPagesToShow + 1, 1);
+      }
 
       if (startPage > 1) {
-        pagination.innerHTML += `<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>`;
-        if (startPage > 2) {
-          pagination.innerHTML += `<li class="page-item disabled"><a class="page-link" href="#">...</a></li>`;
-        }
+          pagination.innerHTML += `<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>`;
+          if (startPage > 2) {
+              pagination.innerHTML += `<li class="page-item disabled"><a class="page-link" href="#">...</a></li>`;
+          }
       }
 
       for (let i = startPage; i <= endPage; i++) {
-        const activeClass = i === currentPage ? "active" : "";
-        pagination.innerHTML += `
-          <li class="page-item ${activeClass}">
-            <a class="page-link" href="#" data-page="${i}">${i}</a>
-          </li>
-        `;
+          const activeClass = i === currentPage ? "active" : "";
+          pagination.innerHTML += `
+              <li class="page-item ${activeClass}">
+                  <a class="page-link" href="#" data-page="${i}">${i}</a>
+              </li>
+          `;
       }
 
       if (endPage < totalPages) {
-        if (endPage < totalPages - 1) {
-          pagination.innerHTML += `<li class="page-item disabled"><a class="page-link" href="#">...</a></li>`;
-        }
-        pagination.innerHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`;
+          if (endPage < totalPages - 1) {
+              pagination.innerHTML += `<li class="page-item disabled"><a class="page-link" href="#">...</a></li>`;
+          }
+          pagination.innerHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`;
       }
 
+      // Botón Next
+      const nextClass = currentPage === totalPages ? "disabled" : "";
       pagination.innerHTML += `
-        <li class="page-item ${currentPage === totalPages ? "disabled" : ""}">
-          <a class="page-link" href="#" aria-label="Next" id="next-page">
-            <span aria-hidden="true">&raquo;</span>
-          </a>
-        </li>
+          <li class="page-item ${nextClass}">
+              <a class="page-link" href="#" aria-label="Next" id="next-page">
+                  <span aria-hidden="true">&raquo;</span>
+              </a>
+          </li>
       `;
 
-      document.getElementById("prev-page").addEventListener("click", function (e) {
-        e.preventDefault();
-        if (currentPage > 1) {
-          currentPage--;
-          showPage(currentPage);
-        }
+      // Eventos para botones
+      document.getElementById("prev-page").addEventListener("click", function(e) {
+          e.preventDefault();
+          if (currentPage > 1) {
+              currentPage--;
+              showPage(currentPage);
+          }
       });
 
-      document.getElementById("next-page").addEventListener("click", function (e) {
-        e.preventDefault();
-        if (currentPage < totalPages) {
-          currentPage++;
-          showPage(currentPage);
-        }
+      document.getElementById("next-page").addEventListener("click", function(e) {
+          e.preventDefault();
+          if (currentPage < totalPages) {
+              currentPage++;
+              showPage(currentPage);
+          }
       });
 
       document.querySelectorAll(".page-link[data-page]").forEach(link => {
-        link.addEventListener("click", function (e) {
-          e.preventDefault();
-          currentPage = parseInt(e.target.getAttribute("data-page"));
-          showPage(currentPage);
-        });
+          link.addEventListener("click", function(e) {
+              e.preventDefault();
+              const selectedPage = parseInt(this.getAttribute("data-page"));
+              if (selectedPage !== currentPage) {
+                  currentPage = selectedPage;
+                  showPage(currentPage);
+              }
+          });
       });
-    }
+  }
 
-    function filtrarTabla() {
-      const searchTerm = document.getElementById("search-input").value.toLowerCase();
-      const rows = document.querySelectorAll("#tabla-cuerpo tr");
+  document.addEventListener("DOMContentLoaded", function () {
+      const filtroFecha = document.getElementById("filtro-fecha");
+      filtroFecha.max = getTodayMonth();
 
-      rows.forEach(row => {
-        const cells = row.querySelectorAll("td");
-        const rowText = Array.from(cells).map(cell => cell.textContent.toLowerCase()).join(" ");
-        row.style.display = rowText.includes(searchTerm) ? "" : "none";
+      const recordsInput = document.getElementById("records-per-page");
+
+      filtroFecha.addEventListener("change", function () {
+          currentPage = 1;
+          cargarDatos(filtroFecha.value);
       });
-    }
 
-    const recordsInput = document.getElementById("records-per-page");
-    recordsInput.addEventListener("input", function () {
-      rowsPerPage = parseInt(this.value);
-      currentPage = 1;
-      showPage(currentPage);
-    });
+      recordsInput.addEventListener("input", function () {
+          const newValue = parseInt(this.value);
+          if (!isNaN(newValue) && newValue > 0) {
+              rowsPerPage = newValue;
+              totalPages = Math.ceil(filteredData.length / rowsPerPage);
+              currentPage = 1;
+              showPage(currentPage);
+          }
+      });
 
-    if (filtroFecha.value) {
-      cargarDatos(filtroFecha.value);
-    }
+      document.getElementById("search-input").addEventListener("input", function() {
+          currentPage = 1;
+          filtrarTabla();
+      });
+
+      if (filtroFecha.value) {
+          cargarDatos(filtroFecha.value);
+      }
   });
 
   function exportarRegistroVentas() {
-    const filtroFecha = document.getElementById("filtro-fecha").value;
-    if (!filtroFecha) {
-      alert("Por favor, seleccione un período antes de exportar.");
-      return;
-    }
-    // Redireccionar a la ruta de exportación con el período como parámetro
-    window.location.href = `/exportar-registro-ventas?periodo=${filtroFecha}`;
+      const filtroFecha = document.getElementById("filtro-fecha").value;
+      if (!filtroFecha) {
+          alert("Por favor, seleccione un período antes de exportar.");
+          return;
+      }
+      // Redireccionar a la ruta de exportación con el período como parámetro
+      window.location.href = `/exportar-registro-ventas?periodo=${filtroFecha}`;
   }
 
   function abrirNuevaPaginaImprimirVentas() {
-    const periodo = document.getElementById('filtro-fecha').value; // Usar el ID correcto
-    if (!periodo) {
-      alert('Por favor, selecciona un periodo antes de continuar.');
-      return;
-    }
+      const periodo = document.getElementById('filtro-fecha').value;
+      if (!periodo) {
+          alert('Por favor, selecciona un periodo antes de continuar.');
+          return;
+      }
 
-    // Redirige a la nueva ruta con el parámetro de periodo
-    const url = `/registro_ventas_imprimir?periodo=${encodeURIComponent(periodo)}`;
-    const nuevaVentana = window.open(url, '_blank');
-    if (!nuevaVentana) {
-      alert('Por favor, permite que el navegador abra ventanas emergentes.');
-    }
+      // Redirige a la nueva ruta con el parámetro de periodo
+      const url = `/registro_ventas_imprimir?periodo=${encodeURIComponent(periodo)}`;
+      const nuevaVentana = window.open(url, '_blank');
+      if (!nuevaVentana) {
+          alert('Por favor, permite que el navegador abra ventanas emergentes.');
+      }
   }
-
-
 </script>
 {% endblock %}

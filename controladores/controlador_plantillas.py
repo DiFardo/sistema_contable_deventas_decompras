@@ -1466,7 +1466,7 @@ def obtener_movimientos_libro_diario(fecha):
                 FROM asientos_contables ac
                 JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
                 WHERE ac.fecha::date = %s::date
-                ORDER BY numero_correlativo, ac.id;
+                ORDER BY fecha, numero_correlativo, ac.id;
             """, (fecha,))
 
             movimientos = cursor.fetchall()
@@ -1513,12 +1513,10 @@ def obtener_libro_caja(mes, año):
     except ValueError:
         print("Error: mes o año no son enteros válidos")
         return [], 0, 0
-
     conexion = obtener_conexion()
-    movimientos_caja = []
+    movimientos_agrupados = []
     total_deudor = 0
     total_acreedor = 0
-
     with conexion.cursor(cursor_factory=DictCursor) as cursor:
         try:
             query = sql.SQL("""
@@ -1542,19 +1540,35 @@ def obtener_libro_caja(mes, año):
                     AND EXTRACT(YEAR FROM ac.fecha) = {año}
                 ORDER BY fecha_operacion, numero_correlativo, ac.id;
             """).format(mes=sql.Literal(mes), año=sql.Literal(año))
-
             cursor.execute(query)
-            movimientos_caja = cursor.fetchall()
+            movimientos = cursor.fetchall()
 
-            for movimiento in movimientos_caja:
+            agrupado = {}
+            for movimiento in movimientos:
+                numero_correlativo = movimiento["numero_correlativo"]
+                if numero_correlativo not in agrupado:
+                    agrupado[numero_correlativo] = {
+                        "numero_correlativo": numero_correlativo,
+                        "fecha_operacion": movimiento["fecha_operacion"],
+                        "descripcion_operacion": movimiento["descripcion_operacion"],
+                        "cuentas": []
+                    }
+                agrupado[numero_correlativo]["cuentas"].append({
+                    "codigo_cuenta_asociada": movimiento["codigo_cuenta_asociada"],
+                    "denominacion_cuenta_asociada": movimiento["denominacion_cuenta_asociada"],
+                    "saldo_deudor": movimiento["saldo_deudor"],
+                    "saldo_acreedor": movimiento["saldo_acreedor"]
+                })
                 total_deudor += movimiento["saldo_deudor"]
                 total_acreedor += movimiento["saldo_acreedor"]
+
+            movimientos_agrupados = list(agrupado.values())
         except Exception as e:
             print("Error en la consulta SQL con `psycopg2.sql`:", e)
-            movimientos_caja, total_deudor, total_acreedor = [], 0, 0
-
+            movimientos_agrupados, total_deudor, total_acreedor = [], 0, 0
     conexion.close()
-    return movimientos_caja, total_deudor, total_acreedor
+    return movimientos_agrupados, total_deudor, total_acreedor
+
 
 def obtener_cuentas_distintas():
     conexion = obtener_conexion()
