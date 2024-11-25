@@ -153,7 +153,7 @@
       <div class="d-flex justify-content-between align-items-center mt-3">
         <div class="d-flex me-3">
           <label for="records-per-page" class="me-2">Registros por página:</label>
-          <input type="number" id="records-per-page" class="form-control" value="6" min="1" max="100" style="width: 80px;">
+          <input type="number" id="records-per-page" class="form-control" value="4" min="1" max="100" style="width: 80px;">
         </div>
         <nav aria-label="Page navigation example align-items-center">
           <ul class="pagination" id="pagination" class="pagination">
@@ -182,7 +182,13 @@
   <script>
     let currentPage = 1;
     let rowsPerPage = parseInt(document.getElementById("records-per-page").value);
-    const spinnerWrapper = document.getElementById("spinner-wrapper"); // Referencia al spinner
+    let totalRows = 0;
+    let totalPages = 0;
+    const spinnerWrapper = document.getElementById("spinner-wrapper");
+    let allData = [];
+    let filteredData = [];
+    let totalDebe = 0;
+    let totalHaber = 0;
 
     function getTodayDate() {
         const today = new Date();
@@ -193,84 +199,116 @@
     }
 
     function cargarTabla(fecha) {
-        spinnerWrapper.style.display = "block"; // Mostrar el spinner
+        spinnerWrapper.style.display = "block";
         $.ajax({
             url: "/libro_diario_datos",
             type: "GET",
             data: { fecha: fecha },
             success: function (data) {
-                let filas = "";
+                allData = [];
+                totalDebe = 0;
+                totalHaber = 0;
                 data.filas.forEach(function (movimiento) {
-                    filas += `
-                        <tr>
-                            <td rowspan="${movimiento.cuentas.length}" class="text-center">${movimiento.numero_correlativo || "-"}</td>
-                            <td rowspan="${movimiento.cuentas.length}" class="text-center">${movimiento.fecha || "-"}</td>
-                            <td rowspan="${movimiento.cuentas.length}">${movimiento.glosa || "-"}</td>
-                            <td rowspan="${movimiento.cuentas.length}" class="text-center">${movimiento.codigo_del_libro || "-"}</td>
-                            <td rowspan="${movimiento.cuentas.length}" class="text-center">${movimiento.numero_correlativo_documento || "-"}</td>
-                            <td rowspan="${movimiento.cuentas.length}" class="text-center">${movimiento.numero_documento_sustentatorio || "-"}</td>
-                    `;
                     movimiento.cuentas.forEach((cuenta, index) => {
-                        if (index === 0) {
-                            filas += `
-                                <td>${cuenta.codigo_cuenta || "-"}</td>
-                                <td>${cuenta.denominacion || "-"}</td>
-                                <td class="text-right">${cuenta.debe || "-"}</td>
-                                <td class="text-right">${cuenta.haber || "-"}</td>
-                            </tr>
-                            `;
-                        } else {
-                            filas += `
-                                <tr>
-                                    <td>${cuenta.codigo_cuenta || "-"}</td>
-                                    <td>${cuenta.denominacion || "-"}</td>
-                                    <td class="text-right">${cuenta.debe || "-"}</td>
-                                    <td class="text-right">${cuenta.haber || "-"}</td>
-                                </tr>
-                            `;
-                        }
+                        allData.push({
+                            movimiento: movimiento,
+                            cuenta: cuenta,
+                            isFirstCuenta: index === 0,
+                            totalCuentas: movimiento.cuentas.length
+                        });
+                        totalDebe += parseFloat(cuenta.debe || 0);
+                        totalHaber += parseFloat(cuenta.haber || 0);
                     });
                 });
-
-                $("#tabla-cuerpo").html(filas);
-
-                document.getElementById("total-debe").textContent = data.total_debe || "-";
-                document.getElementById("total-haber").textContent = data.total_haber || "-";
+                document.getElementById("total-debe").textContent = totalDebe.toFixed(2);
+                document.getElementById("total-haber").textContent = totalHaber.toFixed(2);
+                filteredData = allData.slice();
+                totalRows = filteredData.length;
+                totalPages = Math.ceil(totalRows / rowsPerPage);
+                currentPage = 1;
+                showPage(currentPage);
             },
             error: function (error) {
                 console.error("Error al cargar los datos:", error);
             },
             complete: function () {
-                spinnerWrapper.style.display = "none"; // Ocultar el spinner al finalizar la carga
+                spinnerWrapper.style.display = "none";
             }
         });
     }
 
     function filtrarTabla() {
         const searchTerm = document.getElementById("search-input").value.toLowerCase();
-        const rows = document.querySelectorAll("#tabla-cuerpo tr");
-
-        rows.forEach(row => {
-            const cells = row.querySelectorAll("td");
-            const rowText = Array.from(cells).map(cell => cell.textContent.toLowerCase()).join(" ");
-            row.style.display = rowText.includes(searchTerm) ? "" : "none";
+        filteredData = allData.filter(dataItem => {
+            const { movimiento, cuenta } = dataItem;
+            const rowText = [
+                movimiento.numero_correlativo,
+                movimiento.fecha,
+                movimiento.glosa,
+                movimiento.codigo_del_libro,
+                movimiento.numero_correlativo_documento,
+                movimiento.numero_documento_sustentatorio,
+                cuenta.codigo_cuenta,
+                cuenta.denominacion,
+                cuenta.debe,
+                cuenta.haber
+            ].join(' ').toLowerCase();
+            return rowText.includes(searchTerm);
         });
+        totalRows = filteredData.length;
+        totalPages = Math.ceil(totalRows / rowsPerPage);
+        currentPage = 1;
+        totalDebe = filteredData.reduce((sum, dataItem) => sum + parseFloat(dataItem.cuenta.debe || 0), 0);
+        totalHaber = filteredData.reduce((sum, dataItem) => sum + parseFloat(dataItem.cuenta.haber || 0), 0);
+        document.getElementById("total-debe").textContent = totalDebe.toFixed(2);
+        document.getElementById("total-haber").textContent = totalHaber.toFixed(2);
+        showPage(currentPage);
     }
 
     function showPage(page) {
-        const rows = document.querySelectorAll("#tabla-cuerpo tr");
         const start = (page - 1) * rowsPerPage;
         const end = start + rowsPerPage;
-
-        rows.forEach((row, index) => {
-            row.style.display = index >= start && index < end ? "" : "none";
+        const pageData = filteredData.slice(start, end);
+        let html = "";
+        let currentMovimientoId = null;
+        let rowspanRemaining = 0;
+        pageData.forEach((dataItem, index) => {
+            const { movimiento, cuenta, isFirstCuenta, totalCuentas } = dataItem;
+            let row = "<tr>";
+            if (movimiento.numero_correlativo !== currentMovimientoId) {
+                currentMovimientoId = movimiento.numero_correlativo;
+                rowspanRemaining = pageData.filter(
+                    item => item.movimiento.numero_correlativo === currentMovimientoId
+                ).length;
+                row += `
+                    <td rowspan="${rowspanRemaining}" class="text-center">${movimiento.numero_correlativo || "-"}</td>
+                    <td rowspan="${rowspanRemaining}" class="text-center">${movimiento.fecha || "-"}</td>
+                    <td rowspan="${rowspanRemaining}">${movimiento.glosa || "-"}</td>
+                    <td rowspan="${rowspanRemaining}" class="text-center">${movimiento.codigo_del_libro || "-"}</td>
+                    <td rowspan="${rowspanRemaining}" class="text-center">${movimiento.numero_correlativo_documento || "-"}</td>
+                    <td rowspan="${rowspanRemaining}" class="text-center">${movimiento.numero_documento_sustentatorio || "-"}</td>
+                `;
+            }
+            row += `
+                <td>${cuenta.codigo_cuenta || "-"}</td>
+                <td>${cuenta.denominacion || "-"}</td>
+                <td class="text-right">${cuenta.debe || "-"}</td>
+                <td class="text-right">${cuenta.haber || "-"}</td>
+            </tr>`;
+            html += row;
         });
-
+        document.getElementById("tabla-cuerpo").innerHTML = html;
         updatePagination();
     }
 
     function updatePagination() {
         const pagination = document.getElementById("pagination");
+        pagination.innerHTML = "";
+
+        if (totalPages <= 1) {
+            return;
+        }
+
         pagination.innerHTML = `
             <li class="page-item ${currentPage === 1 ? "disabled" : ""}">
                 <a class="page-link" href="#" aria-label="Previous" id="prev-page">
@@ -280,8 +318,12 @@
         `;
 
         const maxPagesToShow = 5;
-        const startPage = Math.max(currentPage - 2, 1);
-        const endPage = Math.min(startPage + maxPagesToShow - 1, totalPages);
+        let startPage = Math.max(currentPage - 2, 1);
+        let endPage = Math.min(startPage + maxPagesToShow - 1, totalPages);
+
+        if (endPage - startPage < maxPagesToShow - 1) {
+            startPage = Math.max(endPage - maxPagesToShow + 1, 1);
+        }
 
         if (startPage > 1) {
             pagination.innerHTML += `<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>`;
@@ -352,11 +394,12 @@
 
         recordsInput.addEventListener("input", function () {
             rowsPerPage = parseInt(this.value);
+            totalPages = Math.ceil(totalRows / rowsPerPage);
             currentPage = 1;
             showPage(currentPage);
         });
 
-        document.getElementById("search-input").addEventListener("input", filtrarTabla); // Activar la búsqueda en vivo
+        document.getElementById("search-input").addEventListener("input", filtrarTabla);
 
         if (filtroFecha.value) {
             cargarTabla(filtroFecha.value);
@@ -369,27 +412,23 @@
             alert("Por favor, seleccione una fecha para exportar el Libro Diario.");
             return;
         }
-
-        // Redirecciona a la ruta con el parámetro de fecha
         const url = `/exportar-libro-diario?fecha=${encodeURIComponent(fecha)}`;
         window.location.href = url;
     }
 
     function abrirNuevaPaginaImprimir() {
-    const fecha = document.getElementById('filtro-fecha').value;
-    if (!fecha) {
-        alert('Por favor, selecciona una fecha antes de continuar.');
-        return;
-    }
+        const fecha = document.getElementById('filtro-fecha').value;
+        if (!fecha) {
+            alert('Por favor, selecciona una fecha antes de continuar.');
+            return;
+        }
 
-    // Redirige a la nueva ruta con el parámetro de fecha
-    const url = `/libro_diario_imprimir?fecha=${encodeURIComponent(fecha)}`;
-    const nuevaVentana = window.open(url, '_blank');
-    if (!nuevaVentana) {
-        alert('Por favor, permite que el navegador abra ventanas emergentes.');
+        const url = `/libro_diario_imprimir?fecha=${encodeURIComponent(fecha)}`;
+        const nuevaVentana = window.open(url, '_blank');
+        if (!nuevaVentana) {
+            alert('Por favor, permite que el navegador abra ventanas emergentes.');
+        }
     }
-}
-
-  </script>
+</script>
 </div>
 {% endblock %}

@@ -469,9 +469,6 @@ def libro_mayor_datos():
         "total_haber": total_acreedor   
     })
 
-
-
-
 @app.route("/exportar-todas-las-cuentas", methods=["GET"])
 @jwt_required()
 @role_required(1,3)
@@ -499,31 +496,23 @@ def libro_caja():
     usuario = controlador_usuarios.obtener_usuario(dni)
     periodo = request.args.get("periodo", None)
     mes = año = None
-
-    # Extraer mes y año si el periodo está presente
     if periodo:
         try:
             año, mes = periodo.split("-")
-            # Verificar que mes y año son válidos
             if not (mes.isdigit() and año.isdigit()):
                 raise ValueError("Invalid month or year format")
-            print("Periodo extraído correctamente:", "Mes:", mes, "Año:", año)  # Mensaje de depuración
+            print("Periodo extraído correctamente:", "Mes:", mes, "Año:", año)
         except ValueError:
             mes = año = None
-            print("Formato de periodo incorrecto")  # Mensaje de depuración
-    
-    # Llamar a la función obtener_libro_caja solo si mes y año están definidos
+            print("Formato de periodo incorrecto")
     if mes and año:
         movimientos, total_deudor, total_acreedor = controlador_plantillas.obtener_libro_caja(mes, año)
     else:
         movimientos, total_deudor, total_acreedor = [], 0, 0
-
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Libro Caja y Bancos', 'url': '/libro_caja'}
     ]
-
-    # Renderizar la plantilla con los datos obtenidos
     return render_template(
         "libro_caja.html",
         movimientos=movimientos,
@@ -532,6 +521,23 @@ def libro_caja():
         breadcrumbs=breadcrumbs,
         usuario=usuario
     )
+
+@app.route("/libro_caja_datos")
+@jwt_required()
+def libro_caja_datos():
+    periodo = request.args.get("periodo")
+    if not periodo:
+        return jsonify(filas=[], total_deudor=0, total_acreedor=0)
+
+    try:
+        año, mes = periodo.split("-")
+        año = int(año)
+        mes = int(mes)
+    except ValueError:
+        return jsonify(filas=[], total_deudor=0, total_acreedor=0)
+
+    movimientos_agrupados, total_deudor, total_acreedor = controlador_plantillas.obtener_libro_caja(mes, año)
+    return jsonify(filas=movimientos_agrupados, total_deudor=total_deudor, total_acreedor=total_acreedor)
 
 ##################################################################################################
 @app.route('/exportar-libro-caja-pdf', methods=['GET'])
