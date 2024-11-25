@@ -1394,7 +1394,7 @@ def obtener_libro_caja(mes, año):
                 FROM asientos_contables ac
                 JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
                 WHERE 
-                    (ac.codigo_cuenta LIKE '12%' OR ac.codigo_cuenta LIKE '42%')
+                    (ac.codigo_cuenta LIKE '10%')
                     AND EXTRACT(MONTH FROM ac.fecha) = {mes}
                     AND EXTRACT(YEAR FROM ac.fecha) = {año}
                 ORDER BY fecha_operacion, numero_correlativo, ac.id;
@@ -1764,7 +1764,7 @@ def generar_libro_caja_excel(mes, anio):
         FROM asientos_contables ac
         JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
         WHERE 
-            (ac.codigo_cuenta LIKE '12%' OR ac.codigo_cuenta LIKE '42%')
+            (ac.codigo_cuenta LIKE '10%')
             AND EXTRACT(MONTH FROM ac.fecha) = %s
             AND EXTRACT(YEAR FROM ac.fecha) = %s
         ORDER BY fecha_operacion, numero_correlativo, ac.id;
