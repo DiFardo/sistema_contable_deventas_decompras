@@ -178,23 +178,17 @@ def libro_diario_imprimir():
     dni = request.cookies.get('dni')
     usuario = controlador_usuarios.obtener_usuario(dni)
     fecha = request.args.get("fecha", None)
-
-    # Verificar si la fecha está presente
     if not fecha:
-        print("No se proporcionó una fecha válida")  # Mensaje de depuración
+        print("No se proporcionó una fecha válida")
         movimientos, total_debe, total_haber = [], 0, 0
     else:
-        # Obtener los movimientos del libro diario para la fecha proporcionada
         movimientos, total_debe, total_haber = controlador_plantillas.obtener_movimientos_libro_diario(fecha)
-        print(f"Movimientos obtenidos: {len(movimientos)}")  # Mensaje de depuración
-
+        print(f"Movimientos obtenidos: {len(movimientos)}")
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Libro Diario', 'url': '/libro_diario'},
         {'name': 'Imprimir', 'url': ''}
     ]
-
-    # Renderizar la plantilla con los datos obtenidos
     return render_template(
         "libro_diario_imprimir.html",
         movimientos=movimientos,

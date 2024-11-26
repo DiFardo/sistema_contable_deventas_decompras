@@ -1318,11 +1318,10 @@ def obtener_libro_diario_por_fecha(fecha):
     return movimientos_agrupados, total_debe, total_haber
 
 def obtener_movimientos_libro_diario(fecha):
-    conexion = obtener_conexion()  # Asegúrate de que esta función esté correctamente implementada
+    conexion = obtener_conexion()
     movimientos = []
     total_debe = 0
     total_haber = 0
-
     try:
         with conexion.cursor(cursor_factory=DictCursor) as cursor:
             cursor.execute("""
@@ -1349,19 +1348,14 @@ def obtener_movimientos_libro_diario(fecha):
                 WHERE ac.fecha::date = %s::date
                 ORDER BY fecha, numero_correlativo, ac.id;
             """, (fecha,))
-
             movimientos = cursor.fetchall()
-
-            # Calcula totales
             for movimiento in movimientos:
                 total_debe += movimiento['debe'] or 0
                 total_haber += movimiento['haber'] or 0
-
     except Exception as e:
         print(f"Error al obtener los movimientos del libro diario: {e}")
     finally:
         conexion.close()
-
     return movimientos, total_debe, total_haber
 
 

@@ -87,8 +87,6 @@ def obtener_cuentas_por_categoria_endpoint():
     cuentas_json = [{'id': c[0], 'codigo': c[1], 'descripcion': c[2]} for c in cuentas]
     return jsonify(cuentas_json)
 
-
-
 def obtener_ultimo_codigo_subcuenta(cuenta_padre):
     conexion = obtener_conexion()
     ultimo_codigo = None
@@ -114,9 +112,6 @@ def verificar_existencia_cuenta(codigo, categoria):
     return cuenta_existe
 
 def obtener_cuenta_padre(codigo):
-    """
-    Determina la cuenta padre adecuada según el código ingresado.
-    """
     conexion = obtener_conexion()
     cuenta_padre = None
     with conexion.cursor() as cursor:
