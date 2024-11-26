@@ -88,13 +88,24 @@
 
     <!-- Filtros: Fecha exacta y campo de búsqueda -->
     <div class="row mb-3 align-items-center">
-      <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
+      <!-- Campo Fecha Inicio -->
+      <div class="col-lg-4 col-md-4 col-sm-12 d-flex">
         <label class="me-3 d-flex justify-content-center align-items-center custom-label">
-          <strong>FECHA:</strong>
+          <strong>INICIO:</strong>
         </label>
-        <input type="date" class="form-control" id="filtro-fecha" max="" value="{{ request.args.get('fecha', '') }}">
+        <input type="date" class="form-control" id="filtro-fecha" max="" value="{{ request.args.get('fecha_inicio', '') }}">
       </div>
-      <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
+
+      <!-- Campo Fecha Fin -->
+      <div class="col-lg-4 col-md-4 col-sm-12 d-flex">
+        <label class="me-3 d-flex justify-content-center align-items-center custom-label">
+          <strong>FIN:</strong>
+        </label>
+        <input type="date" class="form-control" id="filtro-fecha-fin" max="" value="{{ request.args.get('fecha_fin', '') }}" disabled>
+      </div>
+
+      <!-- Campo Buscar -->
+      <div class="col-lg-4 col-md-4 col-sm-12 d-flex">
         <label class="me-3 d-flex justify-content-center align-items-center custom-label">
           <strong>BUSCAR:</strong>
         </label>
@@ -179,9 +190,9 @@
   <script src="{{ url_for('static', filename='js/tabla_cuentas.js') }}"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', filename='js/paginacion_libros.js') }}"></script>
-  <script>
+      <script>
     let currentPage = 1;
-    let rowsPerPage = parseInt(document.getElementById("records-per-page").value);
+    let rowsPerPage = parseInt(document.getElementById("records-per-page").value) || 1;
     let totalRows = 0;
     let totalPages = 0;
     const spinnerWrapper = document.getElementById("spinner-wrapper");
@@ -198,12 +209,16 @@
         return `${year}-${month}-${day}`;
     }
 
-    function cargarTabla(fecha) {
+    function cargarTabla(fechaInicio, fechaFin = null) {
         spinnerWrapper.style.display = "block";
+        const params = { fecha_inicio: fechaInicio };
+        if (fechaFin) {
+            params.fecha_fin = fechaFin;
+        }
         $.ajax({
             url: "/libro_diario_datos",
             type: "GET",
-            data: { fecha: fecha },
+            data: params,
             success: function (data) {
                 allData = [];
                 totalDebe = 0;
@@ -230,6 +245,7 @@
             },
             error: function (error) {
                 console.error("Error al cargar los datos:", error);
+                document.getElementById("tabla-cuerpo").innerHTML = "<tr><td colspan='10'>No se encontraron resultados</td></tr>";
             },
             complete: function () {
                 spinnerWrapper.style.display = "none";
@@ -382,48 +398,84 @@
     }
 
     document.addEventListener("DOMContentLoaded", function () {
-        const filtroFecha = document.getElementById("filtro-fecha");
-        filtroFecha.max = getTodayDate();
+        const filtroFechaInicio = document.getElementById("filtro-fecha");
+        const filtroFechaFin = document.getElementById("filtro-fecha-fin");
+        const recordsInput = document.getElementById("records-per-page"); // Añadido
 
-        const recordsInput = document.getElementById("records-per-page");
+        filtroFechaInicio.max = getTodayDate();
+        filtroFechaFin.max = getTodayDate();
 
-        filtroFecha.addEventListener("change", function () {
+        function sumarUnDia(fecha) {
+            let fechaObj = new Date(fecha);
+            fechaObj.setDate(fechaObj.getDate() + 1);
+            return fechaObj.toISOString().split('T')[0];
+        }
+
+        if (filtroFechaInicio.value) {
+            filtroFechaFin.min = sumarUnDia(filtroFechaInicio.value);
+        }
+
+        // Habilitar filtro de fecha fin cuando se selecciona fecha inicio
+        filtroFechaInicio.addEventListener("change", function () {
+            filtroFechaFin.disabled = false;
+            filtroFechaFin.min = sumarUnDia(filtroFechaInicio.value);
             currentPage = 1;
-            cargarTabla(filtroFecha.value);
+            cargarTabla(filtroFechaInicio.value);
         });
 
+        // Actualizar tabla con rango de fechas cuando se selecciona fecha fin
+        filtroFechaFin.addEventListener("change", function () {
+            currentPage = 1;
+            cargarTabla(filtroFechaInicio.value, filtroFechaFin.value);
+        });
+
+        // Event listener para "Registros por página"
         recordsInput.addEventListener("input", function () {
-            rowsPerPage = parseInt(this.value);
+            let value = parseInt(this.value);
+            if (isNaN(value) || value < 1) {
+                value = 1;
+                this.value = value;
+            }
+            rowsPerPage = value;
             totalPages = Math.ceil(totalRows / rowsPerPage);
             currentPage = 1;
             showPage(currentPage);
         });
 
         document.getElementById("search-input").addEventListener("input", filtrarTabla);
-
-        if (filtroFecha.value) {
-            cargarTabla(filtroFecha.value);
-        }
     });
 
     function exportarLibroDiario() {
-        const fecha = document.getElementById("filtro-fecha").value;
-        if (!fecha) {
-            alert("Por favor, seleccione una fecha para exportar el Libro Diario.");
+        const fechaInicio = document.getElementById('filtro-fecha').value;
+        const fechaFin = document.getElementById('filtro-fecha-fin').value;
+
+        if (!fechaInicio) {
+            alert("Por favor, selecciona una fecha de inicio para exportar el Libro Diario.");
             return;
         }
-        const url = `/exportar-libro-diario?fecha=${encodeURIComponent(fecha)}`;
+
+        let url = `/exportar-libro-diario?fecha_inicio=${encodeURIComponent(fechaInicio)}`;
+        if (fechaFin) {
+            url += `&fecha_fin=${encodeURIComponent(fechaFin)}`;
+        }
+
         window.location.href = url;
     }
 
     function abrirNuevaPaginaImprimir() {
-        const fecha = document.getElementById('filtro-fecha').value;
-        if (!fecha) {
-            alert('Por favor, selecciona una fecha antes de continuar.');
+        const fechaInicio = document.getElementById('filtro-fecha').value;
+        const fechaFin = document.getElementById('filtro-fecha-fin').value;
+
+        if (!fechaInicio) {
+            alert('Por favor, selecciona una fecha de inicio antes de continuar.');
             return;
         }
 
-        const url = `/libro_diario_imprimir?fecha=${encodeURIComponent(fecha)}`;
+        let url = `/libro_diario_imprimir?fecha_inicio=${encodeURIComponent(fechaInicio)}`;
+        if (fechaFin) {
+            url += `&fecha_fin=${encodeURIComponent(fechaFin)}`;
+        }
+
         const nuevaVentana = window.open(url, '_blank');
         if (!nuevaVentana) {
             alert('Por favor, permite que el navegador abra ventanas emergentes.');

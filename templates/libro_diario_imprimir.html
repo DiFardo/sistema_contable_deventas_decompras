@@ -40,11 +40,11 @@
             width: 10%;
         }
 
-        .text-right{
+        .text-right {
             text-align: right;
         }
 
-        .text-center{
+        .text-center {
             text-align: center;
         }
 
@@ -86,7 +86,6 @@
             }
         }
     </style>
-
 </head>
 
 <body>
@@ -104,6 +103,7 @@
                 </button>
             </div>
         </div>
+
         <!-- Encabezado con título -->
         <div class="row mb-3">
             <div class="col-12">
@@ -129,17 +129,33 @@
                 </thead>
                 <tbody>
                     {% for movimiento in movimientos %}
+                    <!-- Encabezado de la operación -->
                     <tr>
-                        <td class="text-center">{{ movimiento.numero_correlativo }}</td>
-                        <td class="text-center">{{ movimiento.fecha }}</td>
-                        <td>{{ movimiento.glosa }}</td>
-                        <td class="text-center">{{ movimiento.codigo_del_libro or "-" }}</td>
-                        <td class="text-center">{{ movimiento.numero_documento_sustentatorio or "-" }}</td>
-                        <td>{{ movimiento.codigo_cuenta or "-" }}</td>
-                        <td>{{ movimiento.denominacion or "-" }}</td>
-                        <td class="text-right">{{ movimiento.debe or "-" }}</td>
-                        <td class="text-right">{{ movimiento.haber or "-" }}</td>
+                        <td class="text-center" rowspan="{{ movimiento.cuentas|length + 1 }}">
+                            {{ movimiento.numero_correlativo }}
+                        </td>
+                        <td class="text-center" rowspan="{{ movimiento.cuentas|length + 1 }}">
+                            {{ movimiento.fecha }}
+                        </td>
+                        <td rowspan="{{ movimiento.cuentas|length + 1 }}">
+                            {{ movimiento.glosa }}
+                        </td>
+                        <td class="text-center" rowspan="{{ movimiento.cuentas|length + 1 }}">
+                            {{ movimiento.codigo_del_libro or "-" }}
+                        </td>
+                        <td class="text-center" rowspan="{{ movimiento.cuentas|length + 1 }}">
+                            {{ movimiento.numero_documento_sustentatorio or "-" }}
+                        </td>
                     </tr>
+                    <!-- Cuentas asociadas a la operación -->
+                    {% for cuenta in movimiento.cuentas %}
+                    <tr>
+                        <td>{{ cuenta.codigo_cuenta or "-" }}</td>
+                        <td>{{ cuenta.denominacion or "-" }}</td>
+                        <td class="text-right">{{ cuenta.debe or "-" }}</td>
+                        <td class="text-right">{{ cuenta.haber or "-" }}</td>
+                    </tr>
+                    {% endfor %}
                     {% endfor %}
                 </tbody>
                 <tfoot>
@@ -159,16 +175,28 @@
 
     <script>
         function exportarPDF() {
-            const fecha = new URLSearchParams(window.location.search).get('fecha');
-            if (!fecha) {
-                alert("Por favor, selecciona una fecha antes de exportar el PDF.");
+            // Obtener los parámetros de fecha de la URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const fechaInicio = urlParams.get('fecha_inicio');
+            const fechaFin = urlParams.get('fecha_fin');
+
+            // Verificar que al menos fechaInicio esté presente
+            if (!fechaInicio) {
+                alert('Por favor, selecciona una fecha de inicio.');
                 return;
             }
 
-            const url = `/exportar-libro-diario-pdf?fecha=${encodeURIComponent(fecha)}`;
+            // Construir la URL para exportar el PDF
+            let url = `/exportar-libro-diario-pdf?fecha_inicio=${encodeURIComponent(fechaInicio)}`;
+            if (fechaFin) {
+                url += `&fecha_fin=${encodeURIComponent(fechaFin)}`;
+            }
+
+            // Redirigir a la URL de exportación
             window.location.href = url;
         }
     </script>
+
 </body>
 
 </html>

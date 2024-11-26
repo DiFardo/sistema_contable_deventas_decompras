@@ -134,14 +134,18 @@ def actualizar_perfil():
 
 @app.route("/libro_diario", methods=["GET"])
 @jwt_required()
-@role_required(1,3)
+@role_required(1, 3)
 def libro_diario():
     dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
-    fecha = request.args.get("fecha", None)
-    movimientos, total_debe, total_haber = (
-        controlador_plantillas.obtener_libro_diario_por_fecha(fecha) if fecha else ([], 0, 0)
-    )
+    fecha_inicio = request.args.get("fecha_inicio", None)
+    fecha_fin = request.args.get("fecha_fin", None)
+    if fecha_inicio and fecha_fin:
+        movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha_inicio, fecha_fin)
+    elif fecha_inicio:
+        movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha_inicio)
+    else:
+        movimientos, total_debe, total_haber = [], 0, 0
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Libro diario', 'url': '/libro_diario'}
@@ -155,12 +159,18 @@ def libro_diario():
         usuario=usuario
     )
 
-@app.route("/libro_diario_datos")
+@app.route("/libro_diario_datos", methods=["GET"])
 @jwt_required()
-@role_required(1,3)
+@role_required(1, 3)
 def libro_diario_datos():
-    fecha = request.args.get("fecha")
-    grouped_movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha)
+    fecha_inicio = request.args.get("fecha_inicio", None)
+    fecha_fin = request.args.get("fecha_fin", None)
+    if fecha_inicio and fecha_fin:
+        grouped_movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha_inicio, fecha_fin)
+    elif fecha_inicio:
+        grouped_movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha_inicio)
+    else:
+        grouped_movimientos, total_debe, total_haber = [], 0, 0
     return jsonify(filas=grouped_movimientos, total_debe=total_debe, total_haber=total_haber)
 
 
@@ -172,18 +182,19 @@ def libro_diario_datos():
 
 @app.route("/libro_diario_imprimir", methods=["GET"])
 @jwt_required()
-@role_required(1,3)
+@role_required(1, 3)
 def libro_diario_imprimir():
-    token = request.cookies.get('token')
-    dni = request.cookies.get('dni')
+    dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
-    fecha = request.args.get("fecha", None)
-    if not fecha:
-        print("No se proporcionó una fecha válida")
-        movimientos, total_debe, total_haber = [], 0, 0
+    fecha_inicio = request.args.get("fecha_inicio", None)
+    fecha_fin = request.args.get("fecha_fin", None)
+    if fecha_inicio and fecha_fin:
+        movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha_inicio, fecha_fin)
+    elif fecha_inicio:
+        movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha_inicio)
     else:
-        movimientos, total_debe, total_haber = controlador_plantillas.obtener_movimientos_libro_diario(fecha)
-        print(f"Movimientos obtenidos: {len(movimientos)}")
+        print("No se proporcionó una fecha o rango de fechas válido")
+        movimientos, total_debe, total_haber = [], 0, 0
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Libro Diario', 'url': '/libro_diario'},
@@ -194,7 +205,8 @@ def libro_diario_imprimir():
         movimientos=movimientos,
         total_debe=total_debe,
         total_haber=total_haber,
-        fecha=fecha,
+        fecha_inicio=fecha_inicio,
+        fecha_fin=fecha_fin,
         breadcrumbs=breadcrumbs,
         usuario=usuario
     )
@@ -720,18 +732,28 @@ def exportar_libro_diario():
 
 @app.route('/exportar-libro-diario-pdf', methods=['GET'])
 @jwt_required()
-@role_required(1,3)
+@role_required(1, 3)
 def exportar_libro_diario_pdf():
-    fecha = request.args.get('fecha')
-    if not fecha:
-        return jsonify({'error': 'El parámetro "fecha" es requerido.'}), 400
-
+    fecha_inicio = request.args.get('fecha_inicio')
+    fecha_fin = request.args.get('fecha_fin')
+    if not fecha_inicio:
+        return jsonify({'error': 'El parámetro "fecha_inicio" es requerido.'}), 400
     try:
-        datetime.datetime.strptime(fecha, '%Y-%m-%d')
+        datetime.datetime.strptime(fecha_inicio, '%Y-%m-%d')
     except ValueError:
-        return jsonify({'error': 'El formato de la fecha es incorrecto. Debe ser "YYYY-MM-DD".'}), 400
-
-    return controlador_plantillas.generar_libro_diario_pdf_horizontal(fecha)
+        return jsonify({'error': 'El formato de "fecha_inicio" es incorrecto. Debe ser "YYYY-MM-DD".'}), 400
+    if fecha_fin:
+        try:
+            datetime.datetime.strptime(fecha_fin, '%Y-%m-%d')
+        except ValueError:
+            return jsonify({'error': 'El formato de "fecha_fin" es incorrecto. Debe ser "YYYY-MM-DD".'}), 400
+    try:
+        if fecha_fin:
+            return controlador_plantillas.generar_libro_diario_pdf_horizontal(fecha_inicio, fecha_fin)
+        else:
+            return controlador_plantillas.generar_libro_diario_pdf_horizontal(fecha_inicio)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route("/asientos_contables")
 @jwt_required()
