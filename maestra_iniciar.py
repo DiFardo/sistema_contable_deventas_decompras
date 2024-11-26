@@ -719,16 +719,19 @@ def exportar_libro_caja_bancos():
 
 @app.route('/exportar-libro-diario', methods=['GET'])
 @jwt_required()
-@role_required(1,3)
+@role_required(1, 3)
 def exportar_libro_diario():
-    fecha = request.args.get('fecha')
-    if not fecha:
-        return jsonify({'error': 'El parámetro "fecha" es requerido.'}), 400
+    fecha_inicio = request.args.get('fecha_inicio')
+    fecha_fin = request.args.get('fecha_fin')
+    if not fecha_inicio:
+        return jsonify({'error': 'El parámetro "fecha_inicio" es requerido.'}), 400
     try:
-        datetime.datetime.strptime(fecha, '%Y-%m-%d')
+        datetime.datetime.strptime(fecha_inicio, '%Y-%m-%d')
+        if fecha_fin:
+            datetime.datetime.strptime(fecha_fin, '%Y-%m-%d')
     except ValueError:
         return jsonify({'error': 'El formato de la fecha es incorrecto. Debe ser "YYYY-MM-DD".'}), 400
-    return controlador_plantillas.generar_libro_diario_excel(fecha)
+    return controlador_plantillas.generar_libro_diario_excel(fecha_inicio, fecha_fin)
 
 @app.route('/exportar-libro-diario-pdf', methods=['GET'])
 @jwt_required()

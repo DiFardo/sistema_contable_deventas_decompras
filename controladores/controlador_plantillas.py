@@ -329,47 +329,83 @@ def generar_registro_compra_excel(mes, anio):
             cursor.close()
             conexion.close()
 
-def generar_libro_diario_excel(fecha):
+def generar_libro_diario_excel(fecha_inicio, fecha_fin=None):
     try:
         conexion = obtener_conexion()
-        cursor = conexion.cursor()
+        cursor = conexion.cursor()   
+        if fecha_fin:
+            consulta = """
+                SELECT
+                    DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo,
+                    TO_CHAR(ac.fecha, 'DD/MM/YYYY') AS fecha,
+                    CASE
+                        WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la venta de mercadería'
+                        WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
+                        ELSE ''
+                    END AS glosa,
+                    CASE
+                        WHEN m.tipo_movimiento = 'Compras' THEN 8
+                        WHEN m.tipo_movimiento = 'Ventas' THEN 14
+                        ELSE NULL
+                    END AS codigo_del_libro,
+                    DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo_documento,
+                    ac.numero_documento AS numero_documento_sustentatorio,
+                    ac.codigo_cuenta,
+                    ac.denominacion,
+                    ac.debe,
+                    ac.haber
+                FROM asientos_contables ac
+                JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
+                WHERE ac.fecha::date BETWEEN %s AND %s
+                ORDER BY ac.fecha ASC, numero_correlativo, ac.id;
+            """
+            cursor.execute(consulta, (fecha_inicio, fecha_fin))
+        else:
+            consulta = """
+                SELECT
+                    DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo,
+                    TO_CHAR(ac.fecha, 'DD/MM/YYYY') AS fecha,
+                    CASE
+                        WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la venta de mercadería'
+                        WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
+                        ELSE ''
+                    END AS glosa,
+                    CASE
+                        WHEN m.tipo_movimiento = 'Compras' THEN 8
+                        WHEN m.tipo_movimiento = 'Ventas' THEN 14
+                        ELSE NULL
+                    END AS codigo_del_libro,
+                    DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo_documento,
+                    ac.numero_documento AS numero_documento_sustentatorio,
+                    ac.codigo_cuenta,
+                    ac.denominacion,
+                    ac.debe,
+                    ac.haber
+                FROM asientos_contables ac
+                JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
+                WHERE ac.fecha::date = %s
+                ORDER BY ac.fecha ASC, numero_correlativo, ac.id;
+            """
+            cursor.execute(consulta, (fecha_inicio,))
         
-        consulta = """
-            SELECT
-                DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo,
-                TO_CHAR(ac.fecha, 'DD/MM/YYYY') AS fecha,
-                CASE
-                    WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la venta de mercadería'
-                    WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
-                    ELSE ''
-                END AS glosa,
-                CASE
-                    WHEN m.tipo_movimiento = 'Compras' THEN 8
-                    WHEN m.tipo_movimiento = 'Ventas' THEN 14
-                    ELSE NULL
-                END AS codigo_del_libro,
-                DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo_documento,
-                ac.numero_documento AS numero_documento_sustentatorio,
-                ac.codigo_cuenta,
-                ac.denominacion,
-                ac.debe,
-                ac.haber
-            FROM asientos_contables ac
-            JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
-            WHERE ac.fecha::date = %s::date
-            ORDER BY fecha, numero_correlativo, ac.id;
-        """
-        cursor.execute(consulta, (fecha,))
         resultados = cursor.fetchall()
 
+        # Cargar la plantilla de Excel
         ruta_plantilla = 'plantillas/LibroDiario.xlsx'
         workbook = load_workbook(ruta_plantilla)
         hoja = workbook.active
 
-        borde = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+        # Estilos y formatos
+        borde = Border(left=Side(style='thin'), right=Side(style='thin'),
+                       top=Side(style='thin'), bottom=Side(style='thin'))
         fuente_estandar = Font(name='Arial', size=10)
 
-        hoja.cell(row=3, column=2, value=fecha)
+        # Actualizar la fecha en el Excel
+        if fecha_fin:
+            rango_fechas = f"{fecha_inicio} al {fecha_fin}"
+        else:
+            rango_fechas = fecha_inicio
+        hoja.cell(row=3, column=2, value=rango_fechas)
 
         fila_base = 11
         alto_fila_base = hoja.row_dimensions[fila_base].height
@@ -384,11 +420,11 @@ def generar_libro_diario_excel(fecha):
             hoja.row_dimensions[fila].height = alto_fila_base
 
             celdas = [
-                (1, registro[0]),  # Correlativo
+                (1, registro[0]),  # Número correlativo
                 (2, registro[1]),  # Fecha
                 (3, registro[2]),  # Glosa
                 (4, registro[3]),  # Código del libro
-                (5, registro[4]),  # Número correlativo del documento
+                (5, registro[4]),  # Número correlativo documento
                 (6, registro[5]),  # Número documento sustentatorio
                 (7, registro[6]),  # Código cuenta
                 (8, registro[7]),  # Denominación
@@ -405,28 +441,24 @@ def generar_libro_diario_excel(fecha):
                 celda = hoja.cell(row=fila, column=col, value=valor)
                 celda.font = fuente_estandar
 
-                if col in (9, 10):
+                if col in (9, 10):  # Columnas "Debe" y "Haber"
                     celda.alignment = Alignment(horizontal='right', vertical='center')
                     celda.number_format = FORMAT_NUMBER_COMMA_SEPARATED1
-                elif col == 1:
+                elif col in (1, 4, 5, 6):  # Columnas centradas
                     celda.alignment = Alignment(horizontal='center', vertical='center')
-                elif col == 2:
+                elif col == 2:  # Fecha
                     celda.number_format = FORMAT_DATE_DDMMYY
                     celda.alignment = Alignment(horizontal='center', vertical='center')
-                elif col == 4:
-                    celda.alignment = Alignment(horizontal='center', vertical='center')
-                elif col == 5:
-                    celda.alignment = Alignment(horizontal='center', vertical='center')
-                elif col == 6:
-                    celda.alignment = Alignment(horizontal='center', vertical='center')
-                else:
+                else:  # Otras columnas
                     celda.alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
 
+                # Sumar totales
                 if col == 9:
                     total_debe += valor or 0
                 elif col == 10:
                     total_haber += valor or 0
 
+        # Escribir los totales
         fila_totales = fila_inicial + len(resultados)
         hoja.row_dimensions[fila_totales].height = alto_fila_base
         celda_totales = hoja.cell(row=fila_totales, column=8, value="TOTALES")
@@ -449,12 +481,18 @@ def generar_libro_diario_excel(fecha):
         for col in columnas_con_borde:
             hoja.cell(row=fila_totales, column=col).border = borde
 
+        # Guardar el archivo en memoria
         output = BytesIO()
         workbook.save(output)
         output.seek(0)
 
-        nombre_archivo = f'libro_diario_{fecha}.xlsx'
+        # Generar el nombre del archivo
+        nombre_archivo = f'libro_diario_{fecha_inicio}'
+        if fecha_fin:
+            nombre_archivo += f'_al_{fecha_fin}'
+        nombre_archivo += '.xlsx'
 
+        # Enviar el archivo como descarga
         return send_file(
             output,
             download_name=nombre_archivo,

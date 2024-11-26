@@ -448,17 +448,14 @@
     function exportarLibroDiario() {
         const fechaInicio = document.getElementById('filtro-fecha').value;
         const fechaFin = document.getElementById('filtro-fecha-fin').value;
-
         if (!fechaInicio) {
             alert("Por favor, selecciona una fecha de inicio para exportar el Libro Diario.");
             return;
         }
-
         let url = `/exportar-libro-diario?fecha_inicio=${encodeURIComponent(fechaInicio)}`;
         if (fechaFin) {
             url += `&fecha_fin=${encodeURIComponent(fechaFin)}`;
         }
-
         window.location.href = url;
     }
 
