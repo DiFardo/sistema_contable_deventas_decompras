@@ -109,6 +109,8 @@ def login():
     unset_jwt_cookies(resp)
     return resp
 
+
+#####################################################################################
 @app.route("/index")
 @jwt_required()
 def index():
@@ -116,7 +118,7 @@ def index():
     usuario = controlador_usuarios.obtener_usuario(dni)
 
     if usuario and (not usuario[6] or usuario[6] is None):
-        usuario = list(usuario)
+        usuario = list(usuario) 
         usuario[7] = "perfil_defecto.png"
 
     # Obtener rol del usuario
@@ -131,25 +133,25 @@ def index():
     # Configurar módulos y descripciones según el rol
     if rol_nombre == "Contador":  # Rol Contador
         titulo_principal = "Sistema Contable"
-        descripcion_principal = "Gestión de finanzas y reportes contables."
-        descripcion_secundaria = "Optimiza tus procesos financieros con herramientas avanzadas."
+        descripcion_principal = "Automatiza la gestión contable de tu empresa."
+        descripcion_secundaria = "Simplifica procesos y genera reportes financieros precisos."
         modulos = [
             {
                 "titulo": "Módulo contable",
-                "descripcion": "Accede a cuentas, asientos y reportes contables.",
+                "descripcion": "Gestiona cuentas, asientos y reportes contables.",
                 "url": url_for('cuentas'),
                 "clase_cuerpo": "card-body-modulo-contable",
                 "clase_encabezado": "card-header-modulo-contable"
             }
         ]
     elif rol_nombre == "Gestor de operaciones comerciales":  # Rol Gestor de Operaciones Comerciales
-        titulo_principal = "Sistema de Gestión de Compras y Ventas"
-        descripcion_principal = "Gestión de productos y transacciones comerciales."
-        descripcion_secundaria = "Mejora tus operaciones con herramientas de ventas y compras."
+        titulo_principal = "Sistema de Compras y Ventas"
+        descripcion_principal = "Controla las ventas y compras de insumos."
+        descripcion_secundaria = "Optimiza la gestión de productos y transacciones."
         modulos = [
             {
                 "titulo": "Módulo de ventas",
-                "descripcion": "Sistema transaccional para gestionar ventas y compras.",
+                "descripcion": "Gestiona ventas de productos y compras de insumos.",
                 "url": url_for('productos'),
                 "clase_cuerpo": "card-body-modulo-ventas",
                 "clase_encabezado": "card-header-modulo-ventas"
@@ -157,19 +159,19 @@ def index():
         ]
     elif rol_nombre == "Administrador":  # Rol Administrador
         titulo_principal = "Sistema General"
-        descripcion_principal = "Acceso completo a los módulos del sistema."
-        descripcion_secundaria = "Administra y supervisa todas las operaciones del sistema."
+        descripcion_principal = "Supervisa y administra todas las áreas del sistema con acceso a funcionalidades completas."
+        descripcion_secundaria = "Coordina operaciones contables y comerciales con herramientas avanzadas diseñadas para maximizar la eficiencia empresarial."
         modulos = [
             {
                 "titulo": "Módulo contable",
-                "descripcion": "Accede a cuentas, asientos y reportes contables.",
+                "descripcion": "Realiza un seguimiento preciso de las finanzas mediante el registro de cuentas, asientos y la generación de reportes.",
                 "url": url_for('cuentas'),
                 "clase_cuerpo": "card-body-modulo-contable",
                 "clase_encabezado": "card-header-modulo-contable"
             },
             {
                 "titulo": "Módulo de ventas",
-                "descripcion": "Sistema transaccional para gestionar ventas y compras.",
+                "descripcion": "Controla las operaciones de ventas y compras mediante transacciones comerciales de forma integrada.",
                 "url": url_for('productos'),
                 "clase_cuerpo": "card-body-modulo-ventas",
                 "clase_encabezado": "card-header-modulo-ventas"
@@ -177,12 +179,12 @@ def index():
         ]
     else:  # Rol no definido
         titulo_principal = "Sistema General"
-        descripcion_principal = "Accede a las herramientas generales del sistema."
-        descripcion_secundaria = "Explora y utiliza las funcionalidades disponibles."
+        descripcion_principal = "Accede a las herramientas esenciales para mejorar la gestión operativa."
+        descripcion_secundaria = "Descubre funcionalidades clave adaptadas a las necesidades generales de tu organización."
         modulos = []
 
     breadcrumbs = [{'name': 'Inicio', 'url': '/index'}]
-    
+
     return render_template(
         "index.html",
         breadcrumbs=breadcrumbs,
@@ -193,6 +195,8 @@ def index():
         modulos=modulos,
         notificaciones=notificaciones
     )
+
+
 
 @app.route("/actualizar_perfil", methods=["POST"])
 @jwt_required()

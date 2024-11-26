@@ -85,38 +85,89 @@
             background-color: #cc0000 !important;
         }
 
-
-        /* Ventana flotante */
+        /* Ventana flotante con mejor estilo */
         .ventana-flotante {
             position: absolute;
-            top: 60px;
-            right: 20px;
-            width: 350px;
+            top: 70px;
+            right: 25px;
+            width: 360px;
             background-color: #fff;
-            border: 1px solid #ddd;
-            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e3e3e3;
+            box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15);
             z-index: 1050;
-            border-radius: 8px;
-            display: none;
-            /* Oculto por defecto */
+            border-radius: 10px;
+            padding: 15px;
+            animation: fadeIn 0.3s ease-in-out;
         }
 
-        /* Mostrar ventana flotante */
-        .ventana-flotante:not(.hidden) {
-            display: block;
-        }
-
-        /* Botones de igual tamaño */
-        #contenido-perfil .btn {
-            font-size: 0.9rem;
+        /* Título de secciones */
+        .ventana-flotante h5 {
+            font-size: 1.2rem;
             font-weight: bold;
-            padding: 10px;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .ventana-flotante h5 .material-icons {
+            font-size: 1.5rem;
+            margin-right: 8px;
+            color: #007bff;
+        }
+
+        /* Tabla de notificaciones */
+        .notification-dropdown table {
+            width: 100%;
+            margin: 0;
+            font-size: 0.9rem;
+            border-collapse: separate;
+            border-spacing: 0 10px;
+        }
+
+        .notification-dropdown td {
+            padding: 10px 15px;
+            background-color: #f9f9f9;
+            border: 1px solid #e3e3e3;
+            border-radius: 8px;
+        }
+
+        .notification-dropdown td:last-child {
             text-align: center;
         }
 
-        /* Ajuste de espaciado entre los botones */
-        #contenido-perfil .btn+.btn {
-            margin-left: 10px;
+        .notification-dropdown .close-icon {
+            background-color: #e74c3c;
+            color: white;
+            font-size: 1rem;
+            padding: 5px 8px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .notification-dropdown .close-icon:hover {
+            background-color: #c0392b;
+        }
+
+        /* Contenido del perfil */
+        #contenido-perfil {
+            text-align: center;
+        }
+
+        #contenido-perfil .btn {
+            font-size: 1rem;
+            padding: 10px 20px;
+            border-radius: 6px;
+        }
+
+        #contenido-perfil .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+
+        #contenido-perfil .btn-danger {
+            background-color: #e74c3c;
+            border-color: #e74c3c;
         }
     </style>
 </head>
@@ -149,7 +200,7 @@
                         <li><a href="{{ url_for('personal') }}"><i class="material-icons">book</i>Personal</a></li>
                     </ul>
                 </li>
-                {% endif %}                
+                {% endif %}
 
                 <!-- Opciones del Módulo Contable -->
                 <li class="nav-item cuentas hidden">
@@ -258,7 +309,11 @@
         <div id="ventana-flotante" class="ventana-flotante hidden">
             <!-- Contenido de notificaciones -->
             <div id="contenido-notificaciones" class="contenido-flotante hidden">
-                <h5>Notificaciones</h5>
+                <h5>
+                    <span class="material-icons">notifications</span>
+                    Notificaciones
+                </h5>
+
                 <table class="table table-bordered">
                     <thead>
                         <tr>
@@ -276,7 +331,11 @@
 
             <!-- Contenido del perfil -->
             <div id="contenido-perfil" class="contenido-flotante hidden">
-                <h5 class="text-center mb-3">Perfil de Usuario</h5>
+                <h5 class="text-center mb-3">
+                    <span class="material-icons">person</span>
+                    Perfil de Usuario
+                </h5>
+
                 <p><strong>Nombre:</strong> {{ usuario[4] }}</p>
                 <p><strong>Rol:</strong> {{ usuario[5] }}</p>
 

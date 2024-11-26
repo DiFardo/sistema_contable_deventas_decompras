@@ -14,14 +14,11 @@
 <style>
   th {
     text-align: center;
-    vertical-align: middle;
-    /* Centra verticalmente el contenido */
+    vertical-align: middle; /* Centra verticalmente el contenido */
   }
-
   .text-right {
     text-align: right;
   }
-
   .text-center {
     text-align: center;
   }
@@ -38,27 +35,22 @@
 
   /* Cambiar el color del spinner */
   .spinner-border {
-    color: #e73209 !important;
-    /* Color rojo para el spinner, con !important para prioridad */
+    color: #e73209 !important; /* Color rojo para el spinner, con !important para prioridad */
   }
-
+  
   @media print {
     body {
       visibility: hidden;
     }
-
-    .table-wrapper,
-    .table {
+    .table-wrapper, .table {
       visibility: visible;
       width: 100%;
     }
-
     .table-wrapper {
       position: absolute;
       top: 0;
       left: 0;
     }
-
     @page {
       size: landscape;
     }
@@ -93,14 +85,15 @@
         <h2 class="text-left">Libro diario - Detalle de las operaciones</h2>
       </div>
     </div>
+
+    <!-- Filtros: Fecha exacta y campo de búsqueda -->
     <div class="row mb-3 align-items-center">
       <!-- Campo Fecha Inicio -->
       <div class="col-lg-4 col-md-4 col-sm-12 d-flex">
         <label class="me-3 d-flex justify-content-center align-items-center custom-label">
-          <strong>FECHA</strong>
+          <strong>INICIO:</strong>
         </label>
-        <input type="date" class="form-control" id="filtro-fecha" max=""
-          value="{{ request.args.get('fecha_inicio', '') }}">
+        <input type="date" class="form-control" id="filtro-fecha" max="" value="{{ request.args.get('fecha_inicio', '') }}">
       </div>
 
       <!-- Campo Fecha Fin -->
@@ -108,8 +101,7 @@
         <label class="me-3 d-flex justify-content-center align-items-center custom-label">
           <strong>FIN:</strong>
         </label>
-        <input type="date" class="form-control" id="filtro-fecha-fin" max=""
-          value="{{ request.args.get('fecha_fin', '') }}" disabled>
+        <input type="date" class="form-control" id="filtro-fecha-fin" max="" value="{{ request.args.get('fecha_fin', '') }}" disabled>
       </div>
 
       <!-- Campo Buscar -->
@@ -117,19 +109,16 @@
         <label class="me-3 d-flex justify-content-center align-items-center custom-label">
           <strong>BUSCAR:</strong>
         </label>
-        <input type="text" class="form-control" id="search-input" placeholder="Buscar en la tabla..."
-          aria-label="Buscar">
+        <input type="text" class="form-control" id="search-input" placeholder="Buscar en la tabla..." aria-label="Buscar">
       </div>
     </div>
-
-
+      
     <div class="table-wrapper">
       <div class="table-title">
         <div class="row justify-content-between align-items-center">
           <!-- Botones Alineados a la Derecha para Vista Previa y Exportar -->
           <div class="col-12 d-flex justify-content-end">
-            <button class="btn btn-primary me-2" onclick="abrirNuevaPaginaImprimir()"
-              style="background-color: #ff5733;">
+            <button class="btn btn-primary me-2" onclick="abrirNuevaPaginaImprimir()" style="background-color: #ff5733;">
               <i class="material-icons me-1">visibility</i> <!-- Cambiado el icono a "visibility" -->
               <span>Vista previa</span>
             </button>
@@ -140,42 +129,42 @@
           </div>
         </div>
       </div>
+      
 
       <!-- Estructura de la tabla del Libro Diario -->
       <table class="table table-bordered table-striped table-hover">
         <thead>
-          <tr>
-            <th>NÚMERO CORRELATIVO</th>
-            <th>FECHA</th>
-            <th>DESCRIPCIÓN DE LA OPERACIÓN</th>
-            <th>CÓDIGO DEL LIBRO</th>
-            <th>NÚMERO CORRELATIVO</th>
-            <th>NÚMERO DOCUMENTO SUSTENTATORIO</th>
-            <th>CÓDIGO</th>
-            <th>DENOMINACIÓN</th>
-            <th>DEBE</th>
-            <th>HABER</th>
-          </tr>
+            <tr>
+                <th>NÚMERO CORRELATIVO</th>
+                <th>FECHA</th>
+                <th>DESCRIPCIÓN DE LA OPERACIÓN</th>
+                <th>CÓDIGO DEL LIBRO</th>
+                <th>NÚMERO CORRELATIVO</th>
+                <th>NÚMERO DOCUMENTO SUSTENTATORIO</th>
+                <th>CÓDIGO</th>
+                <th>DENOMINACIÓN</th>
+                <th>DEBE</th>
+                <th>HABER</th>
+            </tr>
         </thead>
         <tbody id="tabla-cuerpo">
-          <!-- Las filas dinámicas se generarán aquí -->
+            <!-- Las filas dinámicas se generarán aquí -->
         </tbody>
         <tfoot>
-          <tr>
-            <td colspan="7"></td> <!-- Deja en blanco las primeras columnas -->
-            <td><strong>TOTALES</strong></td>
-            <td class="text-right" id="total-debe">-</td>
-            <td class="text-right" id="total-haber">-</td>
-          </tr>
+            <tr>
+                <td colspan="7"></td> <!-- Deja en blanco las primeras columnas -->
+                <td><strong>TOTALES</strong></td>
+                <td class="text-right" id="total-debe">-</td>
+                <td class="text-right" id="total-haber">-</td>
+            </tr>
         </tfoot>
-      </table>
-
+    </table>
+    
       <!-- Controles de paginación y selector de número de registros -->
       <div class="d-flex justify-content-between align-items-center mt-3">
         <div class="d-flex me-3">
           <label for="records-per-page" class="me-2">Registros por página:</label>
-          <input type="number" id="records-per-page" class="form-control" value="7" min="1" max="100"
-            style="width: 80px;">
+          <input type="number" id="records-per-page" class="form-control" value="4" min="1" max="100" style="width: 80px;">
         </div>
         <nav aria-label="Page navigation example align-items-center">
           <ul class="pagination" id="pagination" class="pagination">
@@ -201,9 +190,9 @@
   <script src="{{ url_for('static', filename='js/tabla_cuentas.js') }}"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', filename='js/paginacion_libros.js') }}"></script>
-  <script>
+      <script>
     let currentPage = 1;
-    let rowsPerPage = parseInt(document.getElementById("records-per-page").value);
+    let rowsPerPage = parseInt(document.getElementById("records-per-page").value) || 1;
     let totalRows = 0;
     let totalPages = 0;
     const spinnerWrapper = document.getElementById("spinner-wrapper");
@@ -213,274 +202,282 @@
     let totalHaber = 0;
 
     function getTodayDate() {
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      const day = String(today.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     }
 
     function cargarTabla(fechaInicio, fechaFin = null) {
-      spinnerWrapper.style.display = "block";
-
-      // Parámetros para la solicitud
-      const params = { fecha_inicio: fechaInicio };
-      if (fechaFin) {
-        params.fecha_fin = fechaFin;
-      }
-
-      $.ajax({
-        url: "/libro_diario_datos",
-        type: "GET",
-        data: params,
-        success: function (data) {
-          // Limpiar datos previos
-          allData = [];
-          totalDebe = 0;
-          totalHaber = 0;
-
-          // Procesar los datos recibidos
-          data.filas.forEach(function (movimiento) {
-            movimiento.cuentas.forEach((cuenta, index) => {
-              allData.push({
-                movimiento: movimiento,
-                cuenta: cuenta,
-                isFirstCuenta: index === 0,
-                totalCuentas: movimiento.cuentas.length
-              });
-              totalDebe += parseFloat(cuenta.debe || 0);
-              totalHaber += parseFloat(cuenta.haber || 0);
-            });
-          });
-
-          // Actualizar totales
-          document.getElementById("total-debe").textContent = totalDebe.toFixed(2);
-          document.getElementById("total-haber").textContent = totalHaber.toFixed(2);
-
-          // Actualizar datos filtrados y paginación
-          filteredData = allData.slice();
-          totalRows = filteredData.length;
-          totalPages = Math.ceil(totalRows / rowsPerPage);
-          currentPage = 1;
-          showPage(currentPage);
-        },
-        error: function (error) {
-          console.error("Error al cargar los datos:", error);
-          document.getElementById("tabla-cuerpo").innerHTML = "<tr><td colspan='10'>No se encontraron resultados</td></tr>";
-        },
-        complete: function () {
-          spinnerWrapper.style.display = "none";
+        spinnerWrapper.style.display = "block";
+        const params = { fecha_inicio: fechaInicio };
+        if (fechaFin) {
+            params.fecha_fin = fechaFin;
         }
-      });
+        $.ajax({
+            url: "/libro_diario_datos",
+            type: "GET",
+            data: params,
+            success: function (data) {
+                allData = [];
+                totalDebe = 0;
+                totalHaber = 0;
+                data.filas.forEach(function (movimiento) {
+                    movimiento.cuentas.forEach((cuenta, index) => {
+                        allData.push({
+                            movimiento: movimiento,
+                            cuenta: cuenta,
+                            isFirstCuenta: index === 0,
+                            totalCuentas: movimiento.cuentas.length
+                        });
+                        totalDebe += parseFloat(cuenta.debe || 0);
+                        totalHaber += parseFloat(cuenta.haber || 0);
+                    });
+                });
+                document.getElementById("total-debe").textContent = totalDebe.toFixed(2);
+                document.getElementById("total-haber").textContent = totalHaber.toFixed(2);
+                filteredData = allData.slice();
+                totalRows = filteredData.length;
+                totalPages = Math.ceil(totalRows / rowsPerPage);
+                currentPage = 1;
+                showPage(currentPage);
+            },
+            error: function (error) {
+                console.error("Error al cargar los datos:", error);
+                document.getElementById("tabla-cuerpo").innerHTML = "<tr><td colspan='10'>No se encontraron resultados</td></tr>";
+            },
+            complete: function () {
+                spinnerWrapper.style.display = "none";
+            }
+        });
     }
 
-    document.addEventListener("DOMContentLoaded", function () {
-      const filtroFechaInicio = document.getElementById("filtro-fecha");
-      const filtroFechaFin = document.getElementById("filtro-fecha-fin");
-
-      filtroFechaInicio.max = getTodayDate();
-
-      // Habilitar filtro de fecha fin cuando se selecciona fecha inicio
-      filtroFechaInicio.addEventListener("change", function () {
-        filtroFechaFin.disabled = false;
-        filtroFechaFin.min = filtroFechaInicio.value;
-        currentPage = 1;
-        cargarTabla(filtroFechaInicio.value);
-      });
-
-      // Actualizar tabla con rango de fechas cuando se selecciona fecha fin
-      filtroFechaFin.addEventListener("change", function () {
-        currentPage = 1;
-        cargarTabla(filtroFechaInicio.value, filtroFechaFin.value);
-      });
-
-      document.getElementById("search-input").addEventListener("input", filtrarTabla);
-    });
-
     function filtrarTabla() {
-      const searchTerm = document.getElementById("search-input").value.toLowerCase();
-      filteredData = allData.filter(dataItem => {
-        const { movimiento, cuenta } = dataItem;
-        const rowText = [
-          movimiento.numero_correlativo,
-          movimiento.fecha,
-          movimiento.glosa,
-          movimiento.codigo_del_libro,
-          movimiento.numero_correlativo_documento,
-          movimiento.numero_documento_sustentatorio,
-          cuenta.codigo_cuenta,
-          cuenta.denominacion,
-          cuenta.debe,
-          cuenta.haber
-        ].join(' ').toLowerCase();
-        return rowText.includes(searchTerm);
-      });
-      totalRows = filteredData.length;
-      totalPages = Math.ceil(totalRows / rowsPerPage);
-      currentPage = 1;
-      totalDebe = filteredData.reduce((sum, dataItem) => sum + parseFloat(dataItem.cuenta.debe || 0), 0);
-      totalHaber = filteredData.reduce((sum, dataItem) => sum + parseFloat(dataItem.cuenta.haber || 0), 0);
-      document.getElementById("total-debe").textContent = totalDebe.toFixed(2);
-      document.getElementById("total-haber").textContent = totalHaber.toFixed(2);
-      showPage(currentPage);
+        const searchTerm = document.getElementById("search-input").value.toLowerCase();
+        filteredData = allData.filter(dataItem => {
+            const { movimiento, cuenta } = dataItem;
+            const rowText = [
+                movimiento.numero_correlativo,
+                movimiento.fecha,
+                movimiento.glosa,
+                movimiento.codigo_del_libro,
+                movimiento.numero_correlativo_documento,
+                movimiento.numero_documento_sustentatorio,
+                cuenta.codigo_cuenta,
+                cuenta.denominacion,
+                cuenta.debe,
+                cuenta.haber
+            ].join(' ').toLowerCase();
+            return rowText.includes(searchTerm);
+        });
+        totalRows = filteredData.length;
+        totalPages = Math.ceil(totalRows / rowsPerPage);
+        currentPage = 1;
+        totalDebe = filteredData.reduce((sum, dataItem) => sum + parseFloat(dataItem.cuenta.debe || 0), 0);
+        totalHaber = filteredData.reduce((sum, dataItem) => sum + parseFloat(dataItem.cuenta.haber || 0), 0);
+        document.getElementById("total-debe").textContent = totalDebe.toFixed(2);
+        document.getElementById("total-haber").textContent = totalHaber.toFixed(2);
+        showPage(currentPage);
     }
 
     function showPage(page) {
-      const start = (page - 1) * rowsPerPage;
-      const end = start + rowsPerPage;
-      const pageData = filteredData.slice(start, end);
-      let html = "";
-      let currentMovimientoId = null;
-      let rowspanRemaining = 0;
-
-      if (pageData.length === 0) {
-        html = "<tr><td colspan='10' class='text-center'>No se encontraron resultados</td></tr>";
-      } else {
-        pageData.forEach((dataItem) => {
-          const { movimiento, cuenta } = dataItem;
-          let row = "<tr>";
-
-          if (movimiento.numero_correlativo !== currentMovimientoId) {
-            currentMovimientoId = movimiento.numero_correlativo;
-            rowspanRemaining = pageData.filter(
-              item => item.movimiento.numero_correlativo === currentMovimientoId
-            ).length;
-
+        const start = (page - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+        const pageData = filteredData.slice(start, end);
+        let html = "";
+        let currentMovimientoId = null;
+        let rowspanRemaining = 0;
+        pageData.forEach((dataItem, index) => {
+            const { movimiento, cuenta, isFirstCuenta, totalCuentas } = dataItem;
+            let row = "<tr>";
+            if (movimiento.numero_correlativo !== currentMovimientoId) {
+                currentMovimientoId = movimiento.numero_correlativo;
+                rowspanRemaining = pageData.filter(
+                    item => item.movimiento.numero_correlativo === currentMovimientoId
+                ).length;
+                row += `
+                    <td rowspan="${rowspanRemaining}" class="text-center">${movimiento.numero_correlativo || "-"}</td>
+                    <td rowspan="${rowspanRemaining}" class="text-center">${movimiento.fecha || "-"}</td>
+                    <td rowspan="${rowspanRemaining}">${movimiento.glosa || "-"}</td>
+                    <td rowspan="${rowspanRemaining}" class="text-center">${movimiento.codigo_del_libro || "-"}</td>
+                    <td rowspan="${rowspanRemaining}" class="text-center">${movimiento.numero_correlativo_documento || "-"}</td>
+                    <td rowspan="${rowspanRemaining}" class="text-center">${movimiento.numero_documento_sustentatorio || "-"}</td>
+                `;
+            }
             row += `
-          <td rowspan="${rowspanRemaining}" class="text-center">${movimiento.numero_correlativo || "-"}</td>
-          <td rowspan="${rowspanRemaining}" class="text-center">${movimiento.fecha || "-"}</td>
-          <td rowspan="${rowspanRemaining}">${movimiento.glosa || "-"}</td>
-          <td rowspan="${rowspanRemaining}" class="text-center">${movimiento.codigo_del_libro || "-"}</td>
-          <td rowspan="${rowspanRemaining}" class="text-center">${movimiento.numero_correlativo_documento || "-"}</td>
-          <td rowspan="${rowspanRemaining}" class="text-center">${movimiento.numero_documento_sustentatorio || "-"}</td>
-        `;
-          }
-
-          row += `
-        <td>${cuenta.codigo_cuenta || "-"}</td>
-        <td>${cuenta.denominacion || "-"}</td>
-        <td class="text-right">${cuenta.debe || "-"}</td>
-        <td class="text-right">${cuenta.haber || "-"}</td>
-      </tr>`;
-          html += row;
+                <td>${cuenta.codigo_cuenta || "-"}</td>
+                <td>${cuenta.denominacion || "-"}</td>
+                <td class="text-right">${cuenta.debe || "-"}</td>
+                <td class="text-right">${cuenta.haber || "-"}</td>
+            </tr>`;
+            html += row;
         });
-      }
-
-      document.getElementById("tabla-cuerpo").innerHTML = html;
-      updatePagination();
+        document.getElementById("tabla-cuerpo").innerHTML = html;
+        updatePagination();
     }
 
     function updatePagination() {
-      const pagination = document.getElementById("pagination");
-      pagination.innerHTML = "";
+        const pagination = document.getElementById("pagination");
+        pagination.innerHTML = "";
 
-      if (totalPages <= 1) {
-        return;
-      }
+        if (totalPages <= 1) {
+            return;
+        }
 
-      pagination.innerHTML = `
-    <li class="page-item ${currentPage === 1 ? "disabled" : ""}">
-      <a class="page-link" href="#" aria-label="Previous" id="prev-page">
-        <span aria-hidden="true">&laquo;</span>
-      </a>
-    </li>
-  `;
+        pagination.innerHTML = `
+            <li class="page-item ${currentPage === 1 ? "disabled" : ""}">
+                <a class="page-link" href="#" aria-label="Previous" id="prev-page">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+        `;
 
-      for (let i = 1; i <= totalPages; i++) {
-        const activeClass = i === currentPage ? "active" : "";
+        const maxPagesToShow = 5;
+        let startPage = Math.max(currentPage - 2, 1);
+        let endPage = Math.min(startPage + maxPagesToShow - 1, totalPages);
+
+        if (endPage - startPage < maxPagesToShow - 1) {
+            startPage = Math.max(endPage - maxPagesToShow + 1, 1);
+        }
+
+        if (startPage > 1) {
+            pagination.innerHTML += `<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>`;
+            if (startPage > 2) {
+                pagination.innerHTML += `<li class="page-item disabled"><a class="page-link" href="#">...</a></li>`;
+            }
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            const activeClass = i === currentPage ? "active" : "";
+            pagination.innerHTML += `
+                <li class="page-item ${activeClass}">
+                    <a class="page-link" href="#" data-page="${i}">${i}</a>
+                </li>
+            `;
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                pagination.innerHTML += `<li class="page-item disabled"><a class="page-link" href="#">...</a></li>`;
+            }
+            pagination.innerHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`;
+        }
+
         pagination.innerHTML += `
-      <li class="page-item ${activeClass}">
-        <a class="page-link" href="#" data-page="${i}">${i}</a>
-      </li>
-    `;
-      }
+            <li class="page-item ${currentPage === totalPages ? "disabled" : ""}">
+                <a class="page-link" href="#" aria-label="Next" id="next-page">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        `;
 
-      pagination.innerHTML += `
-    <li class="page-item ${currentPage === totalPages ? "disabled" : ""}">
-      <a class="page-link" href="#" aria-label="Next" id="next-page">
-        <span aria-hidden="true">&raquo;</span>
-      </a>
-    </li>
-  `;
-
-      document.querySelectorAll(".page-link[data-page]").forEach(link => {
-        link.addEventListener("click", function (e) {
-          e.preventDefault();
-          currentPage = parseInt(this.dataset.page);
-          showPage(currentPage);
+        document.getElementById("prev-page").addEventListener("click", function(e) {
+            e.preventDefault();
+            if (currentPage > 1) {
+                currentPage--;
+                showPage(currentPage);
+            }
         });
-      });
 
-      document.getElementById("prev-page").addEventListener("click", function (e) {
-        e.preventDefault();
-        if (currentPage > 1) {
-          currentPage--;
-          showPage(currentPage);
-        }
-      });
+        document.getElementById("next-page").addEventListener("click", function(e) {
+            e.preventDefault();
+            if (currentPage < totalPages) {
+                currentPage++;
+                showPage(currentPage);
+            }
+        });
 
-      document.getElementById("next-page").addEventListener("click", function (e) {
-        e.preventDefault();
-        if (currentPage < totalPages) {
-          currentPage++;
-          showPage(currentPage);
-        }
-      });
+        document.querySelectorAll(".page-link[data-page]").forEach(link => {
+            link.addEventListener("click", function(e) {
+                e.preventDefault();
+                currentPage = parseInt(e.target.getAttribute("data-page"));
+                showPage(currentPage);
+            });
+        });
     }
 
     document.addEventListener("DOMContentLoaded", function () {
-      const filtroFechaInicio = document.getElementById("filtro-fecha");
-      const filtroFechaFin = document.getElementById("filtro-fecha-fin");
-      filtroFechaInicio.max = getTodayDate();
+        const filtroFechaInicio = document.getElementById("filtro-fecha");
+        const filtroFechaFin = document.getElementById("filtro-fecha-fin");
+        const recordsInput = document.getElementById("records-per-page"); // Añadido
 
-      filtroFechaInicio.addEventListener("change", function () {
-        filtroFechaFin.disabled = false;
-        filtroFechaFin.min = filtroFechaInicio.value;
-        currentPage = 1;
-        cargarTabla(filtroFechaInicio.value);
-      });
+        filtroFechaInicio.max = getTodayDate();
+        filtroFechaFin.max = getTodayDate();
 
-      filtroFechaFin.addEventListener("change", function () {
-        currentPage = 1;
-        cargarTabla(filtroFechaInicio.value, filtroFechaFin.value);
-      });
+        function sumarUnDia(fecha) {
+            let fechaObj = new Date(fecha);
+            fechaObj.setDate(fechaObj.getDate() + 1);
+            return fechaObj.toISOString().split('T')[0];
+        }
 
-      document.getElementById("search-input").addEventListener("input", filtrarTabla);
+        if (filtroFechaInicio.value) {
+            filtroFechaFin.min = sumarUnDia(filtroFechaInicio.value);
+        }
+
+        // Habilitar filtro de fecha fin cuando se selecciona fecha inicio
+        filtroFechaInicio.addEventListener("change", function () {
+            filtroFechaFin.disabled = false;
+            filtroFechaFin.min = sumarUnDia(filtroFechaInicio.value);
+            currentPage = 1;
+            cargarTabla(filtroFechaInicio.value);
+        });
+
+        // Actualizar tabla con rango de fechas cuando se selecciona fecha fin
+        filtroFechaFin.addEventListener("change", function () {
+            currentPage = 1;
+            cargarTabla(filtroFechaInicio.value, filtroFechaFin.value);
+        });
+
+        // Event listener para "Registros por página"
+        recordsInput.addEventListener("input", function () {
+            let value = parseInt(this.value);
+            if (isNaN(value) || value < 1) {
+                value = 1;
+                this.value = value;
+            }
+            rowsPerPage = value;
+            totalPages = Math.ceil(totalRows / rowsPerPage);
+            currentPage = 1;
+            showPage(currentPage);
+        });
+
+        document.getElementById("search-input").addEventListener("input", filtrarTabla);
     });
 
     function exportarLibroDiario() {
-      const fecha = document.getElementById("filtro-fecha").value;
-      if (!fecha) {
-        alert("Por favor, seleccione una fecha para exportar el Libro Diario.");
-        return;
-      }
-      const url = `/exportar-libro-diario?fecha=${encodeURIComponent(fecha)}`;
-      window.location.href = url;
+        const fechaInicio = document.getElementById('filtro-fecha').value;
+        const fechaFin = document.getElementById('filtro-fecha-fin').value;
+        if (!fechaInicio) {
+            alert("Por favor, selecciona una fecha de inicio para exportar el Libro Diario.");
+            return;
+        }
+        let url = `/exportar-libro-diario?fecha_inicio=${encodeURIComponent(fechaInicio)}`;
+        if (fechaFin) {
+            url += `&fecha_fin=${encodeURIComponent(fechaFin)}`;
+        }
+        window.location.href = url;
     }
+
     function abrirNuevaPaginaImprimir() {
-    const fechaInicio = document.getElementById('filtro-fecha').value;
-    const fechaFin = document.getElementById('filtro-fecha-fin').value;
+        const fechaInicio = document.getElementById('filtro-fecha').value;
+        const fechaFin = document.getElementById('filtro-fecha-fin').value;
 
-    // Verificar si hay una fecha inicial seleccionada
-    if (!fechaInicio) {
-        alert('Por favor, selecciona una fecha de inicio antes de continuar.');
-        return;
+        if (!fechaInicio) {
+            alert('Por favor, selecciona una fecha de inicio antes de continuar.');
+            return;
+        }
+
+        let url = `/libro_diario_imprimir?fecha_inicio=${encodeURIComponent(fechaInicio)}`;
+        if (fechaFin) {
+            url += `&fecha_fin=${encodeURIComponent(fechaFin)}`;
+        }
+
+        const nuevaVentana = window.open(url, '_blank');
+        if (!nuevaVentana) {
+            alert('Por favor, permite que el navegador abra ventanas emergentes.');
+        }
     }
-
-    // Construir la URL dependiendo de si se seleccionó una fecha fin o no
-    let url = `/libro_diario_imprimir?fecha_inicio=${encodeURIComponent(fechaInicio)}`;
-    if (fechaFin) {
-        url += `&fecha_fin=${encodeURIComponent(fechaFin)}`;
-    }
-
-    // Abrir nueva ventana para la impresión
-    const nuevaVentana = window.open(url, '_blank');
-    if (!nuevaVentana) {
-        alert('Por favor, permite que el navegador abra ventanas emergentes.');
-    }
-}
-
-
-  </script>
+</script>
 </div>
 {% endblock %}
