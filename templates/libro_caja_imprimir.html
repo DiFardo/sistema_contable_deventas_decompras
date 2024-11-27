@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Libro Caja y Bancos</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/tabla_cuentas.css') }}" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        th {
+            text-align: center;
+            vertical-align: middle;
+            font-weight: bold;
+        }
+
+        td.centered {
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .bg-orange {
+            background-color: #FF9933;
+            color: white;
+        }
+
+        .bg-cyan {
+            background-color: #00CCCC;
+            color: white;
+        }
+
+        .bg-green {
+            background-color: #99CC99;
+            color: black;
+        }
+
+        .w-correlativo {
+            width: 10%;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        /* Estilos para centrar el spinner dentro de la tabla */
+        .spinner-wrapper {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+        }
+
+        /* Cambiar el color del spinner */
+        .spinner-border {
+            color: #e73209 !important;
+            /* Color rojo para el spinner */
+        }
+
+        @media print {
+            body {
+                visibility: hidden;
+            }
+
+            .table-wrapper,
+            .table {
+                visibility: visible;
+                width: 100%;
+            }
+
+            .table-wrapper {
+                position: absolute;
+                top: 0;
+                left: 0;
+            }
+
+            @page {
+                size: landscape;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mt-4">
+        <!-- Botones PDF e Imprimir -->
+        <div class="row btn-container">
+            <div class="col-12 d-flex justify-content-end">
+                <button class="btn btn-danger me-2 d-flex align-items-center" onclick="exportarPDF()">
+                    <i class="material-icons pdf-icon me-1">picture_as_pdf</i>
+                    PDF
+                </button>
+                <button class="btn btn-primary d-flex align-items-center" onclick="window.print()">
+                    <i class="material-icons me-1">print</i>
+                    Imprimir
+                </button>
+            </div>
+        </div>
+
+        <!-- Encabezado con título -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <h2 class="text-left">Libro caja y bancos - detalle de los movimientos</h2>
+            </div>
+        </div>
+
+        <!-- Tabla de Movimientos -->
+        <div class="table-wrapper">
+            <table class="table table-bordered table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>NÚMERO CORRELATIVO</th>
+                        <th>FECHA DE LA OPERACIÓN</th>
+                        <th>DESCRIPCIÓN DE LA OPERACIÓN</th>
+                        <th>CÓDIGO</th>
+                        <th>DENOMINACIÓN</th>
+                        <th>DEUDOR</th>
+                        <th>ACREEDOR</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for movimiento in movimientos %}
+                    <!-- Fila principal del movimiento -->
+                    <tr>
+                        <td class="text-center" rowspan="{{ movimiento.cuentas|length + 1 }}">
+                            {{ movimiento.numero_correlativo }}
+                        </td>
+                        <td class="text-center" rowspan="{{ movimiento.cuentas|length + 1 }}">
+                            {{ movimiento.fecha_operacion }}
+                        </td>
+                        <td rowspan="{{ movimiento.cuentas|length + 1 }}">
+                            {{ movimiento.descripcion_operacion }}
+                        </td>
+                    </tr>
+                    <!-- Cuentas asociadas -->
+                    {% for cuenta in movimiento.cuentas %}
+                    <tr>
+                        <td>{{ cuenta.codigo_cuenta_asociada or "-" }}</td>
+                        <td>{{ cuenta.denominacion_cuenta_asociada or "-" }}</td>
+                        <td class="text-right">{{ cuenta.saldo_deudor or "-" }}</td>
+                        <td class="text-right">{{ cuenta.saldo_acreedor or "-" }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="5" class="text-end"><strong>TOTALES:</strong></td>
+                        <td class="text-right">{{ total_deudor or "-" }}</td>
+                        <td class="text-right">{{ total_acreedor or "-" }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        function exportarPDF() {
+            // Obtener el valor del periodo desde la URL
+            const periodo = new URLSearchParams(window.location.search).get('periodo');
+
+            // Validar que el periodo esté presente
+            if (!periodo) {
+                alert("Por favor, selecciona un periodo antes de exportar el PDF.");
+                return;
+            }
+
+            // Construir la URL con el periodo como parámetro
+            const url = `/exportar-libro-caja-pdf?periodo=${encodeURIComponent(periodo)}`;
+
+            // Redirigir a la URL para exportar el PDF
+            window.location.href = url;
+        }
+
+    </script>
+</body>
+
+</html>

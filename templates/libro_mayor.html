@@ -8,23 +8,89 @@
 <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
 <link href="{{ url_for('static', filename='css/tabla_cuentas.css') }}" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
 {% endblock %}
 
 {% block contenido %}
 <style>
   th {
     text-align: center;
-    vertical-align: middle; /* Centra verticalmente el contenido */
+    vertical-align: middle;
+    font-weight: bold;
   }
 
-  /* Ajustar el ancho específico de la columna "Número Correlativo" */
+  td.centered {
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .bg-orange {
+    background-color: #FF9933;
+    color: white;
+  }
+
+  .bg-cyan {
+    background-color: #00CCCC;
+    color: white;
+  }
+
+  .bg-green {
+    background-color: #99CC99;
+    color: black;
+  }
+
   .w-correlativo {
-    width: 10%; /* Ancho reducido para la columna de número correlativo */
+    width: 10%;
+  }
+
+  /* Estilos para centrar el spinner dentro de la tabla */
+  .spinner-wrapper {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+  }
+
+  /* Cambiar el color del spinner */
+  .spinner-border {
+    color: #e73209 !important;
+    /* Color rojo para el spinner */
+  }
+
+  @media print {
+    body {
+      visibility: hidden;
+    }
+
+    .table-wrapper,
+    .table {
+      visibility: visible;
+      width: 100%;
+    }
+
+    .table-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    @page {
+      size: landscape;
+    }
   }
 </style>
 
 <div id="content">
   <div class="main-content">
+    <!-- Spinner para pantalla de carga -->
+    <div class="spinner-wrapper" id="spinner-wrapper">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+    </div>
+
     <!-- Breadcrumb dinámico -->
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb">
@@ -41,53 +107,72 @@
     <!-- Encabezado con título adicional -->
     <div class="row mb-3">
       <div class="col-12">
-        <h2 class="text-left">Libro Mayor - Detalle de las operaciones</h2>
+        <h2 class="text-left">Libro mayor - Detalle de las operaciones</h2>
       </div>
     </div>
-
-    <!-- Filtros: Fecha exacta y RUC en una sola fila alineados correctamente con centrado vertical -->
-    <div class="row mb-3 align-items-center">
-      <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
-        <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
-          <strong>PERÍODO:</strong>
-        </label>
-        <input type="date" class="form-control" id="filtro-fecha" max="{{ current_year }}-12-31"
-          value="{{ current_year }}-01-01">
+    <!-- Filtros PERIODO, CUENTA y BUSCAR -->
+    <div class="row mb-3">
+      <!-- PERIODO -->
+      <div class="col-lg-4 col-md-6 col-sm-12">
+        <div class="d-flex align-items-center">
+          <label for="filtro-periodo" class="me-3">
+            <strong>PERIODO:</strong>
+          </label>
+          <input type="month" class="form-control" id="filtro-periodo" max=""
+            value="{{ request.args.get('periodo', '') }}">
+        </div>
       </div>
-      <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
-        <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
-          <strong>RUC:</strong>
-        </label>
-        <input type="text" class="form-control" value="20612188930" readonly>
+
+      <!-- CUENTA -->
+      <div class="col-lg-4 col-md-6 col-sm-12">
+        <div class="d-flex align-items-center">
+          <label for="filtro-cuenta" class="me-3">
+            <strong>CUENTA:</strong>
+          </label>
+          <select class="form-control" id="filtro-cuenta">
+            <option value="">Seleccionar cuenta</option>
+            {% for cuenta in cuentas %}
+            <option value="{{ cuenta.codigo_cuenta }}" {% if request.args.get('cuenta')==cuenta.codigo_cuenta
+              %}selected{% endif %}>
+              {{ cuenta.codigo_cuenta }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- BUSCAR -->
+      <div class="col-lg-4 col-md-6 col-sm-12">
+        <div class="d-flex align-items-center">
+          <label for="search-input" class="me-3">
+            <strong>BUSCAR:</strong>
+          </label>
+          <div class="input-group">
+            <input type="text" class="form-control" id="search-input" placeholder="Buscar en la tabla..."
+              aria-label="Buscar">
+          </div>
+        </div>
       </div>
     </div>
-
     <div class="table-wrapper">
       <div class="table-title">
-        <div class="row justify-content-between align-items-center">
-          <!-- Input Group para Filtro de Búsqueda a la izquierda -->
-          <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-start">
-            <div class="input-group">
-              <input type="text" id="search-input" class="form-control"
-                placeholder="Buscar en la tabla..." aria-label="Buscar">
-              <button class="btn btn-outline-secondary" type="button">
-                <i class="material-icons">search</i>
-              </button>
-            </div>
-          </div>
-
-          <!-- Botones Alineados a la Derecha para Imprimir y Exportar -->
-          <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-end">
-            <button class="btn btn-primary me-2" onclick="window.print()" style="background-color: #ff5733;">
-              <i class="material-icons">print</i> <span>Imprimir</span>
+        <div class="row">
+          <!-- Contenedor de botones -->
+          <div class="col-12 d-flex justify-content-end">
+            <button class="btn btn-primary me-2" onclick="abrirNuevaPaginaImprimir()">
+              <i class="material-icons">visibility</i> <span>Vista previa</span>
             </button>
-            <button class="btn btn-success" onclick="exportTableToCSV('libro_mayor.csv')">
+      
+            <button class="btn btn-success me-2" onclick="exportarLibroMayor()">
               <i class="material-icons">file_download</i> <span>Exportar</span>
+            </button>
+      
+            <button class="btn btn-warning" onclick="exportarTodasLasCuentas()">
+              <i class="material-icons">file_download</i> <span>Exportar todas</span>
             </button>
           </div>
         </div>
       </div>
-
       <!-- Estructura de la tabla del Libro Mayor -->
       <table class="table table-bordered table-striped table-hover">
         <thead>
@@ -103,81 +188,262 @@
           </tr>
         </thead>
         <tbody id="tabla-cuerpo">
-          <!-- Aquí van las filas dinámicas de datos -->
-          {% for movimiento in movimientos %}
-          <tr>
-            <td>{{ movimiento.fecha_operacion }}</td>
-            <td class="w-correlativo">{{ movimiento.numero_correlativo_libro }}</td>
-            <td>{{ movimiento.descripcion_glosa }}</td>
-            <td>{{ movimiento.debe }}</td>
-            <td>{{ movimiento.haber }}</td>
-          </tr>
-          {% endfor %}
+          <!-- Aquí se cargarán las filas dinámicamente -->
         </tbody>
         <tfoot>
           <tr>
             <td colspan="3">TOTALES</td>
-            <td>{{ total_debe }}</td>
-            <td>{{ total_haber }}</td>
+            <td class="text-right" id="total-debe">-</td>
+            <td class="text-right" id="total-haber">-</td>
           </tr>
         </tfoot>
       </table>
+
+      <!-- Controles de paginación y selector de número de registros -->
+      <div class="d-flex justify-content-between align-items-center mt-3">
+        <div class="d-flex me-3">
+          <label for="records-per-page" class="me-2">Registros por página:</label>
+          <input type="number" id="records-per-page" class="form-control" value="6" min="1" max="100"
+            style="width: 80px;">
+        </div>
+        <nav aria-label="Page navigation example align-items-center">
+          <ul class="pagination" id="pagination">
+            <li class="page-item">
+              <a class="page-link" href="#" aria-label="Previous" id="prev-page">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="#" aria-label="Next" id="next-page">
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
     </div>
   </div>
 
   <!-- Scripts al final de la página para mejorar la carga -->
   <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/tabla_cuentas.js') }}"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    function exportTableToCSV(filename) {
-      var csv = [];
-      var rows = document.querySelectorAll("table tr");
+    let currentPage = 1;
+    let rowsPerPage = parseInt(document.getElementById("records-per-page").value);
+    const spinnerWrapper = document.getElementById("spinner-wrapper");
 
-      for (var i = 0; i < rows.length; i++) {
-        var row = [], cols = rows[i].querySelectorAll("td, th");
-
-        for (var j = 0; j < cols.length; j++)
-          row.push(cols[j].innerText);
-
-        csv.push(row.join(","));
-      }
-
-      // Download CSV file
-      downloadCSV(csv.join("\n"), filename);
-    }
-
-    function downloadCSV(csv, filename) {
-      var csvFile;
-      var downloadLink;
-
-      csvFile = new Blob([csv], { type: "text/csv" });
-      downloadLink = document.createElement("a");
-      downloadLink.download = filename;
-      downloadLink.href = window.URL.createObjectURL(csvFile);
-      downloadLink.style.display = "none";
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-    }
-
-    // Función para obtener la fecha de hoy en formato YYYY-MM-DD
-    function getTodayDate() {
+    document.addEventListener("DOMContentLoaded", function () {
+      const filtroPeriodo = document.getElementById("filtro-periodo");
+      const filtroCuenta = document.getElementById("filtro-cuenta");
       const today = new Date();
       const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0'); // Mes empieza en 0, así que sumamos 1
-      const day = String(today.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      filtroPeriodo.max = `${year}-${month}`;
+
+      filtroPeriodo.addEventListener("change", cargarTabla);
+      filtroCuenta.addEventListener("change", cargarTabla);
+
+      document.getElementById("search-input").addEventListener("input", filtrarTabla);
+      document.getElementById("records-per-page").addEventListener("input", function () {
+        rowsPerPage = parseInt(this.value);
+        currentPage = 1;
+        updatePagination();
+        showPage(currentPage);
+      });
+
+      cargarTabla();
+    });
+
+    function cargarTabla() {
+      const periodo = document.getElementById("filtro-periodo").value;
+      const cuenta = document.getElementById("filtro-cuenta").value;
+      if (!periodo || !cuenta) return;
+
+      spinnerWrapper.style.display = "block";
+      $.ajax({
+        url: "/libro_mayor_datos",
+        type: "GET",
+        data: { periodo, cuenta },
+        success: function (data) {
+          let filas = "";
+          let totalDebe = 0;
+          let totalHaber = 0;
+
+          data.movimientos.forEach(function (movimiento) {
+            const fechaFormatted = new Date(movimiento.fecha).toLocaleDateString();
+            const deudorFormatted = movimiento.deudor
+              ? movimiento.deudor.toLocaleString('es-PE', { minimumFractionDigits: 2 })
+              : "-";
+            const acreedorFormatted = movimiento.acreedor
+              ? movimiento.acreedor.toLocaleString('es-PE', { minimumFractionDigits: 2 })
+              : "-";
+
+            // Acumular los totales
+            if (movimiento.deudor) totalDebe += parseFloat(movimiento.deudor);
+            if (movimiento.acreedor) totalHaber += parseFloat(movimiento.acreedor);
+
+            filas += `
+              <tr>
+                <td class="centered">${fechaFormatted}</td>
+                <td class="w-correlativo centered">${movimiento.numero_correlativo}</td>
+                <td>${movimiento.glosa}</td>
+                <td class="text-end">${deudorFormatted}</td>
+                <td class="text-end">${acreedorFormatted}</td>
+              </tr>`;
+          });
+
+          $("#tabla-cuerpo").html(filas);
+
+          // Actualizar los totales en el pie de la tabla
+          $("#total-debe").text(totalDebe.toLocaleString('es-PE', { minimumFractionDigits: 2 }));
+          $("#total-haber").text(totalHaber.toLocaleString('es-PE', { minimumFractionDigits: 2 }));
+
+          totalPages = Math.ceil(data.movimientos.length / rowsPerPage);
+          if (totalPages === 0) totalPages = 1;
+          updatePagination();
+          showPage(currentPage);
+        },
+        complete: function () {
+          spinnerWrapper.style.display = "none";
+        },
+        error: function (error) {
+          console.error("Error al cargar los datos:", error);
+          spinnerWrapper.style.display = "none";
+        }
+      });
     }
 
-    // Establece la fecha de hoy como valor predeterminado en el filtro de fecha
-    document.addEventListener('DOMContentLoaded', function () {
-      const filtroFecha = document.getElementById('filtro-fecha');
-      const today = getTodayDate();
-      filtroFecha.value = today;  // Establecer valor como fecha de hoy
-      filtroFecha.max = `${today}`;  // Fecha máxima como hoy para no permitir fechas futuras
-    });
+    function showPage(page, rowsToShow = null) {
+      const rows = rowsToShow || document.querySelectorAll("#tabla-cuerpo tr");
+      const start = (page - 1) * rowsPerPage;
+      const end = start + rowsPerPage;
+
+      rows.forEach((row, index) => {
+        row.style.display = index >= start && index < end ? "" : "none";
+      });
+
+      currentPage = page;
+    }
+
+    function updatePagination() {
+      const pagination = document.getElementById("pagination");
+      const rows = document.querySelectorAll("#tabla-cuerpo tr");
+      const totalRows = rows.length;
+      totalPages = Math.ceil(totalRows / rowsPerPage);
+
+      pagination.innerHTML = `
+        <li class="page-item ${currentPage === 1 ? "disabled" : ""}">
+          <a class="page-link" href="#" aria-label="Previous" id="prev-page">
+            <span aria-hidden="true">&laquo;</span>
+          </a>
+        </li>`;
+
+      for (let i = 1; i <= totalPages; i++) {
+        pagination.innerHTML += `
+          <li class="page-item ${i === currentPage ? "active" : ""}">
+            <a class="page-link" href="#" data-page="${i}">${i}</a>
+          </li>`;
+      }
+
+      pagination.innerHTML += `
+        <li class="page-item ${currentPage === totalPages ? "disabled" : ""}">
+          <a class="page-link" href="#" aria-label="Next" id="next-page">
+            <span aria-hidden="true">&raquo;</span>
+          </a>
+        </li>`;
+
+      document.getElementById("prev-page").addEventListener("click", function (e) {
+        e.preventDefault();
+        if (currentPage > 1) {
+          showPage(currentPage - 1);
+        }
+      });
+
+      document.getElementById("next-page").addEventListener("click", function (e) {
+        e.preventDefault();
+        if (currentPage < totalPages) {
+          showPage(currentPage + 1);
+        }
+      });
+
+      document.querySelectorAll(".page-link[data-page]").forEach(link => {
+        link.addEventListener("click", function (e) {
+          e.preventDefault();
+          showPage(parseInt(this.getAttribute("data-page")));
+        });
+      });
+    }
+
+    function filtrarTabla() {
+      const searchTerm = document.getElementById("search-input").value.toLowerCase();
+      const rows = document.querySelectorAll("#tabla-cuerpo tr");
+
+      // Aplicar el filtro a las filas
+      const filteredRows = Array.from(rows).filter(row => {
+        const cells = row.querySelectorAll("td");
+        const rowText = Array.from(cells).map(cell => cell.textContent.toLowerCase()).join(" ");
+        const matches = rowText.includes(searchTerm);
+        row.style.display = matches ? "" : "none";
+        return matches;
+      });
+
+      // Actualizar variables de paginación
+      const totalFilteredRows = filteredRows.length;
+      totalPages = Math.ceil(totalFilteredRows / rowsPerPage);
+
+      // Mostrar la primera página del resultado filtrado
+      currentPage = 1;
+      showPage(currentPage, filteredRows);
+
+      // Actualizar la paginación
+      updatePagination(filteredRows);
+    }
+
+    function exportarLibroMayor() {
+      const periodo = document.getElementById("filtro-periodo").value;
+      const cuenta = document.getElementById("filtro-cuenta").value;
+      if (periodo && cuenta) {
+        window.location.href = `/exportar-libro-mayor?periodo=${periodo}&cuenta=${cuenta}`;
+      } else {
+        alert("Por favor, seleccione un período y una cuenta antes de exportar.");
+      }
+    }
+
+    function exportarTodasLasCuentas() {
+      const periodo = document.getElementById('filtro-periodo').value;
+      if (periodo) {
+        window.location.href = `/exportar-todas-las-cuentas?periodo=${periodo}`;
+      } else {
+        alert("Por favor, seleccione un período antes de exportar.");
+      }
+    }
+
+    function abrirNuevaPaginaImprimir() {
+      const fecha = document.getElementById('filtro-fecha').value;
+      if (!fecha) {
+        alert('Por favor, selecciona una fecha antes de continuar.');
+        return;
+      }
+      const url = `/libro_diario_imprimir?fecha=${encodeURIComponent(fecha)}`;
+      const nuevaVentana = window.open(url, '_blank');
+      if (!nuevaVentana) {
+        alert('Por favor, permite que el navegador abra ventanas emergentes.');
+      }
+    }
+
+    function abrirNuevaPaginaImprimir() {
+      const periodo = document.getElementById("filtro-periodo").value;
+      const cuenta = document.getElementById("filtro-cuenta").value;
+      if (!periodo || !cuenta) {
+        alert("Por favor, seleccione un período y una cuenta antes de imprimir.");
+        return;
+      }
+      const url = `/libro_mayor_imprimir?periodo=${encodeURIComponent(periodo)}&cuenta=${encodeURIComponent(cuenta)}`;
+      window.open(url, "_blank");
+    }
   </script>
+
 </div>
 {% endblock %}

@@ -8,54 +8,13 @@
 <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
 <link href="{{ url_for('static', filename='css/tabla_cuentas.css') }}" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
 
 <!-- Bootstrap 5.3.3 CSS -->
 {% endblock %}
 
 {% block contenido %}
-<style>
-  .error-input {
-    border: 1px solid red;
-  }
-
-  .error-message {
-    color: red;
-    font-size: 12px;
-    margin-top: 5px;
-    display: none;
-    /* Ocultamos el mensaje por defecto */
-  }
-
-  #editAccountModal .modal-content {
-    position: relative;
-    /* Permite posicionar elementos hijos de manera absoluta */
-  }
-
-  #loadingSpinner {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 1051;
-    /* Asegura que esté en la parte superior del contenido */
-    width: 3rem;
-    height: 3rem;
-    border-width: 0.4rem;
-    /* Grosor de la línea del spinner */
-    animation: spin 1s linear infinite;
-    /* Añade la animación de giro */
-  }
-
-  @keyframes spin {
-    from {
-      transform: translate(-50%, -50%) rotate(0deg);
-    }
-
-    to {
-      transform: translate(-50%, -50%) rotate(360deg);
-    }
-  }
-</style>
 
 <div id="content">
   <div class="main-content">
@@ -114,7 +73,8 @@
           {% for cuenta in cuentas %}
           {% if cuenta[3] is none %}
           <!-- Esta es una cuenta de nivel 1 (cuenta padre) -->
-          <tr class="cuenta-padre" data-cuenta-id="{{ cuenta[0] }}" data-nivel="{{ cuenta[6] }}">
+          <tr class="cuenta-padre" data-cuenta-id="{{ cuenta[0] }}" data-nivel="{{ cuenta[6] }}"
+            data-nueva="{{ 'true' if cuenta[7] else 'false' }}">
             <td>
               {% if cuenta[6] %}
               <button class="btn btn-link toggle-subcuentas" data-cuenta-id="{{ cuenta[0] }}">
@@ -127,15 +87,20 @@
             <td>
               <a href="#" class="edit" data-bs-toggle="modal" data-bs-target="#editAccountModal"
                 data-codigo="{{ cuenta[1] }}" data-descripcion="{{ cuenta[2] }}" data-estado="{{ cuenta[4] | lower }}"
-                data-categoria="{{ cuenta[5] }}">
+                data-categoria="{{ cuenta[5] }}" data-nueva="{{ 'true' if cuenta[7] else 'false' }}">
                 <i class="material-icons" data-bs-toggle="tooltip" title="Editar">&#xE254;</i>
               </a>
-              <a href="#deleteAccountModal" class="delete" data-bs-toggle="modal">
-                <i class="material-icons" data-bs-toggle="tooltip" title="Dar de baja">thumb_down</i>
+              <a href="#deleteAccountModal" class="delete" data-bs-toggle="modal" data-codigo="{{ cuenta[1] }}"
+                data-descripcion="{{ cuenta[2] }}" data-estado="{{ cuenta[4] | lower }}">
+                <i class="material-icons" data-bs-toggle="tooltip"
+                  title="{{ 'Reactivar' if cuenta[4] == 'false' else 'Dar de baja' }}">
+                  {{ 'thumb_up' if cuenta[4] == 'false' else 'thumb_down' }}
+                </i>
               </a>
+
               <a href="#" class="view" data-bs-toggle="modal" data-bs-target="#editAccountModal"
                 data-codigo="{{ cuenta[1] }}" data-descripcion="{{ cuenta[2] }}" data-estado="{{ cuenta[4] | lower }}"
-                data-categoria="{{ cuenta[5] }}">
+                data-categoria="{{ cuenta[5] }}" data-nueva="{{ 'true' if cuenta[7] else 'false' }}">
                 <i class="material-icons" data-bs-toggle="tooltip" title="Ver">&#xE417;</i>
               </a>
             </td>
@@ -143,7 +108,8 @@
           {% else %}
           <!-- Esta es una subcuenta (nivel inferior) -->
           <tr class="subcuenta subcuenta-{{ cuenta[3] }} d-none" data-cuenta-id="{{ cuenta[0] }}"
-            data-nivel="{{ cuenta[6] }}" data-padre-id="{{ cuenta[3] }}">
+            data-nivel="{{ cuenta[6] }}" data-padre-id="{{ cuenta[3] }}"
+            data-nueva="{{ 'true' if cuenta[7] else 'false' }}">
             <td>
               {% if cuenta[6] %}
               <button class="btn btn-link toggle-subcuentas" data-cuenta-id="{{ cuenta[0] }}">
@@ -156,15 +122,21 @@
             <td>
               <a href="#" class="edit" data-bs-toggle="modal" data-bs-target="#editAccountModal"
                 data-codigo="{{ cuenta[1] }}" data-descripcion="{{ cuenta[2] }}" data-estado="{{ cuenta[4] | lower }}"
-                data-categoria="{{ cuenta[5] }}">
+                data-categoria="{{ cuenta[5] }}" data-nueva="{{ 'true' if cuenta[7] else 'false' }}">
                 <i class="material-icons" data-bs-toggle="tooltip" title="Editar">&#xE254;</i>
               </a>
-              <a href="#deleteAccountModal" class="delete" data-bs-toggle="modal">
-                <i class="material-icons" data-bs-toggle="tooltip" title="Eliminar">&#xE872;</i>
+              <a href="#deleteAccountModal" class="delete" data-bs-toggle="modal" data-codigo="{{ cuenta[1] }}"
+                data-descripcion="{{ cuenta[2] }}" data-estado="{{ cuenta[4] | lower }}">
+                <i class="material-icons" data-bs-toggle="tooltip"
+                  title="{{ 'Reactivar' if cuenta[4] == 'false' else 'Dar de baja' }}">
+                  {{ 'thumb_up' if cuenta[4] == 'false' else 'thumb_down' }}
+                </i>
               </a>
+
+
               <a href="#" class="view" data-bs-toggle="modal" data-bs-target="#editAccountModal"
                 data-codigo="{{ cuenta[1] }}" data-descripcion="{{ cuenta[2] }}" data-estado="{{ cuenta[4] | lower }}"
-                data-categoria="{{ cuenta[5] }}">
+                data-categoria="{{ cuenta[5] }}" data-nueva="{{ 'true' if cuenta[7] else 'false' }}">
                 <i class="material-icons" data-bs-toggle="tooltip" title="Ver">&#xE417;</i>
               </a>
             </td>
@@ -175,12 +147,13 @@
       </table>
 
 
+
       <!-- Controles de paginación y selector de número de registros -->
       <div class="d-flex justify-content-between align-items-center mt-3">
         <!-- Selector de número de registros -->
         <div class="d-flex me-3">
           <label for="records-per-page" class="me-2">Registros por página:</label>
-          <input type="number" id="records-per-page" class="form-control" value="10" min="1" max="100"
+          <input type="number" id="records-per-page" class="form-control" value="9" min="1" max="100"
             style="width: 80px;">
         </div>
 
@@ -202,7 +175,34 @@
       </div>
     </div>
   </div>
+  <!-- Botón flotante de configuración -->
+  <button class="open-configurator">
+    <i class="material-icons">settings</i>
+  </button>
+  <!-- Panel lateral de configuración -->
+  <div class="config-panel">
+    <button class="close-config-panel">&times;</button>
+    <h4 class="config-title">Configuración de Niveles de Cuentas</h4>
+    <!-- Opciones de configuración de niveles -->
+    <div class="config-options">
+      <div class="option">
+        <label>Nivel de Cuentas Permitido:</label>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="nivel-cuentas" id="nivel2" value="2" checked>
+          <label class="form-check-label" for="nivel2">Nivel 2 (3 dígitos)</label>
+        </div>
 
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="nivel-cuentas" id="nivel3" value="3">
+          <label class="form-check-label" for="nivel3">Nivel 3 (4 dígitos)</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="nivel-cuentas" id="nivel4" value="4">
+          <label class="form-check-label" for="nivel4">Nivel 4 (5 dígitos)</label>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="modal fade" id="editAccountModal" tabindex="-1" aria-labelledby="editAccountModalLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -211,10 +211,10 @@
           <h5 class="modal-title" id="editAccountModalLabel">Cuenta contable</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-         <!-- Spinner de carga centrado dentro del modal -->
-      <div id="loadingSpinner" class="spinner-border text-primary" role="status" style="display: none;">
-        <span class="visually-hidden">Cargando...</span>
-      </div>
+        <!-- Spinner de carga centrado dentro del modal -->
+        <div id="loadingSpinner" class="spinner-border text-primary" role="status" style="display: none;">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
         <div class="modal-body">
           <form id="editAccountForm">
             <!-- Campo de categoría -->
@@ -272,13 +272,13 @@
       <div class="modal-content">
         <div class="modal-header bg-success text-white d-flex align-items-center justify-content-between">
           <h5 class="modal-title" id="successModalLabel">
-            <i class="fas fa-check-circle me-2"></i> ¡Cuenta agregada exitosamente!
+            <i class="fas fa-check-circle me-2"></i> ¡Acción exitosa!
           </h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
         <div class="modal-body text-center p-5">
           <i class="fas fa-check-circle fa-5x text-success mb-4"></i>
-          <h4 id="successMessage" class="mb-3">La cuenta ha sido añadida correctamente.</h4>
+          <h4 id="successMessage" class="mb-3"></h4>
           <p class="lead"><strong id="successCodigo"></strong></p>
           <p class="lead"><strong id="successDescripcion"></strong></p>
         </div>
@@ -289,6 +289,27 @@
     </div>
   </div>
 
+  <!-- Modal de Confirmación para Dar de Baja -->
+  <div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="deleteAccountModalLabel">Confirmar acción</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p id="deleteMessage">¿Estás seguro de que deseas dar de baja esta cuenta?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-danger" id="confirmDeleteButton">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
   <!-- Scripts al final de la página para mejorar la carga -->
   <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
 
@@ -296,6 +317,35 @@
   <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/tabla_cuentas.js') }}"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+ document.addEventListener("DOMContentLoaded", function () {
+    const openConfiguratorButton = document.querySelector(".open-configurator");
+    const configPanel = document.querySelector(".config-panel");
+    const closeConfigPanelButton = document.querySelector(".close-config-panel");
+
+    // Abrir el panel de configuración
+    openConfiguratorButton.addEventListener("click", function () {
+        configPanel.classList.add("open"); // Añade la clase para abrir el panel
+    });
+
+    // Cerrar el panel de configuración
+    closeConfigPanelButton.addEventListener("click", function () {
+        configPanel.classList.remove("open"); // Elimina la clase para cerrar el panel
+    });
+
+    // Cerrar el panel al hacer clic fuera de él
+    document.addEventListener("click", function (event) {
+        if (
+            !configPanel.contains(event.target) && // Si no se hace clic dentro del panel
+            !event.target.closest(".open-configurator") // Si no se hace clic en el botón de apertura
+        ) {
+            configPanel.classList.remove("open");
+        }
+    });
+});
+
+
+  </script>
 
 </div>
 {% endblock %}
