@@ -204,7 +204,8 @@ def obtener_todos_usuarios():
                 u.dni, 
                 p.nombre, 
                 p.apellido, 
-                r.nombre AS rol
+                r.nombre AS rol,
+                r.id AS rol_id
             FROM usuarios u
             JOIN personas p ON u.id_persona = p.id
             LEFT JOIN roles r ON p.id_rol = r.id
@@ -216,11 +217,13 @@ def obtener_todos_usuarios():
                 'dni': row[0],
                 'nombre': row[1],
                 'apellido': row[2],
-                'rol': row[3] if row[3] else 'Sin rol asignado'
+                'rol': row[3] if row[3] else 'Sin rol asignado',
+                'rol_id': row[4] if row[4] else None
             }
             usuarios.append(usuario)
     conexion.close()
     return usuarios
+
 
 def agregar_usuario(dni, nombre, apellido, id_rol, password):
     conexion = obtener_conexion()

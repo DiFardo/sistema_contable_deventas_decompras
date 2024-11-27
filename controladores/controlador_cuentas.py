@@ -1,6 +1,77 @@
 from flask import jsonify, request
 from bd_conexion import obtener_conexion
 
+
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from io import BytesIO
+from flask import send_file, jsonify
+
+
+def exportar_cuentas_pdf():
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+        cursor.execute("""
+            SELECT codigo, descripcion, nivel
+            FROM cuentas
+            ORDER BY codigo
+        """)
+        cuentas = cursor.fetchall()
+
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        styles = getSampleStyleSheet()
+        elementos = []
+
+        titulo = Paragraph("Cuentas Contables", styles['Title'])
+        elementos.append(titulo)
+        elementos.append(Spacer(1, 12))
+
+        data = [["Código", "Descripción"]]
+        for cuenta in cuentas:
+            codigo = cuenta[0]
+            descripcion = cuenta[1]
+            nivel = cuenta[2] or 0  # Asegurarse de que el nivel no sea None
+            indent = nivel * 15  # Ajusta el valor de indentación según tus necesidades
+            # Crear un estilo de párrafo con indentación
+            estilo_parrafo = ParagraphStyle(
+                name='Indent{}'.format(nivel),
+                parent=styles['Normal'],
+                leftIndent=indent
+            )
+            descripcion_para = Paragraph(descripcion, estilo_parrafo)
+            data.append([codigo, descripcion_para])
+
+        tabla = Table(data, colWidths=[100, 400])
+        tabla.setStyle(TableStyle([
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ]))
+        elementos.append(tabla)
+
+        doc.build(elementos)
+        buffer.seek(0)
+
+        return send_file(
+            buffer,
+            as_attachment=True,
+            download_name="Cuentas_Contables.pdf",
+            mimetype="application/pdf"
+        )
+    except Exception as e:
+        print(f"Error al generar el PDF de las cuentas: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if conexion:
+            cursor.close()
+            conexion.close()
+
+
+            
 def obtener_todas_cuentas():
     conexion = obtener_conexion()
     cuentas = []
@@ -373,3 +444,45 @@ def marcar_notificaciones_leidas():
         return jsonify({'error': str(e)}), 500
     finally:
         conexion.close()
+
+
+
+
+# controlador_cuentas.py
+
+def obtener_cuentas_con_nivel():
+    conexion = obtener_conexion()
+    cuentas = []
+    with conexion.cursor() as cursor:
+        cursor.execute("""
+            WITH cuenta_jerarquia AS (
+                SELECT 
+                    c1.cuenta_id AS id_cuenta,
+                    c1.codigo AS codigo_cuenta,
+                    c1.descripcion AS descripcion_cuenta,
+                    c1.cuenta_padre AS cuenta_padre,
+                    c1.estado AS estado_cuenta,
+                    c1.categoria AS categoria_cuenta,
+                    c1.nivel AS nivel_cuenta,
+                    CASE 
+                        WHEN EXISTS (SELECT 1 FROM cuentas c2 WHERE c2.cuenta_padre = c1.cuenta_id)
+                        THEN TRUE
+                        ELSE FALSE
+                    END AS tiene_subcuentas
+                FROM cuentas c1
+            )
+            SELECT 
+                id_cuenta,
+                codigo_cuenta,
+                descripcion_cuenta,
+                cuenta_padre,
+                estado_cuenta,
+                categoria_cuenta,
+                nivel_cuenta,
+                tiene_subcuentas
+            FROM cuenta_jerarquia
+            ORDER BY codigo_cuenta;
+        """)
+        cuentas = cursor.fetchall()
+    conexion.close()
+    return cuentas

@@ -9,6 +9,8 @@ from flask_jwt_extended import (
 import controladores.controlador_usuarios as controlador_usuarios
 import controladores.controlador_ventas as controlador_ventas
 import controladores.controlador_plantillas as controlador_plantillas
+import controladores.controlador_cuentas as controlador_cuentas
+
 from bd_conexion import obtener_conexion
 from controladores.controlador_cuentas import (
     obtener_todas_cuentas, obtener_cuentas_por_categoria_endpoint,
@@ -173,6 +175,13 @@ def index():
                 "titulo": "Módulo de ventas",
                 "descripcion": "Controla las operaciones de ventas y compras mediante transacciones comerciales de forma integrada.",
                 "url": url_for('productos'),
+                "clase_cuerpo": "card-body-modulo-ventas",
+                "clase_encabezado": "card-header-modulo-ventas"
+            },
+            {
+                "titulo": "Módulo de personal",
+                "descripcion": "Controla el mantenimiento de las cuentas del personl.",
+                "url": url_for('personal'),
                 "clase_cuerpo": "card-body-modulo-ventas",
                 "clase_encabezado": "card-header-modulo-ventas"
             }
@@ -1278,6 +1287,35 @@ def page_not_found(e):
 @app.route('/prueba1')
 def prueba1():
     return render_template('prueba1.html')
+
+
+# maestra_iniciar.py
+
+@app.route("/cuentas_imprimir", methods=["GET"])
+@jwt_required()
+def cuentas_imprimir():
+    dni = get_jwt_identity()
+    usuario = controlador_usuarios.obtener_usuario(dni)
+    cuentas_data = controlador_cuentas.obtener_cuentas_con_nivel()  # Usamos la nueva función
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Cuentas contables', 'url': '/cuentas'},
+        {'name': 'Vista previa', 'url': '/cuentas_imprimir'}
+    ]
+    return render_template("cuentas_imprimir.html", cuentas=cuentas_data, breadcrumbs=breadcrumbs, usuario=usuario)
+
+
+# maestra_iniciar.py
+
+@app.route('/exportar_cuentas_pdf', methods=['GET'])
+@jwt_required()
+def exportar_cuentas_pdf():
+    try:
+        return controlador_cuentas.exportar_cuentas_pdf()
+    except Exception as e:
+        print(f"Error al exportar las cuentas a PDF: {e}")
+        return jsonify({'error': str(e)}), 500
+
 
 # Iniciar el servidor
 if __name__ == "__main__":

@@ -48,8 +48,7 @@
   .input-group-text i {
     width: 1.5em; /* Fija un ancho */
     text-align: center; /* Alinea el ícono */
-    }
-
+  }
 </style>
 
 <div id="content">
@@ -130,7 +129,7 @@
                 data-dni="{{ usuario.dni }}"
                 data-nombre="{{ usuario.nombre }}"
                 data-apellido="{{ usuario.apellido }}"
-                data-rol="{{ usuario.rol }}">
+                data-rol="{{ usuario.rol_id }}">
                 <i class="material-icons" data-bs-toggle="tooltip" title="Editar">&#xE254;</i>
               </a>
               <a href="#" class="delete" data-bs-toggle="modal" data-bs-target="#deleteUserModal"
@@ -333,7 +332,6 @@
                 quitarError(input);
             }
         }
-
 
         nombreInput.addEventListener("input", function () {
             validarTexto(this);
