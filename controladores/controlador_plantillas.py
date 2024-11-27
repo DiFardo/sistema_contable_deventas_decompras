@@ -5,7 +5,7 @@ from openpyxl.styles import Border, Side, Alignment, Font
 from openpyxl.styles.numbers import FORMAT_DATE_DDMMYY, FORMAT_NUMBER_COMMA_SEPARATED1
 from psycopg2.extras import DictCursor
 from bd_conexion import obtener_conexion
-from psycopg2 import sql
+from psycopg2 import sql, Error
 from openpyxl import Workbook
 from io import BytesIO
 from flask import send_file
@@ -14,6 +14,9 @@ from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import Table, TableStyle, SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
+from sqlalchemy import create_engine, text
+from dotenv import load_dotenv
+import os
 
 def generar_registro_venta_excel(mes, anio):
     try:
@@ -901,7 +904,6 @@ def obtener_registro_ventas(mes, año):
     total_base_imponible = 0
     total_igv = 0
     total_total_comprobante = 0
-
     with conexion.cursor(cursor_factory=DictCursor) as cursor:
         cursor.execute("""
             SELECT 
@@ -928,16 +930,12 @@ def obtener_registro_ventas(mes, año):
                      v.numero_documento, v.usuario, v.tipo_comprobante, v.fecha
             ORDER BY v.fecha, v.serie_comprobante, v.numero_comprobante;
         """, (mes, año))
-
         registros = cursor.fetchall()
-
         for registro in registros:
             total_base_imponible += registro['base_imponible']
             total_igv += registro['igv']
             total_total_comprobante += registro['total_comprobante']
-
     conexion.close()
-
     return registros, total_base_imponible, total_igv, total_total_comprobante
 
 # Esta función realiza la consulta a la base de datos con el filtro de mes y año
@@ -947,7 +945,6 @@ def obtener_registro_ventas_por_fecha(mes, anio):
     total_base_imponible = 0
     total_igv = 0
     total_total_comprobante = 0
-
     with conexion.cursor(cursor_factory=DictCursor) as cursor:
         try:
             cursor.execute("""
@@ -975,23 +972,16 @@ def obtener_registro_ventas_por_fecha(mes, anio):
                          v.numero_documento, v.usuario, v.tipo_comprobante, v.fecha
                 ORDER BY v.fecha, v.serie_comprobante, v.numero_comprobante;
             """, (mes, anio))
-
             registros = cursor.fetchall()
-
             for registro in registros:
                 total_base_imponible += registro['base_imponible']
                 total_igv += registro['igv']
                 total_total_comprobante += registro['total_comprobante']
-            
-            # Log output for debugging
             print(f"Registros obtenidos: {registros}")
             print(f"Total Base Imponible: {total_base_imponible}, Total IGV: {total_igv}, Total Comprobante: {total_total_comprobante}")
-        
         except Exception as e:
             print(f"Error al obtener registros de ventas: {e}")
-
     conexion.close()
-
     return registros, total_base_imponible, total_igv, total_total_comprobante
 
 
@@ -1446,7 +1436,6 @@ def obtener_libro_caja(mes, año):
             """).format(mes=sql.Literal(mes), año=sql.Literal(año))
             cursor.execute(query)
             movimientos = cursor.fetchall()
-
             agrupado = {}
             for movimiento in movimientos:
                 numero_correlativo = movimiento["numero_correlativo"]
@@ -1465,7 +1454,6 @@ def obtener_libro_caja(mes, año):
                 })
                 total_deudor += movimiento["saldo_deudor"]
                 total_acreedor += movimiento["saldo_acreedor"]
-
             movimientos_agrupados = list(agrupado.values())
         except Exception as e:
             print("Error en la consulta SQL con `psycopg2.sql`:", e)
@@ -1775,151 +1763,156 @@ def generar_libro_mayor_pdf(mes, año, cuenta):
             cursor.close()
             conexion.close()
 
+load_dotenv()
+
 def generar_libro_caja_excel(mes, anio):
+    print(f"mes: '{mes}', año: '{anio}'")
     try:
-        mes = int(mes)
-        anio = int(anio)
-    except ValueError:
-        print("Error: mes o año no son enteros válidos")
-        return jsonify({'error': 'Mes o año no son enteros válidos'}), 400
+        db_url = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
+        engine = create_engine(db_url)
+        with engine.connect() as conexion:
+            consulta = """
+            SELECT 
+                DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo,
+                TO_CHAR(ac.fecha, 'DD/MM/YYYY') AS fecha_operacion,
+                CASE
+                    WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
+                    WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la venta de mercadería'
+                    ELSE 'Descripción no especificada'
+                END AS descripcion_operacion,
+                ac.codigo_cuenta AS codigo_cuenta_asociada,
+                ac.denominacion AS denominacion_cuenta_asociada,
+                COALESCE(ac.debe, 0) AS saldo_deudor,
+                COALESCE(ac.haber, 0) AS saldo_acreedor
+            FROM asientos_contables ac
+            JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
+            WHERE 
+                (ac.codigo_cuenta LIKE '10%')
+                AND EXTRACT(MONTH FROM ac.fecha) = :mes
+                AND EXTRACT(YEAR FROM ac.fecha) = :anio
+            ORDER BY ac.fecha, numero_correlativo, codigo_cuenta_asociada;
+            """
+            # Ejecuta la consulta y obtiene los resultados
+            resultados = conexion.execute(text(consulta), {"mes": mes, "anio": anio}).fetchall()
 
-    try:
-        conexion = obtener_conexion()
-        cursor = conexion.cursor()
+            if not resultados:
+                return jsonify({'error': 'No se encontraron resultados.'}), 404
 
-        consulta = """
-        SELECT
-            DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo,
-            TO_CHAR(ac.fecha, 'DD/MM/YYYY') AS fecha_operacion,
-            CASE
-                WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
-                WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la venta de mercadería'
-                ELSE 'Descripción no especificada'
-            END AS descripcion_operacion,
-            ac.codigo_cuenta AS codigo_cuenta_asociada,
-            ac.denominacion AS denominacion_cuenta_asociada,
-            COALESCE(ac.debe, 0) AS saldo_deudor,
-            COALESCE(ac.haber, 0) AS saldo_acreedor
-        FROM asientos_contables ac
-        JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
-        WHERE 
-            (ac.codigo_cuenta LIKE '10%')
-            AND EXTRACT(MONTH FROM ac.fecha) = %s
-            AND EXTRACT(YEAR FROM ac.fecha) = %s
-        ORDER BY fecha_operacion, numero_correlativo, ac.id;
-        """
-        cursor.execute(consulta, (mes, anio))
+            # Cargar la plantilla de Excel
+            ruta_plantilla = 'plantillas/LibroCaja.xlsx'
+            workbook = load_workbook(ruta_plantilla)
+            hoja = workbook.active
+            
+            periodo = f"{anio}-{str(mes).zfill(2)}"
+            hoja.cell(row=3, column=2, value=periodo)
 
-        resultados = cursor.fetchall()
+            # Definir estilos
+            borde = Border(
+                left=Side(style='thin'),
+                right=Side(style='thin'),
+                top=Side(style='thin'),
+                bottom=Side(style='thin')
+            )
 
-        # Cargar la plantilla de Excel
-        ruta_plantilla = 'plantillas/LibroCaja.xlsx'
-        workbook = load_workbook(ruta_plantilla)
-        hoja = workbook.active
+            fuente_estandar = Font(name='Arial', size=10)
 
-        # Escribir el periodo en la celda específica
-        periodo = f"{anio}-{str(mes).zfill(2)}"
-        hoja.cell(row=3, column=2, value=periodo)
+            fila_base = 9
+            alto_fila_base = hoja.row_dimensions[fila_base].height  # Alto de fila base
+            fila_inicial = fila_base
+            total_deudor = 0
+            total_acreedor = 0
+            columnas_con_borde = list(range(1, 8))  # Ajusta según las columnas que usas en la plantilla
 
-        # Configuración de bordes y fuente
-        borde = Border(
-            left=Side(style='thin'),
-            right=Side(style='thin'),
-            top=Side(style='thin'),
-            bottom=Side(style='thin')
-        )
-        fuente_estandar = Font(name='Arial', size=10)
+            # Establecer el alto de todas las filas
+            for fila in range(fila_inicial, fila_inicial + len(resultados) + 1):
+                hoja.row_dimensions[fila].height = alto_fila_base
 
-        fila_base = 12
-        alto_fila_base = hoja.row_dimensions[fila_base].height
+            for fila, registro in enumerate(resultados, start=fila_inicial):
+                if len(registro) < 7:
+                    print(f"Error: El registro tiene menos de 7 columnas: {registro}")
+                    continue  # Salta el registro incorrecto
 
-        fila_inicial = fila_base
-        total_deudor = 0
-        total_acreedor = 0
+                celdas = [
+                    (1, registro[0]),  # Correlativo
+                    (2, registro[1]),  # Fecha operación
+                    (3, registro[2]),  # Descripción operación
+                    (4, registro[3]),  # Código cuenta
+                    (5, registro[4]),  # Denominación cuenta
+                    (6, registro[5]),  # Saldo deudor
+                    (7, registro[6])   # Saldo acreedor
+                ]
 
-        columnas_con_borde = list(range(1, 23))
+                # Aplica borde y fuente estándar a todas las celdas de la fila
+                for col in columnas_con_borde:
+                    celda = hoja.cell(row=fila, column=col)
+                    celda.border = borde
+                    celda.font = fuente_estandar
 
-        for fila, registro in enumerate(resultados, start=fila_inicial):
-            hoja.row_dimensions[fila].height = alto_fila_base
+                # Asigna los valores a las celdas correspondientes
+                for col, valor in celdas:
+                    celda = hoja.cell(row=fila, column=col, value=valor)
+                    celda.font = fuente_estandar
 
-            celdas = [
-                (1, registro[0]),  # Correlativo
-                (2, registro[1]),  # Fecha de operación
-                (3, registro[2]),  # Descripción de operación
-                (4, registro[3]),  # Código cuenta asociada
-                (5, registro[4]),  # Denominación cuenta asociada
-                (6, registro[5]), # Saldo deudor
-                (7, registro[6])  # Saldo acreedor
-            ]
+                    # Formatear las celdas de acuerdo a su tipo
+                    if col in (6, 7):  # Saldo deudor y saldo acreedor
+                        celda.alignment = Alignment(horizontal='right', vertical='center')
+                        celda.number_format = '###,##0.00'
+                    elif col == 2:  # Fecha de operación
+                        celda.number_format = 'DD/MM/YYYY'
+                        celda.alignment = Alignment(horizontal='center', vertical='center')
+                    elif col == 1:
+                        celda.alignment = Alignment(horizontal='center', vertical='center')
+                    else:
+                        celda.alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
 
+                    # Sumar los totales deudor y acreedor
+                    if col == 6:
+                        total_deudor += valor
+                    elif col == 7:
+                        total_acreedor += valor
+
+            # Escribir los totales en la fila de "Totales"
+            fila_totales = fila_inicial + len(resultados)
+            hoja.row_dimensions[fila_totales].height = alto_fila_base  # Mantener el mismo alto para la fila de totales
+            celda_totales = hoja.cell(row=fila_totales, column=5, value="TOTALES")
+            celda_totales.border = borde
+            celda_totales.alignment = Alignment(horizontal='center', vertical='center')
+            celda_totales.font = Font(name='Arial', size=10, bold=True)
+
+            total_deudor_celda = hoja.cell(row=fila_totales, column=6, value=total_deudor)
+            total_deudor_celda.border = borde
+            total_deudor_celda.number_format = '###,##0.00'
+            total_deudor_celda.alignment = Alignment(horizontal='right', vertical='center')
+            total_deudor_celda.font = fuente_estandar
+
+            total_acreedor_celda = hoja.cell(row=fila_totales, column=7, value=total_acreedor)
+            total_acreedor_celda.border = borde
+            total_acreedor_celda.number_format = '###,##0.00'
+            total_acreedor_celda.alignment = Alignment(horizontal='right', vertical='center')
+            total_acreedor_celda.font = fuente_estandar
+
+            # Aplicar bordes a las celdas de totales
             for col in columnas_con_borde:
-                celda = hoja.cell(row=fila, column=col)
-                celda.border = borde
-                celda.font = fuente_estandar
+                hoja.cell(row=fila_totales, column=col).border = borde
 
-            for col, valor in celdas:
-                celda = hoja.cell(row=fila, column=col, value=valor)
-                celda.font = fuente_estandar
+            # Guardar el archivo Excel en memoria
+            output = BytesIO()
+            workbook.save(output)
+            output.seek(0)
 
-                if col in (6, 7):
-                    celda.alignment = Alignment(horizontal='right', vertical='center')
-                    celda.number_format = FORMAT_NUMBER_COMMA_SEPARATED1
-                elif col == 2:
-                    celda.number_format = FORMAT_DATE_DDMMYY
-                    celda.alignment = Alignment(horizontal='center', vertical='center')
-                else:
-                    celda.alignment = Alignment(horizontal='left', vertical='center')
+            nombre_archivo = f'libro_caja_{anio}_{mes}.xlsx'
 
-                if col == 6:
-                    total_deudor += valor
-                elif col == 7:
-                    total_acreedor += valor
-
-        # Escribir los totales en la fila de "Totales"
-        fila_totales = fila_inicial + len(resultados)
-        hoja.row_dimensions[fila_totales].height = alto_fila_base
-        celda_totales = hoja.cell(row=fila_totales, column=5, value="TOTALES")
-        celda_totales.border = borde
-        celda_totales.alignment = Alignment(horizontal='center', vertical='center')
-        celda_totales.font = Font(name='Arial', size=10, bold=True)
-
-        total_deudor_celda = hoja.cell(row=fila_totales, column=6, value=total_deudor)
-        total_deudor_celda.border = borde
-        total_deudor_celda.number_format = FORMAT_NUMBER_COMMA_SEPARATED1
-        total_deudor_celda.alignment = Alignment(horizontal='right', vertical='center')
-        total_deudor_celda.font = fuente_estandar
-
-        total_acreedor_celda = hoja.cell(row=fila_totales, column=7, value=total_acreedor)
-        total_acreedor_celda.border = borde
-        total_acreedor_celda.number_format = FORMAT_NUMBER_COMMA_SEPARATED1
-        total_acreedor_celda.alignment = Alignment(horizontal='right', vertical='center')
-        total_acreedor_celda.font = fuente_estandar
-
-        for col in columnas_con_borde:
-            hoja.cell(row=fila_totales, column=col).border = borde
-
-        # Guardar el archivo Excel en memoria
-        output = BytesIO()
-        workbook.save(output)
-        output.seek(0)
-
-        nombre_archivo = f'libro_caja_{anio}_{mes}.xlsx'
-
-        # Enviar el archivo como respuesta
-        return send_file(
-            output,
-            download_name=nombre_archivo,
-            as_attachment=True,
-            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
+            # Enviar el archivo como respuesta
+            return send_file(
+                output,
+                download_name=nombre_archivo,
+                as_attachment=True,
+                mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
 
     except Exception as e:
         print(f"Error al generar el libro de caja: {e}")
         return jsonify({'error': str(e)}), 500
-    finally:
-        if conexion:
-            cursor.close()
-            conexion.close()
 
 def generar_excel_todas_las_cuentas(mes, año):
     try:

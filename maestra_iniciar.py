@@ -522,14 +522,12 @@ def libro_caja_datos():
     periodo = request.args.get("periodo")
     if not periodo:
         return jsonify(filas=[], total_deudor=0, total_acreedor=0)
-
     try:
         año, mes = periodo.split("-")
         año = int(año)
         mes = int(mes)
     except ValueError:
         return jsonify(filas=[], total_deudor=0, total_acreedor=0)
-
     movimientos_agrupados, total_deudor, total_acreedor = controlador_plantillas.obtener_libro_caja(mes, año)
     return jsonify(filas=movimientos_agrupados, total_deudor=total_deudor, total_acreedor=total_acreedor)
 
@@ -647,7 +645,6 @@ def registro_ventas_datos():
     mes = request.args.get("month")
     anio = request.args.get("year")
     registros, total_base_imponible, total_igv, total_total_comprobante = controlador_plantillas.obtener_registro_ventas_por_fecha(mes, anio)
-    
     filas = [
         {
             "correlativo": reg["correlativo"],
@@ -664,7 +661,6 @@ def registro_ventas_datos():
         }
         for reg in registros
     ]
-
     return jsonify(
         registros=filas,
         total_base_imponible=total_base_imponible,

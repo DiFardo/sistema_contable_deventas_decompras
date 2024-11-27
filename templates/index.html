@@ -126,6 +126,24 @@
                 </a>
             </div>
             {% endif %}
+
+            {% if usuario[7] in [3] %}
+            <div class="col-lg-4 mb-4">
+                <a href="{{ url_for('personal') }}" class="text-decoration-none">
+                    <div class="card card-modulo">
+                        <div class="card-header card-header-modulo-reportes">
+                            <h6 class="card-title-centered">Módulo personal</h6>
+                        </div>
+                        <div class="card-body card-body-modulo card-body-modulo-reportes">
+                            <!-- La imagen de fondo se mostrará aquí -->
+                        </div>
+                        <div class="card-footer card-footer-modulo">
+                            <p>Gestión del personal activo de la empresa.</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endif %}
         </div>
 
     </div>

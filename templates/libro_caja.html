@@ -413,14 +413,13 @@
     });
 
     function exportarLibroCajaBancos() {
-        const periodo = document.getElementById("filtro-periodo").value;
-        if (!periodo) {
-            alert("Por favor, seleccione un periodo para exportar el Libro Caja y Bancos.");
+        const filtroPeriodo = document.getElementById("filtro-periodo").value;
+        if (!filtroPeriodo) {
+            alert("Por favor, seleccione un período antes de exportar.");
             return;
         }
-
-        const url = `/exportar-libro-caja-bancos?periodo=${encodeURIComponent(periodo)}`;
-        window.location.href = url;
+        // Redireccionar a la ruta de exportación con el período como parámetro
+        window.location.href = `/exportar-libro-caja-bancos?periodo=${filtroPeriodo}`;
     }
 
     function abrirNuevaPaginaImprimirCaja() {
