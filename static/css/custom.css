@@ -115,6 +115,16 @@ a:focus {
 	transition: all 0.3s;
 }
 
+/* Mantener el color del enlace en blanco */
+#profile-icon, #notification-icon {
+	color: #fff;
+}
+
+
+/* Cambiar el color del nombre de usuario a amarillo al pasar el mouse */
+#profile-icon:hover span,#notification-icon:hover span {
+	color: #FFC107 ;
+}
 
 
 /*=========sidebar---design------*/
@@ -209,7 +219,7 @@ a:focus {
 }
 
 #sidebar ul li a:hover {
-	color: #4c7cf3;
+	color: #FFC107;
 	background-color: #DBE5FD;
 }
 
