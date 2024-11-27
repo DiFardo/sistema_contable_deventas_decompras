@@ -121,10 +121,14 @@ a:focus {
 }
 
 
-/* Cambiar el color del nombre de usuario a amarillo al pasar el mouse */
-#profile-icon:hover span,#notification-icon:hover span {
-	color: #FFC107 ;
+/* Cambiar el color del nombre de usuario a un degradado azul al pasar el mouse */
+#profile-icon:hover span, #notification-icon:hover span {
+    background: linear-gradient(45deg, #0ad6f1, #e5e905); /* Degradado de azul oscuro a azul claro */
+    -webkit-background-clip: text; /* Aplicar el degradado solo al texto */
+    color: transparent; /* Hacer el color de texto transparente para que se vea el degradado */
 }
+
+
 
 
 /*=========sidebar---design------*/
