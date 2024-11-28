@@ -203,21 +203,12 @@
       <div class="d-flex justify-content-between align-items-center mt-3">
         <div class="d-flex me-3">
           <label for="records-per-page" class="me-2">Registros por página:</label>
-          <input type="number" id="records-per-page" class="form-control" value="6" min="1" max="100"
+          <input type="number" id="records-per-page" class="form-control" value="5" min="1" max="100"
             style="width: 80px;">
         </div>
         <nav aria-label="Page navigation example align-items-center">
           <ul class="pagination" id="pagination">
-            <li class="page-item">
-              <a class="page-link" href="#" aria-label="Previous" id="prev-page">
-                <span aria-hidden="true">&laquo;</span>
-              </a>
-            </li>
-            <li class="page-item">
-              <a class="page-link" href="#" aria-label="Next" id="next-page">
-                <span aria-hidden="true">&raquo;</span>
-              </a>
-            </li>
+            <!-- Páginas se generarán dinámicamente -->
           </ul>
         </nav>
       </div>
@@ -232,31 +223,56 @@
   <script>
     let currentPage = 1;
     let rowsPerPage = parseInt(document.getElementById("records-per-page").value);
+    let totalRows = 0;
+    let totalPages = 0;
     const spinnerWrapper = document.getElementById("spinner-wrapper");
+    let allData = [];
+    let filteredData = [];
+    let totalDebe = 0;
+    let totalHaber = 0;
+
+    function formatValue(value) {
+      const numericValue = Number(value);
+      if (numericValue === 0 || isNaN(numericValue) || value === null || value === undefined) {
+        return "-";
+      }
+      return numericValue.toLocaleString('es-PE', { minimumFractionDigits: 2 });
+    }
+
+    function getTodayMonth() {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      return `${year}-${month}`;
+    }
 
     document.addEventListener("DOMContentLoaded", function () {
       const filtroPeriodo = document.getElementById("filtro-periodo");
       const filtroCuenta = document.getElementById("filtro-cuenta");
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      filtroPeriodo.max = `${year}-${month}`;
+      filtroPeriodo.max = getTodayMonth();
 
-      filtroPeriodo.addEventListener("change", cargarTabla);
-      filtroCuenta.addEventListener("change", cargarTabla);
+      filtroPeriodo.addEventListener("change", cargarDatos);
+      filtroCuenta.addEventListener("change", cargarDatos);
 
-      document.getElementById("search-input").addEventListener("input", filtrarTabla);
-      document.getElementById("records-per-page").addEventListener("input", function () {
-        rowsPerPage = parseInt(this.value);
+      document.getElementById("search-input").addEventListener("input", function () {
         currentPage = 1;
-        updatePagination();
-        showPage(currentPage);
+        filtrarTabla();
       });
 
-      cargarTabla();
+      document.getElementById("records-per-page").addEventListener("input", function () {
+        const newValue = parseInt(this.value);
+        if (!isNaN(newValue) && newValue > 0) {
+          rowsPerPage = newValue;
+          totalPages = Math.ceil(filteredData.length / rowsPerPage);
+          currentPage = 1;
+          showPage(currentPage);
+        }
+      });
+
+      cargarDatos();
     });
 
-    function cargarTabla() {
+    function cargarDatos() {
       const periodo = document.getElementById("filtro-periodo").value;
       const cuenta = document.getElementById("filtro-cuenta").value;
       if (!periodo || !cuenta) return;
@@ -267,43 +283,15 @@
         type: "GET",
         data: { periodo, cuenta },
         success: function (data) {
-          let filas = "";
-          let totalDebe = 0;
-          let totalHaber = 0;
-
-          data.movimientos.forEach(function (movimiento) {
-            const fechaFormatted = new Date(movimiento.fecha).toLocaleDateString();
-            const deudorFormatted = movimiento.deudor
-              ? movimiento.deudor.toLocaleString('es-PE', { minimumFractionDigits: 2 })
-              : "-";
-            const acreedorFormatted = movimiento.acreedor
-              ? movimiento.acreedor.toLocaleString('es-PE', { minimumFractionDigits: 2 })
-              : "-";
-
-            // Acumular los totales
-            if (movimiento.deudor) totalDebe += parseFloat(movimiento.deudor);
-            if (movimiento.acreedor) totalHaber += parseFloat(movimiento.acreedor);
-
-            filas += `
-              <tr>
-                <td class="centered">${fechaFormatted}</td>
-                <td class="w-correlativo centered">${movimiento.numero_correlativo}</td>
-                <td>${movimiento.glosa}</td>
-                <td class="text-end">${deudorFormatted}</td>
-                <td class="text-end">${acreedorFormatted}</td>
-              </tr>`;
-          });
-
-          $("#tabla-cuerpo").html(filas);
-
-          // Actualizar los totales en el pie de la tabla
-          $("#total-debe").text(totalDebe.toLocaleString('es-PE', { minimumFractionDigits: 2 }));
-          $("#total-haber").text(totalHaber.toLocaleString('es-PE', { minimumFractionDigits: 2 }));
-
-          totalPages = Math.ceil(data.movimientos.length / rowsPerPage);
-          if (totalPages === 0) totalPages = 1;
-          updatePagination();
-          showPage(currentPage);
+          allData = data.movimientos.map(movimiento => ({
+            fecha: new Date(movimiento.fecha).toLocaleDateString(),
+            numero_correlativo: movimiento.numero_correlativo,
+            glosa: movimiento.glosa,
+            deudor: parseFloat(movimiento.deudor) || 0,
+            acreedor: parseFloat(movimiento.acreedor) || 0
+          }));
+          calcularTotales();
+          filtrarTabla();
         },
         complete: function () {
           spinnerWrapper.style.display = "none";
@@ -315,90 +303,137 @@
       });
     }
 
-    function showPage(page, rowsToShow = null) {
-      const rows = rowsToShow || document.querySelectorAll("#tabla-cuerpo tr");
+    function calcularTotales() {
+      totalDebe = filteredData.reduce((acc, movimiento) => acc + movimiento.deudor, 0);
+      totalHaber = filteredData.reduce((acc, movimiento) => acc + movimiento.acreedor, 0);
+
+      document.getElementById("total-debe").textContent = formatValue(totalDebe);
+      document.getElementById("total-haber").textContent = formatValue(totalHaber);
+    }
+
+    function filtrarTabla() {
+      const searchTerm = document.getElementById("search-input").value.toLowerCase();
+      filteredData = allData.filter(movimiento => {
+        return Object.values(movimiento).some(value =>
+          String(value).toLowerCase().includes(searchTerm)
+        );
+      });
+      totalRows = filteredData.length;
+      totalPages = Math.ceil(totalRows / rowsPerPage);
+      currentPage = 1;
+      calcularTotales();
+      showPage(currentPage);
+    }
+
+    function showPage(page) {
+      const tbody = document.getElementById("tabla-cuerpo");
+      tbody.innerHTML = "";
       const start = (page - 1) * rowsPerPage;
       const end = start + rowsPerPage;
+      const pageData = filteredData.slice(start, end);
 
-      rows.forEach((row, index) => {
-        row.style.display = index >= start && index < end ? "" : "none";
+      pageData.forEach(movimiento => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td class="centered">${movimiento.fecha}</td>
+          <td class="w-correlativo centered">${movimiento.numero_correlativo}</td>
+          <td>${movimiento.glosa}</td>
+          <td class="text-end">${formatValue(movimiento.deudor)}</td>
+          <td class="text-end">${formatValue(movimiento.acreedor)}</td>
+        `;
+        tbody.appendChild(row);
       });
 
-      currentPage = page;
+      updatePagination();
     }
 
     function updatePagination() {
       const pagination = document.getElementById("pagination");
-      const rows = document.querySelectorAll("#tabla-cuerpo tr");
-      const totalRows = rows.length;
-      totalPages = Math.ceil(totalRows / rowsPerPage);
+      pagination.innerHTML = "";
 
-      pagination.innerHTML = `
-        <li class="page-item ${currentPage === 1 ? "disabled" : ""}">
+      if (totalPages <= 1) {
+        return;
+      }
+
+      // Botón Previous
+      const prevClass = currentPage === 1 ? "disabled" : "";
+      pagination.innerHTML += `
+        <li class="page-item ${prevClass}">
           <a class="page-link" href="#" aria-label="Previous" id="prev-page">
             <span aria-hidden="true">&laquo;</span>
           </a>
-        </li>`;
+        </li>
+      `;
 
-      for (let i = 1; i <= totalPages; i++) {
-        pagination.innerHTML += `
-          <li class="page-item ${i === currentPage ? "active" : ""}">
-            <a class="page-link" href="#" data-page="${i}">${i}</a>
-          </li>`;
+      // Páginas
+      const maxPagesToShow = 5;
+      let startPage = Math.max(currentPage - 2, 1);
+      let endPage = Math.min(startPage + maxPagesToShow - 1, totalPages);
+
+      if (endPage - startPage < maxPagesToShow - 1) {
+        startPage = Math.max(endPage - maxPagesToShow + 1, 1);
       }
 
+      if (startPage > 1) {
+        pagination.innerHTML += `<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>`;
+        if (startPage > 2) {
+          pagination.innerHTML += `<li class="page-item disabled"><a class="page-link" href="#">...</a></li>`;
+        }
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        const activeClass = i === currentPage ? "active" : "";
+        pagination.innerHTML += `
+          <li class="page-item ${activeClass}">
+            <a class="page-link" href="#" data-page="${i}">${i}</a>
+          </li>
+        `;
+      }
+
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          pagination.innerHTML += `<li class="page-item disabled"><a class="page-link" href="#">...</a></li>`;
+        }
+        pagination.innerHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`;
+      }
+
+      // Botón Next
+      const nextClass = currentPage === totalPages ? "disabled" : "";
       pagination.innerHTML += `
-        <li class="page-item ${currentPage === totalPages ? "disabled" : ""}">
+        <li class="page-item ${nextClass}">
           <a class="page-link" href="#" aria-label="Next" id="next-page">
             <span aria-hidden="true">&raquo;</span>
           </a>
-        </li>`;
+        </li>
+      `;
 
+      // Eventos para botones
       document.getElementById("prev-page").addEventListener("click", function (e) {
         e.preventDefault();
         if (currentPage > 1) {
-          showPage(currentPage - 1);
+          currentPage--;
+          showPage(currentPage);
         }
       });
 
       document.getElementById("next-page").addEventListener("click", function (e) {
         e.preventDefault();
         if (currentPage < totalPages) {
-          showPage(currentPage + 1);
+          currentPage++;
+          showPage(currentPage);
         }
       });
 
       document.querySelectorAll(".page-link[data-page]").forEach(link => {
         link.addEventListener("click", function (e) {
           e.preventDefault();
-          showPage(parseInt(this.getAttribute("data-page")));
+          const selectedPage = parseInt(this.getAttribute("data-page"));
+          if (selectedPage !== currentPage) {
+            currentPage = selectedPage;
+            showPage(currentPage);
+          }
         });
       });
-    }
-
-    function filtrarTabla() {
-      const searchTerm = document.getElementById("search-input").value.toLowerCase();
-      const rows = document.querySelectorAll("#tabla-cuerpo tr");
-
-      // Aplicar el filtro a las filas
-      const filteredRows = Array.from(rows).filter(row => {
-        const cells = row.querySelectorAll("td");
-        const rowText = Array.from(cells).map(cell => cell.textContent.toLowerCase()).join(" ");
-        const matches = rowText.includes(searchTerm);
-        row.style.display = matches ? "" : "none";
-        return matches;
-      });
-
-      // Actualizar variables de paginación
-      const totalFilteredRows = filteredRows.length;
-      totalPages = Math.ceil(totalFilteredRows / rowsPerPage);
-
-      // Mostrar la primera página del resultado filtrado
-      currentPage = 1;
-      showPage(currentPage, filteredRows);
-
-      // Actualizar la paginación
-      updatePagination(filteredRows);
     }
 
     function exportarLibroMayor() {
@@ -417,19 +452,6 @@
         window.location.href = `/exportar-todas-las-cuentas?periodo=${periodo}`;
       } else {
         alert("Por favor, seleccione un período antes de exportar.");
-      }
-    }
-
-    function abrirNuevaPaginaImprimir() {
-      const fecha = document.getElementById('filtro-fecha').value;
-      if (!fecha) {
-        alert('Por favor, selecciona una fecha antes de continuar.');
-        return;
-      }
-      const url = `/libro_diario_imprimir?fecha=${encodeURIComponent(fecha)}`;
-      const nuevaVentana = window.open(url, '_blank');
-      if (!nuevaVentana) {
-        alert('Por favor, permite que el navegador abra ventanas emergentes.');
       }
     }
 
