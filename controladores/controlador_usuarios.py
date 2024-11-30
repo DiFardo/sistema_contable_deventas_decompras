@@ -246,7 +246,8 @@ def obtener_todos_usuarios():
                 u.dni, 
                 p.nombre, 
                 p.apellido, 
-                r.nombre AS rol
+                r.nombre AS rol,
+                r.id AS rol_id
             FROM usuarios u
             JOIN personas p ON u.id_persona = p.id
             LEFT JOIN roles r ON p.id_rol = r.id
