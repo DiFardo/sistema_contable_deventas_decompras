@@ -468,10 +468,15 @@
                 const apellido = this.getAttribute('data-apellido');
                 const rol = this.getAttribute('data-rol');
 
+                console.log("DNI:", dni);
+                console.log("Nombre:", nombre);
+                console.log("Apellido:", apellido);
+                console.log("Rol:", rol);  // Verifica el valor de 'rol'
+
                 document.getElementById('edit-dni').value = dni;
                 document.getElementById('edit-nombre').value = nombre.trim();
                 document.getElementById('edit-apellido').value = apellido.trim();
-                document.getElementById('edit-rol').value = rol;
+                document.getElementById('edit-rol').value = rol;  // Asigna el valor de rol
             });
         });
 
