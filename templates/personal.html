@@ -195,10 +195,6 @@
                 <input type="checkbox" class="form-check-input" id="dar-baja-cuentas" name="permissions[]" value="dar_baja_cuentas">
                 <label class="form-check-label" for="dar-baja-cuentas">Dar de baja a cuentas</label>
               </div>
-              <div class="form-check">
-                <input type="checkbox" class="form-check-input" id="exportar-libros" name="permissions[]" value="exportar_libros">
-                <label class="form-check-label" for="exportar-libros">Exportar libros</label>
-              </div>
             </div>
             <!-- Campo de Contraseña con opción para mostrar/ocultar -->
             <div class="mb-3">
@@ -388,11 +384,18 @@
         document.getElementById('rol').addEventListener('change', function () {
           const rol = this.value;
           const permissionsDiv = document.getElementById('permissions');
-          if (rol === "1") {
+          if (rol === "1") {  // Si el rol es "1", mostrar permisos
             permissionsDiv.style.display = 'block';
-          } else {
+          } else {  // De lo contrario, ocultarlos
             permissionsDiv.style.display = 'none';
           }
+        });
+
+        // Cuando el modal se cierra, ocultar la sección de permisos
+        document.getElementById('addUserModal').addEventListener('hidden.bs.modal', function () {
+          document.getElementById('permissions').style.display = 'none';
+          // Restablecer el valor del rol a vacío
+          document.getElementById('rol').value = '';
         });
 
         // Verificar existencia del DNI al terminar de escribir (blur)
