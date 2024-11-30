@@ -2,6 +2,48 @@ from bd_conexion import obtener_conexion
 import hashlib
 from psycopg2.extras import RealDictCursor
 
+def obtener_permisos_usuario(dni):
+    conexion = obtener_conexion()
+    permisos = []
+    with conexion.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT DISTINCT p.nombre AS permiso_nombre
+            FROM public.usuarios u
+            JOIN public.personas ps ON u.id_persona = ps.id
+            JOIN public.roles r ON ps.id_rol = r.id
+            JOIN public.roles_permisos rp ON r.id = rp.rol_id
+            JOIN public.permisos p ON rp.permiso_id = p.id
+            UNION
+            SELECT DISTINCT p.nombre AS permiso_nombre
+            FROM public.usuarios u
+            JOIN public.usuarios_permisos up ON u.id = up.id_usuario
+            JOIN public.permisos p ON up.id_permiso = p.id
+            WHERE u.dni = %s;
+            """,(dni,)
+        )
+        permisos = cursor.fetchall()
+    conexion.close()
+    return [permiso[0] for permiso in permisos]
+
+
+def obtener_permisos_por_rol(id_rol):
+    conexion = obtener_conexion()
+    permisos = []
+    with conexion.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT p.nombre
+            FROM public.permisos p
+            INNER JOIN public.roles_permisos rp ON p.id = rp.permiso_id
+            WHERE rp.rol_id = %s
+            """,
+            (id_rol,)
+        )
+        permisos = cursor.fetchall()
+    conexion.close()
+    return [permiso[0] for permiso in permisos]
+
 def obtener_roles():
     conexion = obtener_conexion()
     roles = []
@@ -222,7 +264,7 @@ def obtener_todos_usuarios():
     conexion.close()
     return usuarios
 
-def agregar_usuario(dni, nombre, apellido, id_rol, password):
+def agregar_usuario(dni, nombre, apellido, id_rol, password, permissions):
     conexion = obtener_conexion()
     try:
         with conexion.cursor() as cursor:
@@ -245,6 +287,18 @@ def agregar_usuario(dni, nombre, apellido, id_rol, password):
                 (dni, hashed_password, id_persona)
             )
             conexion.commit()
+            if permissions:
+                for permiso in permissions:
+                    cursor.execute(
+                        "SELECT id FROM permisos WHERE nombre = %s", (permiso,)
+                    )
+                    permiso_id = cursor.fetchone()
+                    if permiso_id:
+                        cursor.execute(
+                            "INSERT INTO usuarios_permisos (id_usuario, id_permiso) VALUES (%s, %s)",
+                            (id_persona, permiso_id[0])
+                        )
+                conexion.commit()
         return True
     except Exception as e:
         print(f"Error al agregar usuario: {e}")

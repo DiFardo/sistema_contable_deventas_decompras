@@ -15,6 +15,12 @@
 {% endblock %}
 
 {% block contenido %}
+<style>
+    td.text-center {
+      justify-content: center;
+      align-items: center;
+    }
+</style>
 
 <div id="content">
   <div class="main-content">
@@ -52,11 +58,13 @@
           </div>
 
           <!-- Botones Alineados -->
+          {% if 'agregar_cuentas' in permisos_usuario or usuario[7]==3 %}
           <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-lg-end justify-content-md-start">
             <a href="#editAccountModal" class="btn btn-success add" data-bs-toggle="modal">
               <i class="material-icons">&#xE147;</i> <span>Añadir cuenta</span>
             </a>
           </div>
+          {% endif %}
         </div>
       </div>
 
@@ -84,12 +92,15 @@
             </td>
             <td>{{ cuenta[1] }}</td>
             <td>{{ cuenta[2] }}</td>
-            <td>
+            <td class="text-center">
+              {% if 'editar_cuentas' in permisos_usuario or usuario[7]==3 %}
               <a href="#" class="edit" data-bs-toggle="modal" data-bs-target="#editAccountModal"
                 data-codigo="{{ cuenta[1] }}" data-descripcion="{{ cuenta[2] }}" data-estado="{{ cuenta[4] | lower }}"
                 data-categoria="{{ cuenta[5] }}" data-nueva="{{ 'true' if cuenta[7] else 'false' }}">
                 <i class="material-icons" data-bs-toggle="tooltip" title="Editar">&#xE254;</i>
               </a>
+              {% endif %}
+              {% if 'darbaja_cuentas' in permisos_usuario or usuario[7]==3 %}
               <a href="#deleteAccountModal" class="delete" data-bs-toggle="modal" data-codigo="{{ cuenta[1] }}"
                 data-descripcion="{{ cuenta[2] }}" data-estado="{{ cuenta[4] | lower }}">
                 <i class="material-icons" data-bs-toggle="tooltip"
@@ -97,12 +108,14 @@
                   {{ 'thumb_up' if cuenta[4] == 'false' else 'thumb_down' }}
                 </i>
               </a>
-
+              {% endif %}
+              {% if 'ver_cuentas' in permisos_usuario or usuario[7]==3 %}
               <a href="#" class="view" data-bs-toggle="modal" data-bs-target="#editAccountModal"
                 data-codigo="{{ cuenta[1] }}" data-descripcion="{{ cuenta[2] }}" data-estado="{{ cuenta[4] | lower }}"
                 data-categoria="{{ cuenta[5] }}" data-nueva="{{ 'true' if cuenta[7] else 'false' }}">
                 <i class="material-icons" data-bs-toggle="tooltip" title="Ver">&#xE417;</i>
               </a>
+              {% endif %}
             </td>
           </tr>
           {% else %}
@@ -119,12 +132,15 @@
             </td>
             <td>{{ cuenta[1] }}</td>
             <td>{{ cuenta[2] }}</td>
-            <td>
+            <td class="text-center">
+              {% if 'editar_cuentas' in permisos_usuario or usuario[7]==3 %}
               <a href="#" class="edit" data-bs-toggle="modal" data-bs-target="#editAccountModal"
                 data-codigo="{{ cuenta[1] }}" data-descripcion="{{ cuenta[2] }}" data-estado="{{ cuenta[4] | lower }}"
                 data-categoria="{{ cuenta[5] }}" data-nueva="{{ 'true' if cuenta[7] else 'false' }}">
                 <i class="material-icons" data-bs-toggle="tooltip" title="Editar">&#xE254;</i>
               </a>
+              {% endif %}
+              {% if 'darbaja_cuentas' in permisos_usuario or usuario[7]==3 %}
               <a href="#deleteAccountModal" class="delete" data-bs-toggle="modal" data-codigo="{{ cuenta[1] }}"
                 data-descripcion="{{ cuenta[2] }}" data-estado="{{ cuenta[4] | lower }}">
                 <i class="material-icons" data-bs-toggle="tooltip"
@@ -132,13 +148,14 @@
                   {{ 'thumb_up' if cuenta[4] == 'false' else 'thumb_down' }}
                 </i>
               </a>
-
-
+              {% endif %}
+              {% if 'ver_cuentas' in permisos_usuario or usuario[7]==3 %}
               <a href="#" class="view" data-bs-toggle="modal" data-bs-target="#editAccountModal"
                 data-codigo="{{ cuenta[1] }}" data-descripcion="{{ cuenta[2] }}" data-estado="{{ cuenta[4] | lower }}"
                 data-categoria="{{ cuenta[5] }}" data-nueva="{{ 'true' if cuenta[7] else 'false' }}">
                 <i class="material-icons" data-bs-toggle="tooltip" title="Ver">&#xE417;</i>
               </a>
+              {% endif %}
             </td>
           </tr>
           {% endif %}

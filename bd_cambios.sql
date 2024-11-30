@@ -56,6 +56,29 @@ CREATE TABLE movimientos (
     total NUMERIC(10, 2) NOT NULL
 );
 
+-- Tabla de permisos
+CREATE TABLE IF NOT EXISTS public.permisos (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL,
+    descripcion TEXT
+);
+
+-- Relación entre roles y permisos
+CREATE TABLE IF NOT EXISTS public.roles_permisos (
+    rol_id INTEGER NOT NULL,
+    permiso_id INTEGER NOT NULL,
+    FOREIGN KEY (rol_id) REFERENCES public.roles(id) ON DELETE CASCADE,
+    FOREIGN KEY (permiso_id) REFERENCES public.permisos(id) ON DELETE CASCADE,
+    PRIMARY KEY (rol_id, permiso_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.usuarios_permisos (
+    id_usuario INTEGER NOT NULL,
+    id_permiso INTEGER NOT NULL,
+    FOREIGN KEY (id_usuario) REFERENCES public.usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_permiso) REFERENCES public.permisos(id) ON DELETE CASCADE,
+    PRIMARY KEY (id_usuario, id_permiso)
+);
 ------------------------------------------------------------------
 
 --Consulta para unir ambas tablas:

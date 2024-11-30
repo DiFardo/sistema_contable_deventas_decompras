@@ -67,6 +67,27 @@ def role_required(*roles_ids):
         return decorated_view
     return wrapper
 
+def permisos_requeridos(*permisos_requeridos):
+    def wrapper(fn):
+        @wraps(fn)
+        def decorated_view(*args, **kwargs):
+            dni = get_jwt_identity()
+            if not dni:
+                flash("No estás autenticado.")
+                return redirect(url_for('login'))
+            usuario = controlador_usuarios.obtener_usuario_idrol(dni)
+            if not usuario:
+                flash("Usuario no encontrado.")
+                return redirect(url_for('login'))
+            id_rol = usuario.get('rol_id')
+            permisos_usuario = controlador_usuarios.obtener_permisos_por_rol(id_rol)
+            if not any(permiso in permisos_usuario for permiso in permisos_requeridos):
+                flash("No tienes permisos para realizar esta acción.")
+                return redirect(url_for('index'))
+            return fn(*args, **kwargs)
+        return decorated_view
+    return wrapper
+
 # Ruta para subir imagen de perfil
 @app.route("/subir_imagen_perfil", methods=["POST"])
 @jwt_required()
@@ -845,15 +866,21 @@ def procesar_logout():
 @jwt_required()
 @role_required(1,3)
 def cuentas():
-    cuentas_data = obtener_todas_cuentas()  # Llama a la función para obtener los datos de las cuentas
+    cuentas_data = obtener_todas_cuentas()
     dni = get_jwt_identity()
-    usuario = controlador_usuarios.obtener_usuario(dni)  # Obtener el usuario con DNI desde la base de datos
-
+    usuario = controlador_usuarios.obtener_usuario(dni)
+    permisos_usuario = controlador_usuarios.obtener_permisos_usuario(dni)
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Cuentas contables', 'url': '/cuentas'}
     ]
-    return render_template("cuentas.html", cuentas=cuentas_data, breadcrumbs=breadcrumbs, usuario=usuario)  # Pasar el usuario a la plantilla
+    return render_template(
+        "cuentas.html",
+        cuentas=cuentas_data,
+        breadcrumbs=breadcrumbs,
+        usuario=usuario,
+        permisos_usuario=permisos_usuario
+    )
     
 # Endpoint para obtener cuentas por categoría
 @app.route("/cuentas/por_categoria", methods=["POST"])
@@ -1002,7 +1029,8 @@ def agregar_usuario():
     apellido = request.form['apellido']
     rol = request.form['rol']
     password = request.form['password']
-    success = controlador_usuarios.agregar_usuario(dni, nombre, apellido, rol, password)
+    permissions = request.form.getlist('permissions[]')
+    success = controlador_usuarios.agregar_usuario(dni, nombre, apellido, rol, password, permissions)
     if success:
         flash("Usuario agregado exitosamente.", 'gestion_usuarios')
     else:

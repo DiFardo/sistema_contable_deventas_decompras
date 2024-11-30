@@ -179,7 +179,23 @@
                   <option value="{{ rol[0] }}">{{ rol[1] }}</option>
                 {% endfor %}
               </select>
-            </div>            
+            </div>
+            <!-- Sección de Permisos específicos para "Contador" -->
+            <div id="permissions" class="mb-3" style="display: none;">
+              <label for="permissions" class="form-label">Permisos</label>
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="editar-cuentas" name="permissions[]" value="editar_cuentas">
+                <label class="form-check-label" for="editar-cuentas">Editar cuentas</label>
+              </div>
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="agregar-cuentas" name="permissions[]" value="agregar_cuentas">
+                <label class="form-check-label" for="agregar-cuentas">Agregar cuentas</label>
+              </div>
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="dar-baja-cuentas" name="permissions[]" value="dar_baja_cuentas">
+                <label class="form-check-label" for="dar-baja-cuentas">Dar de baja a cuentas</label>
+              </div>
+            </div>
             <!-- Campo de Contraseña con opción para mostrar/ocultar -->
             <div class="mb-3">
               <label for="password" class="form-label">Contraseña</label>
@@ -236,7 +252,7 @@
             </div>
             <div class="mb-3">
               <label for="edit-rol" class="form-label">Rol</label>
-              <select class="form-select" id="edit-rol" name="rol" required>
+              <select class="form-select" id="edit-rol" name="edit-rol" required>
                 <option value="">Seleccione un rol</option>
                 {% for rol in roles %}
                   <option value="{{ rol[0] }}">{{ rol[1] }}</option>
@@ -363,6 +379,16 @@
             } else {
                 quitarError(this);
             }
+        });
+
+        document.getElementById('rol').addEventListener('change', function () {
+          const rol = this.value;
+          const permissionsDiv = document.getElementById('permissions');
+          if (rol === "1") {
+            permissionsDiv.style.display = 'block';
+          } else {
+            permissionsDiv.style.display = 'none';
+          }
         });
 
         // Verificar existencia del DNI al terminar de escribir (blur)
