@@ -132,10 +132,9 @@
           <select class="form-control" id="filtro-cuenta">
             <option value="">Seleccionar cuenta</option>
             {% for cuenta in cuentas %}
-            <option value="{{ cuenta.codigo_cuenta }}" {% if request.args.get('cuenta')==cuenta.codigo_cuenta
-              %}selected{% endif %}>
-              {{ cuenta.codigo_cuenta }}
-            </option>
+            <option value="{{ cuenta.codigo_cuenta }}" {% if request.args.get('cuenta')==cuenta.codigo_cuenta %}selected{% endif %}>
+              {{ cuenta.codigo_cuenta }} - {{ cuenta.denominacion }}
+          </option>
             {% endfor %}
           </select>
         </div>

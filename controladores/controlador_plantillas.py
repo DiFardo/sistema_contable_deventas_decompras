@@ -1522,7 +1522,7 @@ def obtener_cuentas_distintas():
 
     with conexion.cursor(cursor_factory=DictCursor) as cursor:
         cursor.execute("""
-            SELECT DISTINCT ac.codigo_cuenta
+            SELECT DISTINCT ac.codigo_cuenta, ac.denominacion
             FROM asientos_contables ac
             JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
             WHERE EXTRACT(MONTH FROM ac.fecha) = 11
@@ -1546,12 +1546,12 @@ def obtener_libro_mayor(mes, año, cuenta):
             FROM (
                 SELECT
                     DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo,
-                    ac.fecha,
+                    ac.fecha, 
                     CASE
                         WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la venta de mercadería'
                         WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
                         ELSE ''
-                    END AS glosa,
+                    END AS glosa, 
                     ac.debe,
                     ac.haber
                 FROM asientos_contables ac
@@ -1703,6 +1703,7 @@ def generar_libro_mayor_pdf(mes, año, cuenta):
                 TO_CHAR(fecha, 'DD/MM/YYYY') AS fecha, 
                 numero_correlativo, 
                 glosa, 
+                denominacion,
                 debe AS deudor, 
                 haber AS acreedor
             FROM (
@@ -1714,6 +1715,7 @@ def generar_libro_mayor_pdf(mes, año, cuenta):
                         WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
                         ELSE 'Operación no especificada'
                     END AS glosa,
+                    ac.denominacion,
                     ac.debe,
                     ac.haber
                 FROM asientos_contables ac
@@ -1763,9 +1765,8 @@ def generar_libro_mayor_pdf(mes, año, cuenta):
         styles = getSampleStyleSheet()
         style_title = styles["Title"]
         elementos = [
-            Paragraph(f"<b>Libro Mayor - Período: {mes}/{año} - Cuenta: {cuenta}</b>", style_title),
-            Spacer(1, 12)
-        ]
+        Paragraph(f"<b>Libro Mayor - Período: {mes}/{año} - Cuenta: {cuenta} - {movimientos[0]['denominacion']}</b>", style_title),
+]
 
         # Construir la tabla
         encabezados = ["Fecha", "N° Correlativo", "Descripción Operación", "Deudor", "Acreedor"]
@@ -1957,7 +1958,7 @@ def generar_libro_caja_excel(mes, anio):
         )
 
     except Exception as e:
-        print(f"Error al generar el libro de caja: {e}")
+        print(f"Error al generar el libro mayor: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
         if conexion:
@@ -1985,7 +1986,7 @@ def generar_excel_todas_las_cuentas(mes, año):
 
             periodo = f"{año}-{mes.zfill(2)}"
             hoja.cell(row=3, column=2, value=periodo)
-            hoja.cell(row=6, column=3, value=codigo_cuenta)
+            hoja.cell(row=6, column=3, value=f"{cuenta} - {resultados[0][3]}")
 
             consulta = """
                 SELECT fecha, numero_correlativo, glosa, debe as deudor, haber as acreedor
