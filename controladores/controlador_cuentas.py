@@ -1,5 +1,11 @@
 from flask import jsonify, request
 from bd_conexion import obtener_conexion
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from io import BytesIO
+from flask import send_file, jsonify
 
 def obtener_todas_cuentas():
     conexion = obtener_conexion()
