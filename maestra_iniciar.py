@@ -881,6 +881,28 @@ def cuentas():
         usuario=usuario,
         permisos_usuario=permisos_usuario
     )
+
+@app.route("/cuentas_imprimir", methods=["GET"])
+@jwt_required()
+def cuentas_imprimir():
+    dni = get_jwt_identity()
+    usuario = controlador_usuarios.obtener_usuario(dni)
+    cuentas_data = controlador_cuentas.obtener_cuentas_con_nivel()
+    breadcrumbs = [
+        {'name': 'Inicio', 'url': '/index'},
+        {'name': 'Cuentas contables', 'url': '/cuentas'},
+        {'name': 'Vista previa', 'url': '/cuentas_imprimir'}
+    ]
+    return render_template("cuentas_imprimir.html", cuentas=cuentas_data, breadcrumbs=breadcrumbs, usuario=usuario)
+
+@app.route('/exportar_cuentas_pdf', methods=['GET'])
+@jwt_required()
+def exportar_cuentas_pdf():
+    try:
+        return controlador_cuentas.exportar_cuentas_pdf()
+    except Exception as e:
+        print(f"Error al exportar las cuentas a PDF: {e}")
+        return jsonify({'error': str(e)}), 500
     
 # Endpoint para obtener cuentas por categoría
 @app.route("/cuentas/por_categoria", methods=["POST"])
