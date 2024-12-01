@@ -23,7 +23,7 @@
     }
 
     .card-body-modulo-ventas {
-        background: url("{{ url_for('static', filename='img/illustrations/fondoIndex.webp') }}") no-repeat center center;
+        background: url("{{ url_for('static', filename='img/illustrations/moduloventas.webp') }}") no-repeat center center;
         background-size: cover;
         height: 200px; 
     }
@@ -34,8 +34,14 @@
         height: 200px; /* Ajusta el tamaño según sea necesario */
     }
 
+    .card-body-modulo-reportes {
+        background: url("{{ url_for('static', filename='img/illustrations/fondoIndex.webp') }}") no-repeat center center;
+        background-size: cover;
+        height: 200px; /* Ajusta el tamaño según sea necesario */
+    }
+
     .card-header-modulo, .card-header-modulo-ventas, 
-    .card-header-modulo-contable {
+    .card-header-modulo-contable, .card-header-modulo-reportes {
         color: white;
     }
 </style>
