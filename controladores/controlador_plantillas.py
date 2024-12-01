@@ -1521,6 +1521,20 @@ def generar_libro_mayor_excel(mes, año, cuenta):
         conexion = obtener_conexion()
         cursor = conexion.cursor()
 
+        consulta_cuenta = """
+            SELECT codigo, descripcion
+            FROM public.cuentas
+            WHERE codigo = %s
+        """
+        cursor.execute(consulta_cuenta, (cuenta,))
+        cuenta_resultado = cursor.fetchone()
+
+        if cuenta_resultado:
+            cuenta_codigo, cuenta_descripcion = cuenta_resultado
+            cuenta_formateada = f"{cuenta_codigo} - {cuenta_descripcion}"
+        else:
+            cuenta_formateada = "Cuenta no encontrada"
+
         consulta = """
             SELECT fecha, numero_correlativo, glosa, debe as deudor, haber as acreedor
             FROM (
@@ -1553,7 +1567,7 @@ def generar_libro_mayor_excel(mes, año, cuenta):
         periodo = f"{año}-{mes.zfill(2)}"
         hoja.cell(row=3, column=2, value=periodo)
 
-        hoja.cell(row=6, column=3, value=cuenta)
+        hoja.cell(row=6, column=3, value=cuenta_formateada)
 
         borde = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
         fuente_estandar = Font(name='Arial', size=10)
@@ -1930,12 +1944,27 @@ def generar_excel_todas_las_cuentas(mes, año):
 
         for cuenta in cuentas:
             codigo_cuenta = cuenta['codigo_cuenta']
+
+            consulta_cuenta = """
+                SELECT codigo, descripcion
+                FROM public.cuentas
+                WHERE codigo = %s
+            """
+            cursor.execute(consulta_cuenta, (codigo_cuenta,))
+            cuenta_resultado = cursor.fetchone()
+
+            if cuenta_resultado:
+                cuenta_codigo, cuenta_descripcion = cuenta_resultado
+                cuenta_formateada = f"{cuenta_codigo} - {cuenta_descripcion}"
+            else:
+                cuenta_formateada = "Cuenta no encontrada"
+
             hoja = workbook.copy_worksheet(workbook.active)
             hoja.title = f"Cuenta {codigo_cuenta}"
 
             periodo = f"{año}-{mes.zfill(2)}"
             hoja.cell(row=3, column=2, value=periodo)
-            hoja.cell(row=6, column=3, value=codigo_cuenta)
+            hoja.cell(row=6, column=3, value=cuenta_formateada)
 
             consulta = """
                 SELECT fecha, numero_correlativo, glosa, debe as deudor, haber as acreedor
