@@ -13,7 +13,8 @@ from bd_conexion import obtener_conexion
 from controladores.controlador_cuentas import (
     obtener_todas_cuentas, obtener_cuentas_por_categoria_endpoint,
     añadir_cuenta, obtener_todas_notificaciones, marcar_notificaciones_leidas,
-    eliminar_notificacion, contar_notificaciones_no_leidas, editar_cuenta, dar_baja_cuenta
+    eliminar_notificacion, contar_notificaciones_no_leidas, editar_cuenta, dar_baja_cuenta,
+    obtener_cuentas_con_nivel, exportar_todas_cuentas_pdf
 )
 from werkzeug.utils import secure_filename
 import datetime
@@ -887,7 +888,7 @@ def cuentas():
 def cuentas_imprimir():
     dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
-    cuentas_data = controlador_cuentas.obtener_cuentas_con_nivel()
+    cuentas_data = obtener_cuentas_con_nivel()
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Cuentas contables', 'url': '/cuentas'},
@@ -899,7 +900,7 @@ def cuentas_imprimir():
 @jwt_required()
 def exportar_cuentas_pdf():
     try:
-        return controlador_cuentas.exportar_cuentas_pdf()
+        return exportar_todas_cuentas_pdf()
     except Exception as e:
         print(f"Error al exportar las cuentas a PDF: {e}")
         return jsonify({'error': str(e)}), 500
