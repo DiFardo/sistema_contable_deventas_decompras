@@ -1044,9 +1044,16 @@ def editar_usuario():
     dni = request.form['dni']
     nombre = request.form['nombre']
     apellido = request.form['apellido']
-    rol = request.form['rol']
-    success = controlador_usuarios.editar_usuario(dni, nombre, apellido, rol)
+    id_rol = request.form['rol']
+    permisos_nombres = request.form.getlist('permissions[]')
+    permisos_ids = controlador_usuarios.obtener_ids_permisos_por_nombre(permisos_nombres)
+    success = controlador_usuarios.editar_usuario(dni, nombre, apellido, id_rol)
     if success:
+        usuario_id = controlador_usuarios.obtener_usuario_id(dni)
+        if usuario_id:
+            controlador_usuarios.eliminar_permisos(usuario_id)
+            for permiso_id in permisos_ids:
+                controlador_usuarios.agregar_permiso(usuario_id, permiso_id)
         flash("Usuario actualizado exitosamente.", 'gestion_usuarios')
     else:
         flash("Hubo un error al actualizar el usuario.", 'gestion_usuarios')

@@ -2,6 +2,50 @@ from bd_conexion import obtener_conexion
 import hashlib
 from psycopg2.extras import RealDictCursor
 
+def obtener_ids_permisos_por_nombre(nombres_permisos):
+    conexion = obtener_conexion()
+    permisos_ids = []
+    with conexion.cursor() as cursor:
+        cursor.execute("""
+            SELECT id
+            FROM public.permisos
+            WHERE nombre = ANY(%s)
+        """, (nombres_permisos,))
+        resultados = cursor.fetchall()
+        permisos_ids = [row[0] for row in resultados]
+    conexion.close()
+    return permisos_ids
+
+def obtener_usuario_id(dni):
+    conexion = obtener_conexion()
+    usuario_id = None
+    with conexion.cursor() as cursor:
+        cursor.execute(
+            "SELECT id FROM usuarios WHERE dni = %s", (dni,)
+        )
+        usuario_id = cursor.fetchone()
+    conexion.close()
+    return usuario_id[0] if usuario_id else None
+
+def eliminar_permisos(usuario_id):
+    conexion = obtener_conexion()
+    with conexion.cursor() as cursor:
+        cursor.execute(
+            "DELETE FROM usuarios_permisos WHERE id_usuario = %s", (usuario_id,)
+        )
+        conexion.commit()
+    conexion.close()
+
+def agregar_permiso(usuario_id, permiso_id):
+    conexion = obtener_conexion()
+    with conexion.cursor() as cursor:
+        cursor.execute("""
+            INSERT INTO public.usuarios_permisos (id_usuario, id_permiso)
+            VALUES (%s, %s)
+        """, (usuario_id, permiso_id))
+    conexion.commit()
+    conexion.close()
+
 def obtener_permisos_usuario(dni):
     conexion = obtener_conexion()
     permisos = []
@@ -240,26 +284,37 @@ def obtener_todos_usuarios():
     conexion = obtener_conexion()
     usuarios = []
     with conexion.cursor() as cursor:
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT 
                 u.dni, 
                 p.nombre, 
                 p.apellido, 
                 r.nombre AS rol,
-                r.id AS rol_id
+                r.id AS rol_id,
+                ARRAY(
+                    SELECT p.nombre
+                    FROM public.roles_permisos rp
+                    JOIN public.permisos p ON rp.permiso_id = p.id
+                    WHERE rp.rol_id = r.id
+                ) || ARRAY(
+                    SELECT p.nombre
+                    FROM public.usuarios_permisos up
+                    JOIN public.permisos p ON up.id_permiso = p.id
+                    WHERE up.id_usuario = u.id
+                ) AS permisos
             FROM usuarios u
             JOIN personas p ON u.id_persona = p.id
             LEFT JOIN roles r ON p.id_rol = r.id
-            """
-        )
+        """)
         resultados = cursor.fetchall()
         for row in resultados:
             usuario = {
                 'dni': row[0],
                 'nombre': row[1],
                 'apellido': row[2],
-                'rol': row[3] if row[3] else 'Sin rol asignado'
+                'rol': row[3] if row[3] else 'Sin rol asignado',
+                'rol_id': row[4] if row[4] else None,
+                'permisos': row[5]
             }
             usuarios.append(usuario)
     conexion.close()

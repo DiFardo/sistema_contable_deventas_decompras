@@ -130,7 +130,8 @@
                 data-dni="{{ usuario.dni }}"
                 data-nombre="{{ usuario.nombre }}"
                 data-apellido="{{ usuario.apellido }}"
-                data-rol="{{ usuario.rol_id }}">
+                data-rol="{{ usuario.rol_id }}"
+                data-permisos="{{ usuario.permisos|join(',') }}">
                 <i class="material-icons" data-bs-toggle="tooltip" title="Editar">&#xE254;</i>
               </a>
               <a href="#" class="delete" data-bs-toggle="modal" data-bs-target="#deleteUserModal"
@@ -258,6 +259,22 @@
                   <option value="{{ rol[0] }}">{{ rol[1] }}</option>
                 {% endfor %}
               </select>
+            </div>
+            <!-- Sección de Permisos específicos para "Contador" (en el modal de edición) -->
+            <div id="permissionsEdit" class="mb-3" style="display: none;">
+              <label for="permissionsEdit" class="form-label">Permisos</label>
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="editar-cuentas-edit" name="permissions[]" value="editar_cuentas">
+                <label class="form-check-label" for="editar-cuentas-edit">Editar cuentas</label>
+              </div>
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="agregar-cuentas-edit" name="permissions[]" value="agregar_cuentas">
+                <label class="form-check-label" for="agregar-cuentas-edit">Agregar cuentas</label>
+              </div>
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="dar-baja-cuentas-edit" name="permissions[]" value="darbaja_cuentas">
+                <label class="form-check-label" for="dar-baja-cuentas-edit">Dar de baja a cuentas</label>
+              </div>
             </div>
             <button type="submit" class="btn btn-primary w-100">Guardar Cambios</button>
           </form>
@@ -467,18 +484,46 @@
                 const nombre = this.getAttribute('data-nombre');
                 const apellido = this.getAttribute('data-apellido');
                 const rol = this.getAttribute('data-rol');
+                const permisos = this.getAttribute('data-permisos') ? this.getAttribute('data-permisos').split(',') : [];
 
-                console.log("DNI:", dni);
-                console.log("Nombre:", nombre);
-                console.log("Apellido:", apellido);
-                console.log("Rol:", rol);  // Verifica el valor de 'rol'
-
+                // Asignar valores a los campos del formulario
                 document.getElementById('edit-dni').value = dni;
                 document.getElementById('edit-nombre').value = nombre.trim();
                 document.getElementById('edit-apellido').value = apellido.trim();
                 document.getElementById('edit-rol').value = rol;  // Asigna el valor de rol
+
+                // Mostrar/ocultar los permisos según el rol
+                togglePermissionsVisibility(rol);
+
+                // Marcar las casillas de permisos correspondientes
+                document.querySelectorAll('#permissionsEdit input[type="checkbox"]').forEach(function (checkbox) {
+                    if (permisos.includes(checkbox.value)) {
+                        checkbox.checked = true;
+                    } else {
+                        checkbox.checked = false;
+                    }
+                });
             });
         });
+
+        // Manejar el cambio de rol para mostrar u ocultar los permisos
+        document.getElementById('edit-rol').addEventListener('change', function () {
+            const rol = this.value;
+            togglePermissionsVisibility(rol);
+            document.querySelectorAll('#permissionsEdit input[type="checkbox"]').forEach(function (checkbox) {
+                checkbox.checked = false;  // Desmarcar todos los permisos
+            });
+        });
+
+        // Función para mostrar u ocultar la sección de permisos
+        function togglePermissionsVisibility(rol) {
+            const permissionsDiv = document.getElementById('permissionsEdit');
+            if (rol === "1") {  // Si el rol es "1", mostrar permisos
+                permissionsDiv.style.display = 'block';
+            } else {  // Si el rol no es "1", ocultar permisos
+                permissionsDiv.style.display = 'none';
+            }
+        }
 
         // Manejar clic en el botón de eliminar usuario
         const deleteButtons = document.querySelectorAll('.delete');
