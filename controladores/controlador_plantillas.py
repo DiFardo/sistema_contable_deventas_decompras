@@ -1663,6 +1663,7 @@ def generar_libro_mayor_pdf(mes, año, cuenta):
                 TO_CHAR(fecha, 'DD/MM/YYYY') AS fecha, 
                 numero_correlativo, 
                 glosa, 
+                denominacion,
                 debe AS deudor, 
                 haber AS acreedor
             FROM (
@@ -1674,6 +1675,7 @@ def generar_libro_mayor_pdf(mes, año, cuenta):
                         WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
                         ELSE 'Operación no especificada'
                     END AS glosa,
+                    ac.denominacion,
                     ac.debe,
                     ac.haber
                 FROM asientos_contables ac
@@ -1723,7 +1725,7 @@ def generar_libro_mayor_pdf(mes, año, cuenta):
         styles = getSampleStyleSheet()
         style_title = styles["Title"]
         elementos = [
-            Paragraph(f"<b>Libro Mayor - Período: {mes}/{año} - Cuenta: {cuenta}</b>", style_title),
+            Paragraph(f"<b>Libro Mayor - Período: {mes}/{año} - Cuenta: {cuenta} - {movimientos[0]['denominacion']}</b>", style_title),
             Spacer(1, 12)
         ]
 
