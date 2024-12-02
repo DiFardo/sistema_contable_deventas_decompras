@@ -1468,7 +1468,7 @@ def obtener_cuentas_distintas():
 
     with conexion.cursor(cursor_factory=DictCursor) as cursor:
         cursor.execute("""
-            SELECT DISTINCT ac.codigo_cuenta
+            SELECT DISTINCT ac.codigo_cuenta, ac.denominacion
             FROM asientos_contables ac
             JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
             WHERE EXTRACT(MONTH FROM ac.fecha) = 11

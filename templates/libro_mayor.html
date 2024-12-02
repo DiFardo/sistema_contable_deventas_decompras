@@ -134,7 +134,7 @@
             {% for cuenta in cuentas %}
             <option value="{{ cuenta.codigo_cuenta }}" {% if request.args.get('cuenta')==cuenta.codigo_cuenta
               %}selected{% endif %}>
-              {{ cuenta.codigo_cuenta }}
+              {{ cuenta.codigo_cuenta }} - {{ cuenta.denominacion }}
             </option>
             {% endfor %}
           </select>
@@ -159,8 +159,8 @@
         <div class="row">
           <!-- Contenedor de botones -->
           <div class="col-12 d-flex justify-content-end">
-            <button class="btn btn-primary me-2" onclick="abrirNuevaPaginaImprimir()">
-              <i class="material-icons">print</i> <span>Imprimir</span>
+            <button class="btn btn-primary me-2" onclick="abrirNuevaPaginaImprimir()" style="background-color: #ff5733;">
+              <i class="material-icons">visibility</i> <span>Vista previa</span>
             </button>
       
             <button class="btn btn-success me-2" onclick="exportarLibroMayor()">
