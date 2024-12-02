@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Cuentas Contables - Vista Previa</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/tabla_cuentas.css') }}" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        th {
+            text-align: center;
+            vertical-align: middle;
+            font-weight: bold;
+        }
+
+        td.centered {
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        /* Estilos para centrar el spinner dentro de la tabla */
+        .spinner-wrapper {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+        }
+
+        /* Cambiar el color del spinner */
+        .spinner-border {
+            color: #e73209 !important;
+            /* Color rojo para el spinner */
+        }
+
+        @media print {
+            body {
+                visibility: hidden;
+            }
+
+            .table-wrapper,
+            .table {
+                visibility: visible;
+                width: 100%;
+            }
+
+            .table-wrapper {
+                position: absolute;
+                top: 0;
+                left: 0;
+            }
+
+            @page {
+                size: landscape;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mt-4">
+        <!-- Botones PDF e Imprimir -->
+        <div class="row btn-container">
+            <div class="col-12 d-flex justify-content-end">
+                <button class="btn btn-danger me-2 d-flex align-items-center" onclick="exportarPDF()">
+                    <i class="material-icons pdf-icon me-1">picture_as_pdf</i>
+                    PDF
+                </button>
+                <button class="btn btn-primary d-flex align-items-center" onclick="window.print()">
+                    <i class="material-icons me-1">print</i>
+                    Imprimir
+                </button>
+            </div>
+        </div>
+
+        <!-- Encabezado con título -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <h2 class="text-left">Cuentas Contables - Vista Previa</h2>
+            </div>
+        </div>
+
+        <!-- Tabla de Cuentas -->
+        <div class="table-wrapper">
+            <table class="table table-bordered table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cuenta in cuentas %}
+                    <tr>
+                        <td>{{ cuenta[1] }}</td>
+                        <td >{{ cuenta[2] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        function exportarPDF() {
+            // Redirigir a la URL de exportación
+            window.location.href = "/exportar_cuentas_pdf";
+        }
+    </script>
+</body>
+
+</html>
