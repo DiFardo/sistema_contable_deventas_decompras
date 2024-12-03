@@ -133,16 +133,94 @@ def login():
     unset_jwt_cookies(resp)
     return resp
 
+
+#####################################################################################
 @app.route("/index")
 @jwt_required()
 def index():
     dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
+
     if usuario and (not usuario[6] or usuario[6] is None):
-        usuario = list(usuario)
-        usuario[6] = "perfil_defecto.png"
+        usuario = list(usuario) 
+        usuario[7] = "perfil_defecto.png"
+
+    # Obtener rol del usuario
+    rol_nombre = usuario[5]  # Asumiendo que el nombre del rol está en la posición 5 del usuario
+
+    # Obtener notificaciones solo para Administrador y Contador
+    if rol_nombre in ["Administrador", "Contador"]:
+        notificaciones = controlador_usuarios.obtener_notificaciones(rol_nombre)
+    else:
+        notificaciones = []  # Rol no autorizado para ver notificaciones
+
+    # Configurar módulos y descripciones según el rol
+    if rol_nombre == "Contador":  # Rol Contador
+        titulo_principal = "Sistema Contable"
+        descripcion_principal = "Automatiza la gestión contable de tu empresa."
+        descripcion_secundaria = "Simplifica procesos y genera reportes financieros precisos."
+        modulos = [
+            {
+                "titulo": "Módulo contable",
+                "descripcion": "Gestiona cuentas, asientos y reportes contables.",
+                "url": url_for('cuentas'),
+                "clase_cuerpo": "card-body-modulo-contable",
+                "clase_encabezado": "card-header-modulo-contable"
+            }
+        ]
+    elif rol_nombre == "Gestor de operaciones comerciales":  # Rol Gestor de Operaciones Comerciales
+        titulo_principal = "Sistema de Compras y Ventas"
+        descripcion_principal = "Controla las ventas y compras de insumos."
+        descripcion_secundaria = "Optimiza la gestión de productos y transacciones."
+        modulos = [
+            {
+                "titulo": "Módulo de ventas",
+                "descripcion": "Gestiona ventas de productos y compras de insumos.",
+                "url": url_for('productos'),
+                "clase_cuerpo": "card-body-modulo-ventas",
+                "clase_encabezado": "card-header-modulo-ventas"
+            }
+        ]
+    elif rol_nombre == "Administrador":  # Rol Administrador
+        titulo_principal = "Sistema General"
+        descripcion_principal = "Supervisa y administra todas las áreas del sistema con acceso a funcionalidades completas."
+        descripcion_secundaria = "Coordina operaciones contables y comerciales con herramientas avanzadas diseñadas para maximizar la eficiencia empresarial."
+        modulos = [
+            {
+                "titulo": "Módulo contable",
+                "descripcion": "Realiza un seguimiento preciso de las finanzas mediante el registro de cuentas, asientos y la generación de reportes.",
+                "url": url_for('cuentas'),
+                "clase_cuerpo": "card-body-modulo-contable",
+                "clase_encabezado": "card-header-modulo-contable"
+            },
+            {
+                "titulo": "Módulo de ventas",
+                "descripcion": "Controla las operaciones de ventas y compras mediante transacciones comerciales de forma integrada.",
+                "url": url_for('productos'),
+                "clase_cuerpo": "card-body-modulo-ventas",
+                "clase_encabezado": "card-header-modulo-ventas"
+            }
+        ]
+    else:  # Rol no definido
+        titulo_principal = "Sistema General"
+        descripcion_principal = "Accede a las herramientas esenciales para mejorar la gestión operativa."
+        descripcion_secundaria = "Descubre funcionalidades clave adaptadas a las necesidades generales de tu organización."
+        modulos = []
+
     breadcrumbs = [{'name': 'Inicio', 'url': '/index'}]
-    return render_template("index.html", breadcrumbs=breadcrumbs, usuario=usuario)
+
+    return render_template(
+        "index.html",
+        breadcrumbs=breadcrumbs,
+        usuario=usuario,
+        titulo_principal=titulo_principal,
+        descripcion_principal=descripcion_principal,
+        descripcion_secundaria=descripcion_secundaria,
+        modulos=modulos,
+        notificaciones=notificaciones
+    )
+
+
 
 @app.route("/actualizar_perfil", methods=["POST"])
 @jwt_required()
@@ -156,24 +234,36 @@ def actualizar_perfil():
     flash("Perfil actualizado correctamente.")
     return redirect(url_for('perfil_usuario'))
 
+
 @app.route("/libro_diario", methods=["GET"])
 @jwt_required()
 @role_required(1, 3)
 def libro_diario():
     dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
+
     fecha_inicio = request.args.get("fecha_inicio", None)
     fecha_fin = request.args.get("fecha_fin", None)
+
+
+    # Obtener fechas de los filtros
+    fecha_inicio = request.args.get("fecha_inicio", None)
+    fecha_fin = request.args.get("fecha_fin", None)
+
+    # Obtener movimientos basados en los filtros
+
     if fecha_inicio and fecha_fin:
         movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha_inicio, fecha_fin)
     elif fecha_inicio:
         movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha_inicio)
     else:
         movimientos, total_debe, total_haber = [], 0, 0
+
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Libro diario', 'url': '/libro_diario'}
     ]
+
     return render_template(
         "libro_diario.html",
         movimientos=movimientos,
@@ -187,15 +277,25 @@ def libro_diario():
 @jwt_required()
 @role_required(1, 3)
 def libro_diario_datos():
+
     fecha_inicio = request.args.get("fecha_inicio", None)
     fecha_fin = request.args.get("fecha_fin", None)
+
+    # Obtener fechas desde los parámetros
+    fecha_inicio = request.args.get("fecha_inicio", None)
+    fecha_fin = request.args.get("fecha_fin", None)
+
+    # Obtener movimientos basados en los filtros
+
     if fecha_inicio and fecha_fin:
         grouped_movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha_inicio, fecha_fin)
     elif fecha_inicio:
         grouped_movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha_inicio)
     else:
         grouped_movimientos, total_debe, total_haber = [], 0, 0
+
     return jsonify(filas=grouped_movimientos, total_debe=total_debe, total_haber=total_haber)
+
 
 
 
@@ -208,6 +308,7 @@ def libro_diario_datos():
 @jwt_required()
 @role_required(1, 3)
 def libro_diario_imprimir():
+
     dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
     fecha_inicio = request.args.get("fecha_inicio", None)
@@ -219,11 +320,39 @@ def libro_diario_imprimir():
     else:
         print("No se proporcionó una fecha o rango de fechas válido")
         movimientos, total_debe, total_haber = [], 0, 0
+
+    """
+    Genera una vista imprimible del libro diario, ya sea para una fecha específica
+    o un rango de fechas definido por `fecha_inicio` y `fecha_fin`.
+    """
+    token = request.cookies.get('token')
+    dni = request.cookies.get('dni')
+    usuario = controlador_usuarios.obtener_usuario(dni)
+
+    # Obtener fechas desde los parámetros
+    fecha_inicio = request.args.get("fecha_inicio", None)
+    fecha_fin = request.args.get("fecha_fin", None)
+
+    # Validar fechas y obtener movimientos
+    if fecha_inicio and fecha_fin:
+        # Rango de fechas
+        movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha_inicio, fecha_fin)
+    elif fecha_inicio:
+        # Una única fecha
+        movimientos, total_debe, total_haber = controlador_plantillas.obtener_libro_diario_por_fecha(fecha_inicio)
+    else:
+        # Sin fechas válidas
+        print("No se proporcionó una fecha o rango de fechas válido")  # Mensaje de depuración
+        movimientos, total_debe, total_haber = [], 0, 0
+
+
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Libro Diario', 'url': '/libro_diario'},
         {'name': 'Imprimir', 'url': ''}
     ]
+
+
     return render_template(
         "libro_diario_imprimir.html",
         movimientos=movimientos,
@@ -234,6 +363,7 @@ def libro_diario_imprimir():
         breadcrumbs=breadcrumbs,
         usuario=usuario
     )
+
 
 @app.route("/libro_caja_imprimir", methods=["GET"])
 @jwt_required()
@@ -556,6 +686,38 @@ def libro_caja_datos():
     return jsonify(filas=movimientos_agrupados, total_deudor=total_deudor, total_acreedor=total_acreedor)
 
 ##################################################################################################
+@app.route('/exportar-libro-diario-pdf', methods=['GET'])
+@jwt_required()
+@role_required(1, 3)
+def exportar_libro_diario_pdf():
+    fecha_inicio = request.args.get('fecha_inicio')
+    fecha_fin = request.args.get('fecha_fin')
+
+    if not fecha_inicio:
+        return jsonify({'error': 'El parámetro "fecha_inicio" es requerido.'}), 400
+
+    try:
+        datetime.datetime.strptime(fecha_inicio, '%Y-%m-%d')
+    except ValueError:
+        return jsonify({'error': 'El formato de "fecha_inicio" es incorrecto. Debe ser "YYYY-MM-DD".'}), 400
+
+    if fecha_fin:
+        try:
+            datetime.datetime.strptime(fecha_fin, '%Y-%m-%d')
+        except ValueError:
+            return jsonify({'error': 'El formato de "fecha_fin" es incorrecto. Debe ser "YYYY-MM-DD".'}), 400
+
+    try:
+        if fecha_fin:
+            return controlador_plantillas.generar_libro_diario_pdf_horizontal(fecha_inicio, fecha_fin)
+        else:
+            return controlador_plantillas.generar_libro_diario_pdf_horizontal(fecha_inicio)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+
+
 @app.route('/exportar-libro-caja-pdf', methods=['GET'])
 @jwt_required()
 @role_required(1,3)
@@ -753,6 +915,7 @@ def exportar_libro_diario():
         return jsonify({'error': 'El formato de la fecha es incorrecto. Debe ser "YYYY-MM-DD".'}), 400
     return controlador_plantillas.generar_libro_diario_excel(fecha_inicio, fecha_fin)
 
+
 @app.route('/exportar-libro-diario-pdf', methods=['GET'])
 @jwt_required()
 @role_required(1, 3)
@@ -777,6 +940,7 @@ def exportar_libro_diario_pdf():
             return controlador_plantillas.generar_libro_diario_pdf_horizontal(fecha_inicio)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 @app.route("/asientos_contables")
 @jwt_required()
@@ -869,7 +1033,21 @@ def procesar_logout():
 @jwt_required()
 @role_required(1,3)
 def cuentas():
+
     cuentas_data = obtener_todas_cuentas()
+
+    dni = get_jwt_identity()
+    usuario = controlador_usuarios.obtener_usuario(dni)
+        # Obtener rol del usuario
+    rol_nombre = usuario[5]  # Asumiendo que el nombre del rol está en la posición 5 del usuario
+
+    # Obtener notificaciones solo para Administrador y Contador
+    if rol_nombre in ["Administrador", "Contador"]:
+        notificaciones = controlador_usuarios.obtener_notificaciones(rol_nombre)
+    else:
+        notificaciones = []
+    cuentas_data = obtener_todas_cuentas()  # Llama a la función para obtener los datos de las cuentas
+
     dni = get_jwt_identity()
     usuario = controlador_usuarios.obtener_usuario(dni)
     permisos_usuario = controlador_usuarios.obtener_permisos_usuario(dni)
@@ -877,6 +1055,7 @@ def cuentas():
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Cuentas contables', 'url': '/cuentas'}
     ]
+
     return render_template(
         "cuentas.html",
         cuentas=cuentas_data,
@@ -906,6 +1085,9 @@ def exportar_cuentas_pdf():
     except Exception as e:
         print(f"Error al exportar las cuentas a PDF: {e}")
         return jsonify({'error': str(e)}), 500
+
+    return render_template("cuentas.html", cuentas=cuentas_data, breadcrumbs=breadcrumbs, usuario=usuario , notificaciones=notificaciones)  # Pasar el usuario a la plantilla
+
     
 # Endpoint para obtener cuentas por categoría
 @app.route("/cuentas/por_categoria", methods=["POST"])

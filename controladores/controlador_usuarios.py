@@ -408,3 +408,27 @@ def verificar_dni(dni):
         resultado = cursor.fetchone()
     conexion.close()
     return resultado is not None
+
+def obtener_notificaciones(rol):
+    """
+    Obtiene notificaciones dependiendo del rol del usuario.
+    Solo los roles Administrador y Contador tendrán acceso a las notificaciones.
+    """
+    if rol not in ['Administrador', 'Contador']:
+        return []  # Si no es Administrador o Contador, no hay notificaciones.
+
+    conexion = obtener_conexion()
+    try:
+        with conexion.cursor() as cursor:
+            cursor.execute("""
+                SELECT mensaje, url, leido, creado_en
+                FROM notificaciones
+                WHERE leido = false
+                ORDER BY creado_en DESC
+            """)
+            return cursor.fetchall()
+    except Exception as e:
+        print(f"Error al obtener notificaciones: {e}")
+        return []
+    finally:
+        conexion.close()

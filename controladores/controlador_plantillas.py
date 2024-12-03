@@ -625,54 +625,15 @@ def generar_libro_diario_pdf_horizontal(fecha_inicio, fecha_fin=None):
         print(f"Error al generar el PDF: {e}")
         return jsonify({"error": str(e)}), 500
 
-
 def generar_libro_caja_pdf_horizontal(mes, año):
     try:
-        conexion = obtener_conexion()
-        cursor = conexion.cursor(cursor_factory=DictCursor)
+        # Usar la función de obtención de datos
+        movimientos_agrupados, total_deudor, total_acreedor = obtener_libro_caja(mes, año)
 
-        consulta = """
-            SELECT
-                DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo,
-                TO_CHAR(ac.fecha, 'DD/MM/YYYY') AS fecha_operacion,
-                CASE
-                    WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
-                    WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la venta de mercadería'
-                    ELSE 'Descripción no especificada'
-                END AS descripcion_operacion,
-                ac.codigo_cuenta AS codigo_cuenta_asociada,
-                ac.denominacion AS denominacion_cuenta_asociada,
-                COALESCE(ac.debe, 0) AS saldo_deudor,
-                COALESCE(ac.haber, 0) AS saldo_acreedor
-            FROM asientos_contables ac
-            JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
-            WHERE EXTRACT(MONTH FROM ac.fecha) = %s AND EXTRACT(YEAR FROM ac.fecha) = %s
-            ORDER BY fecha_operacion, numero_correlativo, ac.id;
-        """
-        cursor.execute(consulta, (mes, año))
-        resultados = cursor.fetchall()
-
-        if not resultados:
+        if not movimientos_agrupados:
             return jsonify({'error': 'No se encontraron datos para el periodo seleccionado.'}), 404
 
-        # Procesar datos y ajustar capitalización en denominación
-        procesados = []
-        for registro in resultados:
-            denominación = registro["denominacion_cuenta_asociada"]
-            if denominación:
-                denominación = denominación.capitalize()
-            registro_procesado = (
-                registro["numero_correlativo"],
-                registro["fecha_operacion"],
-                registro["descripcion_operacion"],
-                registro["codigo_cuenta_asociada"],
-                denominación,
-                registro["saldo_deudor"],
-                registro["saldo_acreedor"]
-            )
-            procesados.append(registro_procesado)
-
-        # Crear PDF
+        # Crear el PDF
         buffer = BytesIO()
         doc = SimpleDocTemplate(
             buffer,
@@ -683,53 +644,63 @@ def generar_libro_caja_pdf_horizontal(mes, año):
             bottomMargin=20
         )
 
-        styles = getSampleStyleSheet()
-        style_title = styles["Title"]
-        style_normal = styles["Normal"]
-        style_normal.fontSize = 9
-        style_normal.leading = 11
+        # Agregar título y encabezados
+        estilos = getSampleStyleSheet()
+        estilo_titulo = estilos["Title"]
+        estilo_normal = estilos["Normal"]
+        estilo_normal.fontSize = 9
+        estilo_normal.leading = 11
 
-        elementos = []
-        título = Paragraph(f"<b>Libro Caja y Bancos - Periodo: {mes}/{año}</b>", style_title)
-        elementos.append(título)
+        elementos = [Paragraph(f"<b>Libro Caja y Bancos - Periodo: {año}-{mes:02}</b>", estilo_titulo)]
         elementos.append(Spacer(1, 12))
 
-        # Construir la tabla
+        # Crear tabla de datos
         encabezados = ["N°", "Fecha", "Descripción", "Código", "Denominación", "Deudor", "Acreedor"]
         tabla_datos = [encabezados]
 
-        for registro in procesados:
-            fila = [
-                str(registro[0]),
-                registro[1],
-                registro[2],
-                str(registro[3] or "-"),
-                registro[4],
-                f"{registro[5]:,.2f}" if registro[5] else "-",
-                f"{registro[6]:,.2f}" if registro[6] else "-"
-            ]
-            tabla_datos.append(fila)
+        for movimiento in movimientos_agrupados:
+            # Obtener el número de cuentas asociadas
+            total_cuentas = len(movimiento["cuentas"])
 
-        total_deudor = sum([registro[5] or 0 for registro in procesados])
-        total_acreedor = sum([registro[6] or 0 for registro in procesados])
+            # Fila de encabezado del movimiento (descripción del movimiento)
+            tabla_datos.append([
+                movimiento["numero_correlativo"],  # N° Correlativo
+                movimiento["fecha_operacion"],  # Fecha de la operación
+                movimiento["descripcion_operacion"],  # Descripción del movimiento
+                movimiento["cuentas"][0]["codigo_cuenta_asociada"] if total_cuentas > 0 else "-",  # Código de la primera cuenta
+                movimiento["cuentas"][0]["denominacion_cuenta_asociada"] if total_cuentas > 0 else "-",  # Denominación de la primera cuenta
+                f"{movimiento['cuentas'][0]['saldo_deudor']:,.2f}" if total_cuentas > 0 and movimiento["cuentas"][0]["saldo_deudor"] else "-",  # Saldo Deudor de la primera cuenta
+                f"{movimiento['cuentas'][0]['saldo_acreedor']:,.2f}" if total_cuentas > 0 and movimiento["cuentas"][0]["saldo_acreedor"] else "-"  # Saldo Acreedor de la primera cuenta
+            ])
+
+            # Resto de cuentas asociadas (si hay más de una)
+            for cuenta in movimiento["cuentas"][1:]:
+                tabla_datos.append([
+                    "",  # Vacío para correlativo
+                    "",  # Vacío para fecha
+                    "",  # Vacío para descripción
+                    cuenta["codigo_cuenta_asociada"],  # Código de cuenta
+                    cuenta["denominacion_cuenta_asociada"],  # Denominación de cuenta
+                    f"{cuenta['saldo_deudor']:,.2f}" if cuenta["saldo_deudor"] else "-",  # Saldo Deudor
+                    f"{cuenta['saldo_acreedor']:,.2f}" if cuenta["saldo_acreedor"] else "-"  # Saldo Acreedor
+                ])
+
+            # Fila vacía al final del grupo para separar
+            tabla_datos.append([""] * 7)
+
+        # Totales
         tabla_datos.append(["", "", "", "", "Totales", f"{total_deudor:,.2f}", f"{total_acreedor:,.2f}"])
 
-        # Estilizar tabla
-        tabla = Table(
-            tabla_datos,
-            colWidths=[30, 50, 120, 60, 300, 70, 70]
-        )
+        # Estilo de la tabla
+        tabla = Table(tabla_datos, colWidths=[30, 50, 150, 60, 250, 70, 70])
         tabla.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('ALIGN', (2, 1), (2, -1), 'LEFT'),  # Descripción a la izquierda
-            ('ALIGN', (3, 1), (3, -1), 'LEFT'),  # Código a la izquierda
-            ('ALIGN', (4, 1), (4, -1), 'LEFT'),  # Denominación a la izquierda
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
-            ('ALIGN', (-2, 1), (-1, -1), 'RIGHT'),  # Deudor y Acreedor a la derecha
-            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),  # Fondo gris para encabezados
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),  # Texto blanco en encabezados
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),  # Alineación general
+            ('ALIGN', (3, 1), (3, -1), 'LEFT'),  # Código alineado a la izquierda
+            ('ALIGN', (4, 1), (4, -1), 'LEFT'),  # Denominación alineada a la izquierda
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),  # Cuadrícula en toda la tabla
+            ('FONTSIZE', (0, 1), (-1, -1), 9),  # Tamaño de fuente
         ]))
 
         elementos.append(tabla)
@@ -739,17 +710,16 @@ def generar_libro_caja_pdf_horizontal(mes, año):
         return send_file(
             buffer,
             as_attachment=True,
-            download_name=f"Libro_Caja_{mes}_{año}.pdf",
+            download_name=f"Libro_Caja_{año}_{mes:02}.pdf",
             mimetype="application/pdf"
         )
 
     except Exception as e:
         print(f"Error al generar el PDF: {e}")
         return jsonify({"error": str(e)}), 500
-    finally:
-        if conexion:
-            cursor.close()
-            conexion.close()
+
+
+
 
 def generar_registro_ventas_pdf(mes, año):
     try:
@@ -1268,11 +1238,20 @@ def obtener_libro_diario(fecha):
     conexion.close()
     return movimientos, total_debe, total_haber
 
+
 def obtener_libro_diario_por_fecha(fecha_inicio, fecha_fin=None):
+=======
+
+def obtener_libro_diario_por_fecha(fecha_inicio, fecha_fin=None):
+    """
+    Obtiene los movimientos del libro diario filtrados por una fecha o por un rango de fechas.
+    """
+
     conexion = obtener_conexion()
     movimientos_agrupados = []
     total_debe = 0
     total_haber = 0
+
     try:
         with conexion.cursor(cursor_factory=DictCursor) as cursor:
             if fecha_fin:
@@ -1393,11 +1372,224 @@ def obtener_movimientos_libro_diario(fecha):
             for movimiento in movimientos:
                 total_debe += movimiento['debe'] or 0
                 total_haber += movimiento['haber'] or 0
+
+
+    try:
+        with conexion.cursor(cursor_factory=DictCursor) as cursor:
+            if fecha_fin:  # Rango de fechas
+                query = """
+                    SELECT
+                        DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo,
+                        TO_CHAR(ac.fecha, 'DD/MM/YYYY') AS fecha,
+                        CASE
+                            WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la venta de mercadería'
+                            WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
+                            ELSE ''
+                        END AS glosa,
+                        CASE
+                            WHEN m.tipo_movimiento = 'Compras' THEN 8
+                            WHEN m.tipo_movimiento = 'Ventas' THEN 14
+                            ELSE NULL
+                        END AS codigo_del_libro,
+                        DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo_documento,
+                        ac.numero_documento AS numero_documento_sustentatorio,
+                        ac.codigo_cuenta,
+                        ac.denominacion,
+                        ac.debe,
+                        ac.haber
+                    FROM asientos_contables ac
+                    JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
+                    WHERE ac.fecha::date BETWEEN %s AND %s
+                    ORDER BY ac.fecha ASC, numero_correlativo, ac.id;
+                """
+                cursor.execute(query, (fecha_inicio, fecha_fin))
+            else:  # Solo una fecha
+                query = """
+                    SELECT
+                        DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo,
+                        TO_CHAR(ac.fecha, 'DD/MM/YYYY') AS fecha,
+                        CASE
+                            WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la venta de mercadería'
+                            WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
+                            ELSE ''
+                        END AS glosa,
+                        CASE
+                            WHEN m.tipo_movimiento = 'Compras' THEN 8
+                            WHEN m.tipo_movimiento = 'Ventas' THEN 14
+                            ELSE NULL
+                        END AS codigo_del_libro,
+                        DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo_documento,
+                        ac.numero_documento AS numero_documento_sustentatorio,
+                        ac.codigo_cuenta,
+                        ac.denominacion,
+                        ac.debe,
+                        ac.haber
+                    FROM asientos_contables ac
+                    JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
+                    WHERE ac.fecha::date = %s
+                    ORDER BY ac.fecha ASC, numero_correlativo, ac.id;
+                """
+                cursor.execute(query, (fecha_inicio,))
+
+            movimientos = cursor.fetchall()
+            agrupado = {}
+
+            for movimiento in movimientos:
+                numero_correlativo = movimiento["numero_correlativo"]
+                if numero_correlativo not in agrupado:
+                    agrupado[numero_correlativo] = {
+                        "numero_correlativo": numero_correlativo,
+                        "fecha": movimiento["fecha"],
+                        "glosa": movimiento["glosa"],
+                        "codigo_del_libro": movimiento["codigo_del_libro"],
+                        "numero_correlativo_documento": movimiento["numero_correlativo_documento"],
+                        "numero_documento_sustentatorio": movimiento["numero_documento_sustentatorio"],
+                        "cuentas": []
+                    }
+                agrupado[numero_correlativo]["cuentas"].append({
+                    "codigo_cuenta": movimiento["codigo_cuenta"],
+                    "denominacion": movimiento["denominacion"],
+                    "debe": movimiento["debe"],
+                    "haber": movimiento["haber"]
+                })
+
+                # Calcular totales
+                total_debe += movimiento["debe"] or 0
+                total_haber += movimiento["haber"] or 0
+
+            movimientos_agrupados = list(agrupado.values())
+
+
     except Exception as e:
         print(f"Error al obtener los movimientos del libro diario: {e}")
     finally:
         conexion.close()
+
     return movimientos, total_debe, total_haber
+
+
+    return movimientos_agrupados, total_debe, total_haber
+
+
+
+
+def generar_libro_diario_pdf_horizontal(fecha_inicio, fecha_fin=None):
+    try:
+        # Obtener los datos agrupados del libro diario
+        if fecha_fin:
+            movimientos_agrupados, total_debe, total_haber = obtener_libro_diario_por_fecha(fecha_inicio, fecha_fin)
+        else:
+            movimientos_agrupados, total_debe, total_haber = obtener_libro_diario_por_fecha(fecha_inicio)
+
+        if not movimientos_agrupados:
+            return jsonify({'error': 'No se encontraron datos para las fechas seleccionadas.'}), 404
+
+        # Crear buffer para el PDF
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=landscape(A4),  # Configuración horizontal
+            rightMargin=10, leftMargin=10, topMargin=10, bottomMargin=10  # Márgenes reducidos
+        )
+
+        # Crear estilos
+        styles = getSampleStyleSheet()
+        style_title = styles["Title"]
+        style_normal = styles["Normal"]
+        style_normal.fontSize = 9
+        style_normal.leading = 11
+
+        # Determinar el rango de fechas para el título
+        fecha_texto = f"Fecha: {fecha_inicio}" if not fecha_fin else f"Rango: {fecha_inicio} - {fecha_fin}"
+
+        # Agregar título
+        elementos = []
+        titulo = Paragraph(f"<b>Libro Diario - {fecha_texto}</b>", style_title)
+        elementos.append(titulo)
+        elementos.append(Spacer(1, 12))
+
+        # Crear la tabla con los encabezados
+        encabezados = [
+            "N°", "Fecha", "Descripción", "Código",
+            "N° Documento", "Código Cuenta", "Denominación", "Debe", "Haber"
+        ]
+        tabla_datos = [encabezados]
+
+        # Procesar los datos agrupados
+        for movimiento in movimientos_agrupados:
+            # Encabezado del movimiento
+            primera_fila = [
+                movimiento["numero_correlativo"],  # N° Correlativo
+                movimiento["fecha"],  # Fecha
+                movimiento["glosa"],  # Descripción de la operación
+                movimiento["codigo_del_libro"] or "-",  # Código del libro
+                movimiento["numero_documento_sustentatorio"] or "-",  # N° Documento Sustentatorio
+                "",  # Código Cuenta
+                "",  # Denominación
+                "",  # Debe
+                ""   # Haber
+            ]
+            tabla_datos.append(primera_fila)
+
+            # Cuentas asociadas al movimiento
+            for idx, cuenta in enumerate(movimiento["cuentas"]):
+                cuenta_fila = [
+                    "",  # N° Correlativo vacío
+                    "",  # Fecha vacía
+                    "",  # Descripción vacía
+                    "",  # Código del libro vacío
+                    "",  # N° Documento vacío
+                    cuenta["codigo_cuenta"] or "-",  # Código Cuenta
+                    Paragraph(cuenta["denominacion"] or "-", style_normal),  # Denominación con ajuste
+                    f"{cuenta['debe']:,.2f}" if cuenta["debe"] else "-",  # Debe
+                    f"{cuenta['haber']:,.2f}" if cuenta["haber"] else "-"  # Haber
+                ]
+                tabla_datos.append(cuenta_fila)
+
+            # Separador vacío entre movimientos
+            tabla_datos.append([""] * len(encabezados))
+
+        # Agregar fila de totales
+        tabla_datos.append(["", "", "", "", "", "", "Totales", f"{total_debe:,.2f}", f"{total_haber:,.2f}"])
+
+        # Ajustar tamaños de columna para ocupar más espacio
+        tabla = Table(
+            tabla_datos,
+            colWidths=[50, 70, 150, 50, 100, 60, 220, 70, 70]  # Columnas ajustadas
+        )
+        tabla.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),  # Fondo gris para encabezados
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),  # Texto blanco para encabezados
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),  # Alineación general centrada
+            ('ALIGN', (5, 1), (5, -1), 'LEFT'),  # Código Cuenta alineado a la izquierda
+            ('ALIGN', (6, 1), (6, -1), 'LEFT'),  # Denominación alineado a la izquierda
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),  # Fuente en negrita para encabezados
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),  # Fuente normal para contenido
+            ('FONTSIZE', (0, 1), (-1, -1), 9),  # Fuente pequeña para contenido
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),  # Espaciado inferior en encabezados
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),  # Líneas de cuadrícula
+            ('VALIGN', (6, 1), (6, -1), 'MIDDLE'),  # Alinear verticalmente Denominación al centro
+            ('SPAN', (0, -1), (5, -1)),  # Fusionar celdas para Totales
+            ('ALIGN', (-2, 1), (-1, -1), 'RIGHT'),  # Alinear Debe y Haber a la derecha
+        ]))
+        elementos.append(tabla)
+
+        # Generar el PDF
+        doc.build(elementos)
+        buffer.seek(0)
+
+        return send_file(
+            buffer,
+            as_attachment=True,
+            download_name=f"Libro_Diario_{fecha_inicio}_to_{fecha_fin or fecha_inicio}.pdf",
+            mimetype="application/pdf"
+        )
+    except Exception as e:
+        print(f"Error al generar el PDF: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+
 
 
 def obtener_libro_caja(mes, año):
@@ -1779,11 +1971,15 @@ def generar_libro_mayor_pdf(mes, año, cuenta):
             cursor.close()
             conexion.close()
 
+
 load_dotenv()
+=======
+
 
 def generar_libro_caja_excel(mes, anio):
     print(f"mes: '{mes}', año: '{anio}'")
     try:
+
         db_url = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
         engine = create_engine(db_url)
         with engine.connect() as conexion:
@@ -1810,6 +2006,60 @@ def generar_libro_caja_excel(mes, anio):
             """
             # Ejecuta la consulta y obtiene los resultados
             resultados = conexion.execute(text(consulta), {"mes": mes, "anio": anio}).fetchall()
+
+        mes = int(mes)
+        anio = int(anio)
+    except ValueError:
+        print("Error: mes o año no son enteros válidos")
+        return jsonify({'error': 'Mes o año no son enteros válidos'}), 400
+
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        consulta = """
+        SELECT
+            DENSE_RANK() OVER (ORDER BY ac.numero_asiento) AS numero_correlativo,
+            TO_CHAR(ac.fecha, 'DD/MM/YYYY') AS fecha_operacion,
+            CASE
+                WHEN m.tipo_movimiento = 'Compras' THEN 'Por la compra de insumos'
+                WHEN m.tipo_movimiento = 'Ventas' THEN 'Por la venta de mercadería'
+                ELSE 'Descripción no especificada'
+            END AS descripcion_operacion,
+            ac.codigo_cuenta AS codigo_cuenta_asociada,
+            ac.denominacion AS denominacion_cuenta_asociada,
+            COALESCE(ac.debe, 0) AS saldo_deudor,
+            COALESCE(ac.haber, 0) AS saldo_acreedor
+        FROM asientos_contables ac
+        JOIN movimientos m ON ac.numero_asiento = m.movimiento_id
+        WHERE 
+            (ac.codigo_cuenta LIKE '10%')
+            AND EXTRACT(MONTH FROM ac.fecha) = %s
+            AND EXTRACT(YEAR FROM ac.fecha) = %s
+        ORDER BY fecha_operacion, numero_correlativo, ac.id;
+        """
+        cursor.execute(consulta, (mes, anio))
+
+        resultados = cursor.fetchall()
+
+        # Cargar la plantilla de Excel
+        ruta_plantilla = 'plantillas/LibroCaja.xlsx'
+        workbook = load_workbook(ruta_plantilla)
+        hoja = workbook.active
+
+        # Escribir el periodo en la celda específica
+        periodo = f"{anio}-{str(mes).zfill(2)}"
+        hoja.cell(row=3, column=2, value=periodo)
+
+        # Configuración de bordes y fuente
+        borde = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+        fuente_estandar = Font(name='Arial', size=10)
+
 
             if not resultados:
                 return jsonify({'error': 'No se encontraron resultados.'}), 404
