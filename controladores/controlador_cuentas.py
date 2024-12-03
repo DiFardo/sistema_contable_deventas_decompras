@@ -418,6 +418,21 @@ def obtener_cuentas_con_nivel():
     conexion.close()
     return cuentas
 
+def encabezado_primera_pagina(canvas, doc):
+    """Encabezado solo para la primera página."""
+    canvas.saveState()
+    canvas.setFont("Helvetica-Bold", 14)
+    canvas.drawCentredString(A4[0] / 2.0, A4[1] - 50, "PLAN CONTABLE GENERAL EMPRESARIAL")
+    canvas.setFont("Helvetica-Bold", 12)
+    canvas.drawCentredString(A4[0] / 2.0, A4[1] - 70, "CATÁLOGO DE CUENTAS")
+    canvas.restoreState()
+
+def encabezado_paginas_siguientes(canvas, doc):
+    """Encabezado para las páginas posteriores."""
+    canvas.saveState()
+    canvas.setFont("Helvetica-Bold", 12)
+    canvas.restoreState()
+
 def exportar_todas_cuentas_pdf():
     try:
         conexion = obtener_conexion()
