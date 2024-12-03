@@ -682,37 +682,7 @@ def registro_ventas_datos():
         total_total_comprobante=total_total_comprobante
     )
 
-@app.route("/registro_compras_datos", methods=["GET"])
-@jwt_required()
-@role_required(1,3)
-def registro_compras_datos():
-    mes = request.args.get("month")
-    anio = request.args.get("year")
-    registros, total_base_imponible, total_igv, total_total_comprobante = controlador_plantillas.obtener_registro_compras_por_fecha(mes, anio)
-    
-    filas = [
-        {
-            "correlativo": reg["correlativo"],
-            "fecha_emision": reg["fecha_emision"],
-            "tipo_comprobante": reg["tipo_comprobante"],
-            "serie_comprobante": reg["serie_comprobante"],
-            "numero_comprobante": reg["numero_comprobante"],
-            "tipo_documento": reg["tipo_documento"],
-            "numero_documento": reg["numero_documento"],
-            "nombre_proveedor": reg["nombre_proveedor"],
-            "base_imponible": reg["base_imponible"],
-            "igv": reg["igv"],
-            "total_comprobante": reg["total_comprobante"]
-        }
-        for reg in registros
-    ]
 
-    return jsonify(
-        registros=filas,
-        total_base_imponible=total_base_imponible,
-        total_igv=total_igv,
-        total_total_comprobante=total_total_comprobante
-    )
 
 @app.route('/exportar-libro-caja-bancos', methods=['GET'])
 @jwt_required()
@@ -808,6 +778,36 @@ def registro_compras():
         total_total_comprobante=total_total_comprobante,
         breadcrumbs=breadcrumbs,
         usuario=usuario
+    )
+
+@app.route("/registro_compras_datos", methods=["GET"])
+@jwt_required()
+@role_required(1,3)
+def registro_compras_datos():
+    mes = request.args.get("month")
+    anio = request.args.get("year")
+    registros, total_base_imponible, total_igv, total_total_comprobante = controlador_plantillas.obtener_registro_compras_por_fecha(mes, anio)
+    filas = [
+        {
+            "correlativo": reg["correlativo"],
+            "fecha_emision": reg["fecha_emision"],
+            "tipo_comprobante": reg["tipo_comprobante"],
+            "serie_comprobante": reg["serie_comprobante"],
+            "numero_comprobante": reg["numero_comprobante"],
+            "tipo_documento": reg["tipo_documento"],
+            "numero_documento": reg["numero_documento"],
+            "nombre_proveedor": reg["nombre_proveedor"],
+            "base_imponible": reg["base_imponible"],
+            "igv": reg["igv"],
+            "total_comprobante": reg["total_comprobante"]
+        }
+        for reg in registros
+    ]
+    return jsonify(
+        registros=filas,
+        total_base_imponible=total_base_imponible,
+        total_igv=total_igv,
+        total_total_comprobante=total_total_comprobante
     )
 
 @app.route("/ventas/productos")
