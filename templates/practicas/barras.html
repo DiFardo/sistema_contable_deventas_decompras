@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gráfico de Barras</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+  <div id="grafico"></div>
+
+  <script>
+    var trace1 = {
+      x: ['Categoría A', 'Categoría B', 'Categoría C', 'Categoría D'],
+      y: [10, 12, 15, 18],
+      type: 'bar'
+    };
+
+    var data = [trace1];
+
+    var layout = {
+      title: 'Gráfico de Barras',
+      xaxis: { title: 'Categorías' },
+      yaxis: { title: 'Valores' }
+    };
+
+    Plotly.newPlot('grafico', data, layout);
+  </script>
+</body>
+</html>

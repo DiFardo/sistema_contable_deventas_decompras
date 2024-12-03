@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gráfico de Caja</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+  <div id="grafico"></div>
+
+  <script>
+    var trace1 = {
+      y: [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+      type: 'box',
+      name: 'Grupo 1'
+    };
+
+    var data = [trace1];
+
+    var layout = {
+      title: 'Gráfico de Caja',
+    };
+
+    Plotly.newPlot('grafico', data, layout);
+  </script>
+</body>
+</html>

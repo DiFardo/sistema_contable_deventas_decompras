@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gráfico de Movimientos</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <h1>Gráfico de Movimientos (Ventas vs Compras)</h1>
+
+    <div id="grafico"></div>
+
+    <form action="/grafico_movimientos" method="get">
+        <label for="fecha_inicio">Fecha de Inicio:</label>
+        <input type="date" name="fecha_inicio" value="2024-01-01">
+
+        <label for="fecha_fin">Fecha de Fin:</label>
+        <input type="date" name="fecha_fin" value="2024-12-31">
+
+        <button type="submit">Filtrar</button>
+    </form>
+
+    <script>
+        // Obtener los datos del backend (Flask)
+        var datos = {{ datos_json | tojson }};
+
+        var trace1 = {
+            x: datos.fechas,
+            y: datos.ventas,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Ventas',
+            line: { color: 'blue' }
+        };
+
+        var trace2 = {
+            x: datos.fechas,
+            y: datos.compras,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Compras',
+            line: { color: 'red' }
+        };
+
+        var layout = {
+            title: 'Ventas y Compras a lo largo del tiempo',
+            xaxis: { title: 'Fecha' },
+            yaxis: { title: 'Monto' }
+        };
+
+        var data = [trace1, trace2];
+
+        // Crear el gráfico
+        Plotly.newPlot('grafico', data, layout);
+    </script>
+</body>
+</html>

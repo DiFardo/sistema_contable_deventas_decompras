@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gráfico de Líneas con Plotly</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+  <div id="grafico"></div>
+
+  <script>
+    var trace1 = {
+      x: [1, 2, 3, 4, 5],
+      y: [2, 4, 6, 8, 10],
+      type: 'scatter',
+      mode: 'lines',
+      name: 'Linea 1'
+    };
+
+    var data = [trace1];
+
+    var layout = {
+      title: 'Gráfico de Líneas',
+      xaxis: { title: 'X' },
+      yaxis: { title: 'Y' }
+    };
+
+    Plotly.newPlot('grafico', data, layout);
+  </script>
+</body>
+</html>

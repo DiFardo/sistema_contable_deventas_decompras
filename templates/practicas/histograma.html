@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Histograma</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+  <div id="grafico"></div>
+
+  <script>
+    var trace1 = {
+      x: [1, 2, 2, 3, 3, 3, 4, 4, 5],
+      type: 'histogram',
+    };
+
+    var data = [trace1];
+
+    var layout = {
+      title: 'Histograma',
+      xaxis: { title: 'Valor' },
+      yaxis: { title: 'Frecuencia' }
+    };
+
+    Plotly.newPlot('grafico', data, layout);
+  </script>
+</body>
+</html>

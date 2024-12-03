@@ -1247,6 +1247,30 @@ def prueba1():
     
 #     return jsonify(labels=labels, values=values)
 
+@app.route("/grafico_movimientos", methods=["GET"])
+def grafico_movimientos():
+    # Obtener parámetros de fecha desde la URL
+    fecha_inicio = request.args.get("fecha_inicio", None)
+    fecha_fin = request.args.get("fecha_fin", None)
+
+    # Si no se proporciona fecha de inicio o fin, utilizar un rango por defecto
+    if not fecha_inicio or not fecha_fin:
+        fecha_inicio = "2024-01-01"
+        fecha_fin = "2024-12-31"
+
+    try:
+        # Convertir las fechas a objetos datetime para validación
+        fecha_inicio = datetime.strptime(fecha_inicio, "%Y-%m-%d")
+        fecha_fin = datetime.strptime(fecha_fin, "%Y-%m-%d")
+    except ValueError:
+        return "Error: Las fechas no tienen el formato correcto (YYYY-MM-DD)", 400
+
+    # Obtener los datos filtrados de la base de datos
+    datos = controlador_plantillas.obtener_datos_movimientos(fecha_inicio, fecha_fin)
+
+    # Retornar la plantilla con los datos en formato JSON
+    return render_template('grafico.html', datos_json=json.dumps(datos))
+
 # Iniciar el servidor
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8000, debug=True)

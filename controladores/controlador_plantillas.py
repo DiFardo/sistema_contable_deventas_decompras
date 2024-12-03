@@ -2232,3 +2232,42 @@ def obtener_reporte_circular(fecha_inicio=None, fecha_fin=None):
     values = [float(row[1]) for row in data]
     
     return labels, values
+
+
+def obtener_datos_movimientos(fecha_inicio, fecha_fin):
+    conexion = obtener_conexion()
+    with conexion.cursor() as cursor:
+        query = """
+            SELECT 
+                fecha, 
+                tipo_movimiento, 
+                SUM(sub_sin_igv) AS sub_sin_igv, 
+                SUM(igv) AS igv, 
+                SUM(total) AS total
+            FROM movimientos
+            WHERE fecha >= %s AND fecha <= %s
+            GROUP BY fecha, tipo_movimiento
+            ORDER BY fecha;
+        """
+        
+        cursor.execute(query, (fecha_inicio, fecha_fin))
+        datos = cursor.fetchall()
+
+        # Formatear los resultados para enviarlos al frontend
+        movimientos = {"fechas": [], "ventas": [], "compras": []}
+        
+        for fila in datos:
+            fecha = fila[0].strftime("%Y-%m-%d %H:%M:%S")  # Convertir la fecha a string
+            tipo_movimiento = fila[1]
+            total = fila[4]
+            
+            movimientos["fechas"].append(fecha)
+            if tipo_movimiento == "Ventas":
+                movimientos["ventas"].append(total)
+                movimientos["compras"].append(None)
+            else:
+                movimientos["compras"].append(total)
+                movimientos["ventas"].append(None)
+    cursor.close()
+    conexion.close()
+    return movimientos
