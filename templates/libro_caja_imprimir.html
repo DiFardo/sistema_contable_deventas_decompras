@@ -40,11 +40,11 @@
             width: 10%;
         }
 
-        .text-right{
+        .text-right {
             text-align: right;
         }
 
-        .text-center{
+        .text-center {
             text-align: center;
         }
 
@@ -127,15 +127,27 @@
                 </thead>
                 <tbody>
                     {% for movimiento in movimientos %}
+                    <!-- Fila principal del movimiento -->
                     <tr>
-                        <td class="text-center">{{ movimiento.numero_correlativo }}</td>
-                        <td class="text-center">{{ movimiento.fecha_operacion }}</td>
-                        <td>{{ movimiento.descripcion_operacion }}</td>
-                        <td>{{ movimiento.codigo_cuenta_asociada or "-" }}</td>
-                        <td>{{ movimiento.denominacion_cuenta_asociada or "-" }}</td>
-                        <td class="text-right">{{ movimiento.saldo_deudor or "-" }}</td>
-                        <td class="text-right">{{ movimiento.saldo_acreedor or "-" }}</td>
+                        <td class="text-center" rowspan="{{ movimiento.cuentas|length + 1 }}">
+                            {{ movimiento.numero_correlativo }}
+                        </td>
+                        <td class="text-center" rowspan="{{ movimiento.cuentas|length + 1 }}">
+                            {{ movimiento.fecha_operacion }}
+                        </td>
+                        <td rowspan="{{ movimiento.cuentas|length + 1 }}">
+                            {{ movimiento.descripcion_operacion }}
+                        </td>
                     </tr>
+                    <!-- Cuentas asociadas -->
+                    {% for cuenta in movimiento.cuentas %}
+                    <tr>
+                        <td>{{ cuenta.codigo_cuenta_asociada or "-" }}</td>
+                        <td>{{ cuenta.denominacion_cuenta_asociada or "-" }}</td>
+                        <td class="text-right">{{ cuenta.saldo_deudor or "-" }}</td>
+                        <td class="text-right">{{ cuenta.saldo_acreedor or "-" }}</td>
+                    </tr>
+                    {% endfor %}
                     {% endfor %}
                 </tbody>
                 <tfoot>
@@ -155,15 +167,22 @@
 
     <script>
         function exportarPDF() {
+            // Obtener el valor del periodo desde la URL
             const periodo = new URLSearchParams(window.location.search).get('periodo');
+
+            // Validar que el periodo esté presente
             if (!periodo) {
                 alert("Por favor, selecciona un periodo antes de exportar el PDF.");
                 return;
             }
 
+            // Construir la URL con el periodo como parámetro
             const url = `/exportar-libro-caja-pdf?periodo=${encodeURIComponent(periodo)}`;
+
+            // Redirigir a la URL para exportar el PDF
             window.location.href = url;
         }
+
     </script>
 </body>
 

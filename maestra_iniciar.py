@@ -1200,6 +1200,53 @@ def page_not_found(e):
 def prueba1():
     return render_template('prueba1.html')
 
+# @app.route("/reporte_circular")
+# @jwt_required()
+# @role_required(1, 3)  # Solo roles con ID 1 y 3 pueden acceder
+# def reporte_circular():
+#     dni = get_jwt_identity()
+#     usuario = controlador_usuarios.obtener_usuario(dni)
+#     if usuario and (not usuario[6] or usuario[6] is None):
+#         usuario = list(usuario)
+#         usuario[6] = "perfil_defecto.png"
+#     breadcrumbs = [
+#         {'name': 'Inicio', 'url': '/index'},
+#         {'name': 'Reporte Circular', 'url': '/reporte_circular'}
+#     ]
+#     return render_template("practicas/reporte_circular.html", breadcrumbs=breadcrumbs, usuario=usuario)
+
+# @app.route("/reporte_circular_datos", methods=["GET"])
+# @jwt_required()
+# @role_required(1, 3)
+# def reporte_circular_datos():
+#     fecha_inicio = request.args.get("fecha_inicio", None)
+#     fecha_fin = request.args.get("fecha_fin", None)
+    
+#     conexion = obtener_conexion()  # Asegúrate de tener esta función para obtener la conexión a la BD
+#     with conexion.cursor() as cursor:
+#         query = """
+#             SELECT tipo_movimiento, SUM(total) as total
+#             FROM movimientos
+#             WHERE 1=1
+#         """
+#         params = []
+#         if fecha_inicio:
+#             query += " AND fecha >= %s"
+#             params.append(fecha_inicio)
+#         if fecha_fin:
+#             query += " AND fecha <= %s"
+#             params.append(fecha_fin)
+#         query += " GROUP BY tipo_movimiento"
+#         cursor.execute(query, tuple(params))
+#         data = cursor.fetchall()
+#     conexion.close()
+    
+#     # Formatear los datos para Chart.js
+#     labels = [row[0] for row in data]
+#     values = [float(row[1]) for row in data]
+    
+#     return jsonify(labels=labels, values=values)
+
 # Iniciar el servidor
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8000, debug=True)

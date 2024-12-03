@@ -1,0 +1,118 @@
+<!-- templates/reporte_circular.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte Circular</title>
+    <!-- Incluir Chart.js y jQuery -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        /* Estilos opcionales */
+        .container {
+            width: 80%;
+            margin: auto;
+            text-align: center;
+        }
+        #filtro-form {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navegación y otros componentes -->
+    <div class="container">
+        <h1>Reporte Circular de Movimientos</h1>
+        
+        <!-- Formulario de filtros -->
+        <form id="filtro-form">
+            <label for="fecha_inicio">Fecha Inicio:</label>
+            <input type="date" id="fecha_inicio" name="fecha_inicio">
+            
+            <label for="fecha_fin">Fecha Fin:</label>
+            <input type="date" id="fecha_fin" name="fecha_fin">
+            
+            <button type="submit">Filtrar</button>
+        </form>
+        
+        <!-- Canvas para el gráfico -->
+        <canvas id="pieChart" width="400" height="400"></canvas>
+    </div>
+    
+    <script>
+        $(document).ready(function(){
+            var ctx = document.getElementById('pieChart').getContext('2d');
+            var pieChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Movimientos',
+                        data: [],
+                        backgroundColor: [
+                            'rgba(75, 192, 192, 0.6)',
+                            'rgba(255, 99, 132, 0.6)',
+                            'rgba(255, 206, 86, 0.6)',
+                            'rgba(54, 162, 235, 0.6)',
+                            'rgba(153, 102, 255, 0.6)',
+                            'rgba(255, 159, 64, 0.6)'
+                        ],
+                        borderColor: [
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(255,99,132,1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(255, 159, 64, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Distribución de Movimientos'
+                        }
+                    }
+                }
+            });
+
+            // Función para actualizar el gráfico
+            function actualizarGrafico(fecha_inicio, fecha_fin){
+                $.ajax({
+                    url: '/reporte_circular_datos',
+                    data: {
+                        fecha_inicio: fecha_inicio,
+                        fecha_fin: fecha_fin
+                    },
+                    dataType: 'json',
+                    success: function(response){
+                        pieChart.data.labels = response.labels;
+                        pieChart.data.datasets[0].data = response.values;
+                        pieChart.update();
+                    },
+                    error: function(error){
+                        console.error("Error al obtener los datos:", error);
+                    }
+                });
+            }
+
+            // Cargar datos iniciales sin filtros
+            actualizarGrafico();
+
+            // Manejar el envío del formulario de filtros
+            $('#filtro-form').on('submit', function(e){
+                e.preventDefault();
+                var fecha_inicio = $('#fecha_inicio').val();
+                var fecha_fin = $('#fecha_fin').val();
+                actualizarGrafico(fecha_inicio, fecha_fin);
+            });
+        });
+    </script>
+</body>
+</html>
