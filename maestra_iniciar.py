@@ -21,6 +21,8 @@ import datetime
 from io import BytesIO
 from datetime import timedelta
 from functools import wraps
+import plotly.graph_objs as go
+import json
 
 # Directorio donde se guardarán las imágenes de perfil
 UPLOAD_FOLDER = 'static/img/perfiles'

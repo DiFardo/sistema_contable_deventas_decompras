@@ -1,16 +1,12 @@
 --En la bd de contabilidad
 CREATE TABLE ventas_contables (
     id SERIAL PRIMARY KEY,
-    --id_detalle INT NOT NULL,
     id_pedido INT NOT NULL,
     id_usuario INT NOT NULL,
 	usuario VARCHAR(255) NOT NULL,
     tipo_documento VARCHAR(20) NOT NULL,
     numero_documento VARCHAR(30) NOT NULL,
     fecha TIMESTAMP NOT NULL,
-    --id_producto INT NOT NULL,
-    --nombre_producto VARCHAR(255) NOT NULL,
-    --cantidad INT NOT NULL,
     sub_sin_igv NUMERIC(10, 2) NOT NULL,
     igv NUMERIC(10, 2) NOT NULL,
     total NUMERIC(10, 2) NOT NULL,
@@ -21,7 +17,6 @@ CREATE TABLE ventas_contables (
 
 CREATE TABLE compras_contables (
     id SERIAL PRIMARY KEY,
-    --id_detalle_compra INT NOT NULL,
     id_compra INT NOT NULL,
     id_usuario INT NOT NULL,
     usuario VARCHAR(255) NOT NULL,
@@ -30,9 +25,6 @@ CREATE TABLE compras_contables (
     tipo_documento VARCHAR(20) NOT NULL,
     numero_documento VARCHAR(30) NOT NULL,
     fecha TIMESTAMP NOT NULL,
-    --id_insumo INT NOT NULL,
-    --nombre_insumo VARCHAR(255) NOT NULL,
-    --cantidad INT NOT NULL,
     sub_sin_igv NUMERIC(10, 2) NOT NULL,
     igv NUMERIC(10, 2) NOT NULL,
     total NUMERIC(10, 2) NOT NULL,
@@ -47,96 +39,121 @@ CREATE TABLE movimientos (
     tipo_comprobante VARCHAR(20) NOT NULL,
     serie_comprobante VARCHAR(10) NOT NULL,
     numero_comprobante VARCHAR(10) NOT NULL,
-    tipo_documento VARCHAR(20) NOT NULL,
+    tipo_documento VARCHAR(20) NOT NULL, --DNI, RUC, Pasaporte, etc
     numero_documento VARCHAR(30) NOT NULL,
-    entidad VARCHAR(255) NOT NULL,
+    entidad VARCHAR(255) NOT NULL, --Persona o empresa, ejemplo: "Gustavo Gil", o "HERMANOS SAC"
     tipo_movimiento VARCHAR(10) NOT NULL CHECK (tipo_movimiento IN ('Ventas', 'Compras')),
     sub_sin_igv NUMERIC(10, 2) NOT NULL,
     igv NUMERIC(10, 2) NOT NULL,
     total NUMERIC(10, 2) NOT NULL
 );
-
-------------------------------------------------
---permisos y roles:
-CREATE TABLE IF NOT EXISTS public.roles
-(
-    id integer NOT NULL DEFAULT nextval('roles_id_seq'::regclass),
-    nombre character varying(50) COLLATE pg_catalog."default" NOT NULL,
-    descripcion text COLLATE pg_catalog."default",
-    estado boolean DEFAULT true,
-    CONSTRAINT roles_pkey PRIMARY KEY (id),
-    CONSTRAINT roles_nombre_key UNIQUE (nombre)
-)
-
-TABLESPACE pg_default;
-
-ALTER TABLE IF EXISTS public.roles
-    OWNER to avnadmin;
-
-CREATE TABLE IF NOT EXISTS public.personas
-(
-    id integer NOT NULL DEFAULT nextval('personas_id_seq'::regclass),
-    nombre character varying(50) COLLATE pg_catalog."default" NOT NULL,
-    apellido character varying(50) COLLATE pg_catalog."default" NOT NULL,
-    dni character varying(8) COLLATE pg_catalog."default" NOT NULL,
-    imagen character varying(255) COLLATE pg_catalog."default",
-    id_rol integer,
-    CONSTRAINT personas_pkey PRIMARY KEY (id),
-    CONSTRAINT personas_dni_key UNIQUE (dni),
-    CONSTRAINT fk_roles FOREIGN KEY (id_rol)
-        REFERENCES public.roles (id) MATCH SIMPLE
-        ON UPDATE CASCADE
-        ON DELETE SET NULL
-)
-
-TABLESPACE pg_default;
-
-ALTER TABLE IF EXISTS public.personas
-    OWNER to avnadmin;
-
-CREATE TABLE IF NOT EXISTS public.usuarios
-(
-    id integer NOT NULL DEFAULT nextval('usuarios_id_seq'::regclass),
-    dni character varying(8) COLLATE pg_catalog."default" NOT NULL,
-    pass character varying(255) COLLATE pg_catalog."default" NOT NULL,
-    token character varying(512) COLLATE pg_catalog."default",
-    id_persona integer,
-    CONSTRAINT usuarios_pkey PRIMARY KEY (id),
-    CONSTRAINT usuarios_dni_key UNIQUE (dni),
-    CONSTRAINT fk_persona FOREIGN KEY (id_persona)
-        REFERENCES public.personas (id) MATCH SIMPLE
-        ON UPDATE NO ACTION
-        ON DELETE NO ACTION
-)
-
-TABLESPACE pg_default;
-
-ALTER TABLE IF EXISTS public.usuarios
-    OWNER to avnadmin;
-
--- Tabla de permisos
-CREATE TABLE IF NOT EXISTS public.permisos (
+/*
+EJEMPLO DE movimientos:
+"movimiento_id"	"fecha"	"tipo_comprobante"	"serie_comprobante"	"numero_comprobante"	"tipo_documento"	"numero_documento"	"entidad"	"tipo_movimiento"	"sub_sin_igv"	"igv"	"total"
+"V-60"	"2024-10-13 10:41:47"	"Boleta"	"B001"	"0000001"	"DNI"	"71937486"	"Gustavo Gil"	"Ventas"	67.80	12.20	80.00
+"C-32"	"2024-11-09 10:48:39"	"Factura"	"C002"	"0000008"	"RUC"	"20198765432"	"Decoraciones Elegantes"	"Compras"	6059.32	1090.68	7150.00
+"V-68"	"2024-10-29 01:43:52"	"Factura"	"F001"	"0000001"	"RUC"	"10174131612"	"HERMANOS SAC"	"Ventas"	150.00	27.00	177.00
+*/
+CREATE TABLE asientos_contables (
+    id SERIAL PRIMARY KEY,
+    numero_asiento VARCHAR(20),
+    fecha TIMESTAMP,
+    codigo_cuenta VARCHAR(10),
+    denominacion VARCHAR(255),
+    debe NUMERIC,
+    haber NUMERIC,
+    numero_documento VARCHAR(255)
+);
+/*
+EJEMPLO DE asientos_contables:
+"id"	"numero_asiento"	"fecha"	"codigo_cuenta"	"denominacion"
+837	"V-60"	"2024-10-13 10:41:47"	"40"	"TRIBUTOS, CONTRAPRESTACIONES Y APORTES AL SISTEMA PÚBLICO DE PENSIONES Y DE SALUD POR PAGAR"
+838	"V-60"	"2024-10-13 10:41:47"	"401"	"Gobierno central"
+839	"V-60"	"2024-10-13 10:41:47"	"4011"	"Impuesto general a las ventas"
+840	"V-60"	"2024-10-13 10:41:47"	"40111"	"IGV – Cuenta propia"
+841	"V-60"	"2024-10-13 10:41:47"	"70"	"VENTAS"
+842	"V-60"	"2024-10-13 10:41:47"	"701"	"Mercaderías"
+843	"V-60"	"2024-10-13 10:41:47"	"7012"	"Mercaderías - Venta local"
+844	"V-60"	"2024-10-13 10:41:47"	"70111"	"Terceros"
+834	"V-60"	"2024-10-13 10:41:47"	"10"	"EFECTIVO Y EQUIVALENTES DE EFECTIVO"
+*/
+CREATE TABLE roles (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL UNIQUE,
+    descripcion TEXT,
+    estado BOOLEAN DEFAULT TRUE
+);
+/*
+roles:
+"id"	"nombre"	"descripcion"	"estado"
+1	"Contador"	"Responsable de gestionar y analizar las finanzas de la empresa, asegurando su legalidad y precisión."	true
+2	"Gestor de operaciones comerciales"	"Encargado de gestionar y analizar las transacciones de compras y ventas, asegurando su eficiencia y precisión."	true
+3	"Administrador"	"Encargado de gestionar y analizar tanto las finanzas como las transacciones comerciales de la empresa."	true
+*/
+CREATE TABLE personas (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL,
+    apellido VARCHAR(50) NOT NULL,
+    dni VARCHAR(8) NOT NULL UNIQUE,
+    imagen VARCHAR(255),
+    id_rol INTEGER,
+    FOREIGN KEY (id_rol) REFERENCES roles(id) ON UPDATE CASCADE ON DELETE SET NULL
+);
+/*
+EJEMPLO personas:
+"id"	"nombre"	"apellido"	"dni"	"imagen"	"id_rol"
+2	"Gustavo"	"Gil"	"71937486"	"Miyamura_Izumi_icons.jpeg"	3
+*/
+CREATE TABLE usuarios (
+    id SERIAL PRIMARY KEY,
+    dni VARCHAR(8) NOT NULL UNIQUE,
+    pass VARCHAR(255) NOT NULL,
+    token VARCHAR(512),
+    id_persona INTEGER,
+    FOREIGN KEY (id_persona) REFERENCES public.personas(id) ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+/*
+EJEMPLO usuarios:
+"id"	"dni"	"pass"	"token"	"id_persona"
+2	"71937486"	"e70..."   "eyJhba..."    2
+*/
+CREATE TABLE permisos (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL,
     descripcion TEXT
 );
-
--- Relación entre roles y permisos
-CREATE TABLE IF NOT EXISTS public.roles_permisos (
+/*
+permisos:
+"id"	"nombre"	"descripcion"
+1	"ver_cuentas"	"Ver las cuentas contables"
+2	"editar_cuentas"	"Editar las cuentas contables"
+3	"darbaja_cuentas"	"Dar de baja las cuentas contables"
+4	"agregar_cuentas"	"Agregar nuevas cuentas contables"
+*/
+CREATE TABLE roles_permisos (
     rol_id INTEGER NOT NULL,
     permiso_id INTEGER NOT NULL,
     FOREIGN KEY (rol_id) REFERENCES public.roles(id) ON DELETE CASCADE,
     FOREIGN KEY (permiso_id) REFERENCES public.permisos(id) ON DELETE CASCADE,
     PRIMARY KEY (rol_id, permiso_id)
 );
-
-CREATE TABLE IF NOT EXISTS public.usuarios_permisos (
+/*
+roles_permisos:
+"rol_id"	"permiso_id"
+1	1
+*/
+CREATE TABLE usuarios_permisos (
     id_usuario INTEGER NOT NULL,
     id_permiso INTEGER NOT NULL,
     FOREIGN KEY (id_usuario) REFERENCES public.usuarios(id) ON DELETE CASCADE,
     FOREIGN KEY (id_permiso) REFERENCES public.permisos(id) ON DELETE CASCADE,
     PRIMARY KEY (id_usuario, id_permiso)
 );
+/*
+EJEMPLO usuarios_permisos:
+"id_usuario"	"id_permiso"
+22	4
+*/
 ------------------------------------------------------------------
 
 --Consulta para unir ambas tablas:
