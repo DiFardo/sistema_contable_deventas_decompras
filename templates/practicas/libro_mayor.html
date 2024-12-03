@@ -8,7 +8,8 @@
 <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
 <link href="{{ url_for('static', filename='css/tabla_cuentas.css') }}" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+<!-- Plotly.js CDN -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 {% endblock %}
 
 {% block contenido %}
@@ -79,6 +80,13 @@
     @page {
       size: landscape;
     }
+  }
+
+  /* Estilos para el gráfico */
+  #libro-mayor-chart {
+    width: 100%;
+    height: 500px;
+    margin-bottom: 30px;
   }
 </style>
 
@@ -213,6 +221,8 @@
         </nav>
       </div>
     </div>
+    <!-- Contenedor para el gráfico del Libro Mayor -->
+    <div id="libro-mayor-chart"></div>
   </div>
 
   <!-- Scripts al final de la página para mejorar la carga -->
@@ -222,7 +232,7 @@
 
   <script>
     let currentPage = 1;
-    let rowsPerPage = parseInt(document.getElementById("records-per-page").value);
+    let rowsPerPage = parseInt(document.getElementById("records-per-page").value) || 1;
     let totalRows = 0;
     let totalPages = 0;
     const spinnerWrapper = document.getElementById("spinner-wrapper");
@@ -275,7 +285,17 @@
     function cargarDatos() {
       const periodo = document.getElementById("filtro-periodo").value;
       const cuenta = document.getElementById("filtro-cuenta").value;
-      if (!periodo || !cuenta) return;
+      if (!periodo || !cuenta) {
+        allData = [];
+        filteredData = [];
+        totalDebe = 0;
+        totalHaber = 0;
+        document.getElementById("tabla-cuerpo").innerHTML = "<tr><td colspan='5'>Seleccione un período y una cuenta para ver los movimientos.</td></tr>";
+        document.getElementById("total-debe").textContent = "-";
+        document.getElementById("total-haber").textContent = "-";
+        Plotly.purge('libro-mayor-chart');
+        return;
+      }
 
       spinnerWrapper.style.display = "block";
       $.ajax({
@@ -284,7 +304,7 @@
         data: { periodo, cuenta },
         success: function (data) {
           allData = data.movimientos.map(movimiento => ({
-            fecha: new Date(movimiento.fecha).toLocaleDateString(),
+            fecha: new Date(movimiento.fecha).toLocaleDateString('es-PE'),
             numero_correlativo: movimiento.numero_correlativo,
             glosa: movimiento.glosa,
             deudor: parseFloat(movimiento.deudor) || 0,
@@ -292,12 +312,15 @@
           }));
           calcularTotales();
           filtrarTabla();
+          generarGrafico();
         },
         complete: function () {
           spinnerWrapper.style.display = "none";
         },
         error: function (error) {
           console.error("Error al cargar los datos:", error);
+          document.getElementById("tabla-cuerpo").innerHTML = "<tr><td colspan='5'>Ocurrió un error al cargar los datos.</td></tr>";
+          Plotly.purge('libro-mayor-chart');
           spinnerWrapper.style.display = "none";
         }
       });
@@ -331,6 +354,12 @@
       const start = (page - 1) * rowsPerPage;
       const end = start + rowsPerPage;
       const pageData = filteredData.slice(start, end);
+
+      if (pageData.length === 0) {
+        tbody.innerHTML = "<tr><td colspan='5'>No se encontraron movimientos para mostrar.</td></tr>";
+        Plotly.purge('libro-mayor-chart');
+        return;
+      }
 
       pageData.forEach(movimiento => {
         const row = document.createElement("tr");
@@ -464,6 +493,78 @@
       }
       const url = `/libro_mayor_imprimir?periodo=${encodeURIComponent(periodo)}&cuenta=${encodeURIComponent(cuenta)}`;
       window.open(url, "_blank");
+    }
+
+    function generarGrafico() {
+      if (filteredData.length === 0) {
+        Plotly.purge('libro-mayor-chart');
+        return;
+      }
+
+      // Agrupar los datos por fecha y sumar 'Debe' y 'Haber'
+      const datosPorFecha = {};
+
+      filteredData.forEach(movimiento => {
+        const fecha = movimiento.fecha;
+        if (!datosPorFecha[fecha]) {
+          datosPorFecha[fecha] = { debe: 0, haber: 0 };
+        }
+        datosPorFecha[fecha].debe += movimiento.deudor;
+        datosPorFecha[fecha].haber += movimiento.acreedor;
+      });
+
+      // Ordenar las fechas
+      const fechas = Object.keys(datosPorFecha).sort((a, b) => {
+        const fechaA = new Date(a.split('/').reverse().join('-'));
+        const fechaB = new Date(b.split('/').reverse().join('-'));
+        return fechaA - fechaB;
+      });
+
+      const debe = fechas.map(fecha => datosPorFecha[fecha].debe);
+      const haber = fechas.map(fecha => datosPorFecha[fecha].haber);
+
+      const data = [
+        {
+          x: fechas,
+          y: debe,
+          type: 'bar',
+          name: 'Debe',
+          marker: {
+            color: '#1f77b4'
+          }
+        },
+        {
+          x: fechas,
+          y: haber,
+          type: 'bar',
+          name: 'Haber',
+          marker: {
+            color: '#ff7f0e'
+          }
+        }
+      ];
+
+      const layout = {
+        title: 'Comparación de Debe y Haber por Fecha',
+        barmode: 'group',
+        xaxis: {
+          title: 'Fecha',
+          tickangle: -45,
+          automargin: true
+        },
+        yaxis: {
+          title: 'Monto (S/.)'
+        },
+        margin: {
+          b: 150
+        },
+        legend: {
+          orientation: "h",
+          y: -0.2
+        }
+      };
+
+      Plotly.newPlot('libro-mayor-chart', data, layout, {responsive: true});
     }
   </script>
 
