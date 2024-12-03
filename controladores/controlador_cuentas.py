@@ -6,6 +6,18 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from io import BytesIO
 from flask import send_file, jsonify
+from reportlab.pdfgen import canvas
+from io import BytesIO
+from flask import send_file, jsonify
+from reportlab.lib.units import inch
+from reportlab.lib.pagesizes import A4, landscape
+from io import BytesIO
+from flask import send_file, jsonify
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer, Paragraph
+from reportlab.pdfgen import canvas
 
 def obtener_todas_cuentas():
     conexion = obtener_conexion()
@@ -412,6 +424,28 @@ def obtener_cuentas_con_nivel():
     conexion.close()
     return cuentas
 
+
+# Función para agregar la marca de agua con una imagen
+def add_watermark_image(canvas, doc):
+    watermark_image = "static/img/illustrations/logoEquipo.png"  # Ruta de la imagen de la marca de agua
+    
+    canvas.saveState()
+    
+    # Establecer la posición y tamaño de la imagen de la marca de agua
+    width, height = A4  # Obtener tamaño de página en formato vertical
+    image_width = width * 0.6  # Ajustar ancho de la imagen (60% de la página)
+    image_height = height * 0.5  # Ajustar alto de la imagen (60% de la página)
+    
+    # Posición de la imagen (centrada)
+    x_position = (width - image_width) / 2
+    y_position = (height - image_height) / 2
+    
+    # Dibujar la imagen con opacidad
+    canvas.setFillColor(colors.grey, alpha=0.2)  # Opacidad 20%
+    canvas.drawImage(watermark_image, x_position, y_position, width=image_width, height=image_height, mask='auto')
+    
+    canvas.restoreState()
+
 def exportar_todas_cuentas_pdf():
     try:
         conexion = obtener_conexion()
@@ -423,21 +457,29 @@ def exportar_todas_cuentas_pdf():
         """)
         cuentas = cursor.fetchall()
 
+        # Crear el buffer para el PDF
         buffer = BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=10)  # Ajusta el margen superior
         styles = getSampleStyleSheet()
         elementos = []
 
+        # Título del documento
         titulo = Paragraph("Cuentas Contables", styles['Title'])
         elementos.append(titulo)
-        elementos.append(Spacer(1, 12))
+        
+        # Si quieres reducir el espacio debajo del título, puedes eliminar o ajustar el Spacer
+        # Elementos.append(Spacer(1, 12))  # Eliminar este Spacer si no es necesario
 
+        # Crear los datos de la tabla
         data = [["Código", "Descripción"]]
+        
+        # Añadir las cuentas a la tabla
         for cuenta in cuentas:
             codigo = cuenta[0]
             descripcion = cuenta[1]
             nivel = cuenta[2] or 0  # Asegurarse de que el nivel no sea None
-            indent = nivel * 15  # Ajusta el valor de indentación según tus necesidades
+            indent = nivel * 15  # Ajustar el valor de indentación según el nivel
+
             # Crear un estilo de párrafo con indentación
             estilo_parrafo = ParagraphStyle(
                 name='Indent{}'.format(nivel),
@@ -447,17 +489,31 @@ def exportar_todas_cuentas_pdf():
             descripcion_para = Paragraph(descripcion, estilo_parrafo)
             data.append([codigo, descripcion_para])
 
+        # Crear la tabla con los datos
         tabla = Table(data, colWidths=[100, 400])
+        
+        # Estilo de la tabla
         tabla.setStyle(TableStyle([
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),  # Añadir bordes
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),  # Alinear todo a la izquierda
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),  # Alineación vertical superior
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),  # Color de fondo de los encabezados
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),  # Color del texto de los encabezados
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),  # Fuente en negrita para encabezados
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),  # Alineación centrada para los encabezados
+            ('FONTSIZE', (0, 0), (-1, -1), 10),  # Tamaño de fuente para las celdas
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),  # Fuente estándar
         ]))
+        
+        # Añadir la tabla a los elementos
         elementos.append(tabla)
 
-        doc.build(elementos)
-        buffer.seek(0)
+        # Generar el PDF con la marca de agua en cada página
+        doc.build(elementos, onFirstPage=add_watermark_image, onLaterPages=add_watermark_image)
+        
+        buffer.seek(0)  # Reposicionar el puntero al principio del buffer
 
+        # Retornar el archivo PDF como respuesta
         return send_file(
             buffer,
             as_attachment=True,
