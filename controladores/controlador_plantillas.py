@@ -1465,7 +1465,6 @@ def obtener_libro_caja(mes, año):
 def obtener_cuentas_distintas():
     conexion = obtener_conexion()
     cuentas = []
-
     with conexion.cursor(cursor_factory=DictCursor) as cursor:
         cursor.execute("""
             SELECT DISTINCT ac.codigo_cuenta, ac.denominacion
@@ -1476,9 +1475,7 @@ def obtener_cuentas_distintas():
               AND (ac.debe IS NOT NULL AND ac.debe != 0 OR ac.haber IS NOT NULL AND ac.haber != 0)
             ORDER BY ac.codigo_cuenta;
         """)
-        
         cuentas = cursor.fetchall()
-
     conexion.close()
     return cuentas
 

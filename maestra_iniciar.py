@@ -427,24 +427,19 @@ def libro_mayor():
     cuentas = controlador_plantillas.obtener_cuentas_distintas()
     periodo = request.args.get('periodo', '')
     cuenta = request.args.get('cuenta', '')
-
     movimientos = []
     total_deudor = 0
     total_acreedor = 0
-
     if periodo and cuenta:
         año, mes = periodo.split('-')
         movimientos = controlador_plantillas.obtener_libro_mayor(mes, año, cuenta)
-        
         for movimiento in movimientos:
             total_deudor += movimiento['deudor'] or 0
             total_acreedor += movimiento['acreedor'] or 0
-
     breadcrumbs = [
         {'name': 'Inicio', 'url': '/index'},
         {'name': 'Libro Mayor', 'url': '/libro_mayor'}
     ]
-
     return render_template(
         "libro_mayor.html", 
         movimientos=movimientos, 
@@ -461,16 +456,12 @@ def libro_mayor():
 def libro_mayor_datos():
     periodo = request.args.get('periodo', '')
     cuenta = request.args.get('cuenta', '')
-
     if not periodo or not cuenta:
         return jsonify({"movimientos": [], "total_debe": 0, "total_haber": 0})
-
     año, mes = periodo.split('-')
     movimientos = controlador_plantillas.obtener_libro_mayor(mes, año, cuenta)
-
     total_deudor = sum(movimiento['deudor'] or 0 for movimiento in movimientos)
     total_acreedor = sum(movimiento['acreedor'] or 0 for movimiento in movimientos)
-
     filas = []
     for movimiento in movimientos:
         filas.append({
@@ -480,7 +471,6 @@ def libro_mayor_datos():
             "deudor": movimiento["deudor"],
             "acreedor": movimiento["acreedor"]
         })
-
     return jsonify({
         "movimientos": filas,
         "total_debe": total_deudor,
