@@ -6,18 +6,6 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from io import BytesIO
 from flask import send_file, jsonify
-from reportlab.pdfgen import canvas
-from io import BytesIO
-from flask import send_file, jsonify
-from reportlab.lib.units import inch
-from reportlab.lib.pagesizes import A4, landscape
-from io import BytesIO
-from flask import send_file, jsonify
-from reportlab.lib.pagesizes import A4, landscape
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer, Paragraph
-from reportlab.pdfgen import canvas
 
 def obtener_todas_cuentas():
     conexion = obtener_conexion()
@@ -320,6 +308,12 @@ def dar_baja_cuenta():
     finally:
         conexion.close()
 
+
+
+
+
+
+
 def eliminar_notificacion(notificacion_id):
     conexion = obtener_conexion()
     try:
@@ -424,26 +418,19 @@ def obtener_cuentas_con_nivel():
     conexion.close()
     return cuentas
 
-
-# Función para agregar la marca de agua con una imagen
-def add_watermark_image(canvas, doc):
-    watermark_image = "static/img/illustrations/logoEquipo.png"  # Ruta de la imagen de la marca de agua
-    
+def encabezado_primera_pagina(canvas, doc):
+    """Encabezado solo para la primera página."""
     canvas.saveState()
-    
-    # Establecer la posición y tamaño de la imagen de la marca de agua
-    width, height = A4  # Obtener tamaño de página en formato vertical
-    image_width = width * 0.6  # Ajustar ancho de la imagen (60% de la página)
-    image_height = height * 0.5  # Ajustar alto de la imagen (60% de la página)
-    
-    # Posición de la imagen (centrada)
-    x_position = (width - image_width) / 2
-    y_position = (height - image_height) / 2
-    
-    # Dibujar la imagen con opacidad
-    canvas.setFillColor(colors.grey, alpha=0.2)  # Opacidad 20%
-    canvas.drawImage(watermark_image, x_position, y_position, width=image_width, height=image_height, mask='auto')
-    
+    canvas.setFont("Helvetica-Bold", 14)
+    canvas.drawCentredString(A4[0] / 2.0, A4[1] - 50, "PLAN CONTABLE GENERAL EMPRESARIAL")
+    canvas.setFont("Helvetica-Bold", 12)
+    canvas.drawCentredString(A4[0] / 2.0, A4[1] - 70, "CATÁLOGO DE CUENTAS")
+    canvas.restoreState()
+
+def encabezado_paginas_siguientes(canvas, doc):
+    """Encabezado para las páginas posteriores."""
+    canvas.saveState()
+    canvas.setFont("Helvetica-Bold", 12)
     canvas.restoreState()
 
 def exportar_todas_cuentas_pdf():
@@ -457,69 +444,59 @@ def exportar_todas_cuentas_pdf():
         """)
         cuentas = cursor.fetchall()
 
-        # Crear el buffer para el PDF
         buffer = BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=10)  # Ajusta el margen superior
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
         styles = getSampleStyleSheet()
-        elementos = []
 
-        # Título del documento
-        titulo = Paragraph("Cuentas Contables", styles['Title'])
-        elementos.append(titulo)
-        
-        # Si quieres reducir el espacio debajo del título, puedes eliminar o ajustar el Spacer
-        # Elementos.append(Spacer(1, 12))  # Eliminar este Spacer si no es necesario
+        # Definir estilos para las cuentas
+        estilo_normal = styles["Normal"]
+        estilo_negrita = ParagraphStyle(
+            name="Negrita",
+            parent=styles["Normal"],
+            fontName="Helvetica-Bold",
+            fontSize=10
+        )
 
-        # Crear los datos de la tabla
+        # Configurar datos de la tabla
         data = [["Código", "Descripción"]]
-        
-        # Añadir las cuentas a la tabla
         for cuenta in cuentas:
             codigo = cuenta[0]
             descripcion = cuenta[1]
-            nivel = cuenta[2] or 0  # Asegurarse de que el nivel no sea None
-            indent = nivel * 15  # Ajustar el valor de indentación según el nivel
+            nivel = cuenta[2] or 0
+            indent = nivel * 15  # Ajusta la sangría según el nivel de la cuenta
 
-            # Crear un estilo de párrafo con indentación
-            estilo_parrafo = ParagraphStyle(
-                name='Indent{}'.format(nivel),
-                parent=styles['Normal'],
-                leftIndent=indent
+            # Seleccionar el estilo según el nivel
+            estilo = estilo_negrita if nivel == 1 else estilo_normal
+
+            # Crear un Paragraph con el estilo adecuado
+            descripcion_paragraph = Paragraph(
+                f"<para leftIndent={indent}>{descripcion}</para>",
+                estilo
             )
-            descripcion_para = Paragraph(descripcion, estilo_parrafo)
-            data.append([codigo, descripcion_para])
+            data.append([codigo, descripcion_paragraph])
 
-        # Crear la tabla con los datos
-        tabla = Table(data, colWidths=[100, 400])
-        
-        # Estilo de la tabla
+        # Crear tabla con encabezado repetible
+        tabla = Table(data, colWidths=[100, 400], repeatRows=1)
         tabla.setStyle(TableStyle([
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),  # Añadir bordes
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),  # Alinear todo a la izquierda
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),  # Alineación vertical superior
-            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),  # Color de fondo de los encabezados
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),  # Color del texto de los encabezados
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),  # Fuente en negrita para encabezados
-            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),  # Alineación centrada para los encabezados
-            ('FONTSIZE', (0, 0), (-1, -1), 10),  # Tamaño de fuente para las celdas
-            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),  # Fuente estándar
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+            ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+            ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ]))
-        
-        # Añadir la tabla a los elementos
-        elementos.append(tabla)
 
-        # Generar el PDF con la marca de agua en cada página
-        doc.build(elementos, onFirstPage=add_watermark_image, onLaterPages=add_watermark_image)
-        
-        buffer.seek(0)  # Reposicionar el puntero al principio del buffer
+        # Añadir tabla al flujo de elementos
+        elementos = [tabla]
 
-        # Retornar el archivo PDF como respuesta
-        return send_file(
-            buffer,
-            as_attachment=True,
-            download_name="Cuentas_Contables.pdf",
-            mimetype="application/pdf"
+        # Generar el PDF con encabezados personalizados
+        doc.build(
+            elementos,
+            onFirstPage=encabezado_primera_pagina,
+            onLaterPages=encabezado_paginas_siguientes
         )
+
+        buffer.seek(0)
+        return send_file(buffer, as_attachment=True, download_name="Cuentas_Contables.pdf", mimetype="application/pdf")
     except Exception as e:
         print(f"Error al generar el PDF de las cuentas: {e}")
         return jsonify({'error': str(e)}), 500
@@ -527,3 +504,19 @@ def exportar_todas_cuentas_pdf():
         if conexion:
             cursor.close()
             conexion.close()
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
