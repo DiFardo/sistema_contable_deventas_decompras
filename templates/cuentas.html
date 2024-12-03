@@ -15,6 +15,20 @@
 {% endblock %}
 
 {% block contenido %}
+<style>
+
+.btn.vista-previa {
+    background-color: #ff5733;
+    color: white;
+    border-color: #ff5733;
+}
+
+.btn.vista-previa:hover {
+    background-color: #e04d2a; /* Color más oscuro para hover */
+    border-color: #e04d2a;
+}
+
+</style>
 
 <div id="content">
   <div class="main-content">
@@ -57,9 +71,10 @@
 
           <!-- Botones Alineados -->
           <div class="col-lg-4 col-md-6 col-sm-12 d-flex justify-content-lg-end justify-content-md-start">
-            <a href="/cuentas_imprimir" target="_blank" class="btn btn-secondary me-2">
+            <a href="/cuentas_imprimir" target="_blank" class="btn btn-secondary me-2 vista-previa">
               <i class="material-icons">visibility</i> <span>Vista previa</span>
-            </a>
+          </a>
+          
             <a href="#editAccountModal" class="btn btn-success add" data-bs-toggle="modal">
               <i class="material-icons">&#xE147;</i> <span>Añadir cuenta</span>
             </a>

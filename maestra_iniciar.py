@@ -180,7 +180,7 @@ def index():
             },
             {
                 "titulo": "Módulo de personal",
-                "descripcion": "Controla el mantenimiento de las cuentas del personl.",
+                "descripcion": "Controla el mantenimiento de las cuentas del personal.",
                 "url": url_for('personal'),
                 "clase_cuerpo": "card-body-modulo-ventas",
                 "clase_encabezado": "card-header-modulo-ventas"
