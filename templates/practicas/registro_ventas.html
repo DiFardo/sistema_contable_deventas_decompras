@@ -1,0 +1,462 @@
+{% extends "pagina_maestra.html" %}
+
+{% block titulo %}Registro de Ventas e Ingresos{% endblock %}
+
+{% block link %}
+<!-- Font Awesome for icons -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/tabla_cuentas.css') }}" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+{% endblock %}
+
+{% block contenido %}
+<style>
+  th {
+    text-align: center;
+    vertical-align: middle;
+    font-weight: bold;
+  }
+
+  td.centered {
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .bg-orange {
+    background-color: #FF9933;
+    color: white;
+  }
+
+  .bg-cyan {
+    background-color: #00CCCC;
+    color: white;
+  }
+
+  .bg-green {
+    background-color: #99CC99;
+    color: black;
+  }
+
+  .w-correlativo {
+    width: 10%;
+  }
+
+  /* Estilos para centrar el spinner dentro de la tabla */
+  .spinner-wrapper {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+  }
+
+  /* Cambiar el color del spinner */
+  .spinner-border {
+    color: #e73209 !important;
+    /* Color rojo para el spinner, con !important para prioridad */
+  }
+
+  @media print {
+    body {
+      visibility: hidden;
+    }
+
+    .table-wrapper,
+    .table {
+      visibility: visible;
+      width: 100%;
+    }
+
+    .table-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    @page {
+      size: landscape;
+    }
+  }
+</style>
+
+<div id="content">
+  <div class="main-content position-relative">
+    <!-- Spinner para pantalla de carga -->
+    <div class="spinner-wrapper" id="spinner-wrapper">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+    </div>
+
+    <!-- Breadcrumb dinámico -->
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        {% for crumb in breadcrumbs %}
+        {% if loop.last %}
+        <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
+        {% else %}
+        <li class="breadcrumb-item"><a href="{{ crumb.url }}">{{ crumb.name }}</a></li>
+        {% endif %}
+        {% endfor %}
+      </ol>
+    </nav>
+
+    <!-- Encabezado con título adicional -->
+    <div class="row mb-3">
+      <div class="col-12">
+        <h2 class="text-left">Registro de ventas e ingresos</h2>
+      </div>
+    </div>
+
+    <!-- Filtros: Fecha exacta y Buscar en una sola fila alineados correctamente con centrado vertical -->
+    <div class="row mb-3 align-items-center">
+      <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
+        <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
+          <strong>PERIODO:</strong>
+        </label>
+        <input type="month" class="form-control" id="filtro-fecha" max="" value="{{ request.args.get('periodo', '') }}">
+      </div>
+      <div class="col-lg-6 col-md-6 col-sm-12 d-flex">
+        <label class="me-3 d-flex justify-content-center align-items-center" style="min-width: 100px;">
+          <strong>BUSCAR:</strong>
+        </label>
+        <div class="input-group">
+          <input type="text" id="search-input" class="form-control" placeholder="Buscar en la tabla..."
+            aria-label="Buscar">
+        </div>
+      </div>
+    </div>
+    <div class="table-wrapper position-relative">
+      <div class="table-title">
+        <div class="row justify-content-end align-items-center">
+          <!-- Botones Alineados a la Derecha -->
+          <div class="col-lg-6 col-md-6 col-sm-12 d-flex justify-content-end">
+            <button class="btn btn-danger me-2 d-flex align-items-center" onclick="abrirNuevaPaginaImprimirVentas()" style="background-color: #ff5733;">
+              <i class="material-icons me-1">visibility</i>
+              <span>Vista previa</span>
+            </button>
+            <button class="btn btn-success d-flex align-items-center" onclick="exportarRegistroVentas()">
+              <i class="material-icons me-1">file_download</i>
+              <span>Exportar</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Estructura de la tabla del Registro de Ventas e Ingresos -->
+      <table class="table table-bordered table-striped table-hover" id="tabla-cuentas">
+        <thead>
+          <tr>
+            <th rowspan="2" class="w-correlativo">NÚMERO CORRELATIVO</th>
+            <th rowspan="2" class="w-correlativo">FECHA DE EMISIÓN</th>
+            <th class="bg-orange" colspan="3">COMPROBANTE DE PAGO O DOCUMENTO</th>
+            <th class="bg-cyan" colspan="3">INFORMACIÓN DEL CLIENTE</th>
+            <th rowspan="2" class="w-correlativo">BASE IMPONIBLE</th>
+            <th rowspan="2" class="w-correlativo">IGV</th>
+            <th rowspan="2" class="w-correlativo">IMPORTE TOTAL</th>
+          </tr>
+          <tr>
+            <th class="bg-orange">TIPO</th>
+            <th class="bg-orange">N° SERIE</th>
+            <th class="bg-orange">N° COMPROBANTE</th>
+            <th class="bg-cyan">TIPO DOCUMENTO</th>
+            <th class="bg-cyan">NÚMERO</th>
+            <th class="bg-cyan">RAZÓN SOCIAL</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-cuerpo">
+          <!-- Aquí se cargarán las filas dinámicamente -->
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="8" class="text-end"><strong>TOTALES</strong></td>
+            <td class="text-end" id="total-base-imponible">-</td>
+            <td class="text-end" id="total-igv">-</td>
+            <td class="text-end" id="total-total-comprobante">-</td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <!-- Controles de paginación y selector de número de registros -->
+      <div class="d-flex justify-content-between align-items-center mt-3">
+        <div class="d-flex me-3">
+          <label for="records-per-page" class="me-2">Registros por página:</label>
+          <input type="number" id="records-per-page" class="form-control" value="5" min="1" max="100"
+            style="width: 80px;">
+        </div>
+        <nav aria-label="Page navigation example align-items-center">
+          <ul class="pagination" id="pagination">
+            <!-- Páginas se generarán dinámicamente -->
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts al final de la página para mejorar la carga -->
+<script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  let currentPage = 1;
+  let rowsPerPage = parseInt(document.getElementById("records-per-page").value);
+  let totalRows = 0;
+  let totalPages = 0;
+  const spinnerWrapper = document.getElementById("spinner-wrapper");
+  let allData = [];
+  let filteredData = [];
+  let totalBaseImponible = 0;
+  let totalIGV = 0;
+  let totalTotalComprobante = 0;
+
+  function formatValue(value) {
+      const numericValue = Number(value);
+      if (numericValue === 0 || isNaN(numericValue) || value === null || value === undefined) {
+          return "-";
+      }
+      return numericValue.toFixed(2);
+  }
+
+  function getTodayMonth() {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      return `${year}-${month}`;
+  }
+
+  function cargarDatos(periodo) {
+      const [year, month] = periodo.split("-");
+      spinnerWrapper.style.display = "block"; // Mostrar el spinner
+      $.ajax({
+          url: "/registro_ventas_datos",
+          type: "GET",
+          data: { month, year },
+          success: function (data) {
+              allData = data.registros.map(registro => ({
+                  correlativo: registro.correlativo,
+                  fecha_emision: registro.fecha_emision,
+                  tipo_comprobante: registro.tipo_comprobante,
+                  serie_comprobante: registro.serie_comprobante,
+                  numero_comprobante: registro.numero_comprobante,
+                  tipo_documento: registro.tipo_documento,
+                  numero_documento: registro.numero_documento,
+                  usuario: registro.usuario,
+                  base_imponible: parseFloat(registro.base_imponible) || 0,
+                  igv: parseFloat(registro.igv) || 0,
+                  total_comprobante: parseFloat(registro.total_comprobante) || 0
+              }));
+              calcularTotales();
+              filtrarTabla();
+          },
+          error: function (error) {
+              console.error("Error al cargar los datos:", error);
+          },
+          complete: function () {
+              spinnerWrapper.style.display = "none"; // Ocultar el spinner cuando la carga finaliza
+          }
+      });
+  }
+
+  function calcularTotales() {
+      totalBaseImponible = filteredData.reduce((acc, registro) => acc + registro.base_imponible, 0);
+      totalIGV = filteredData.reduce((acc, registro) => acc + registro.igv, 0);
+      totalTotalComprobante = filteredData.reduce((acc, registro) => acc + registro.total_comprobante, 0);
+
+      document.getElementById("total-base-imponible").textContent = formatValue(totalBaseImponible);
+      document.getElementById("total-igv").textContent = formatValue(totalIGV);
+      document.getElementById("total-total-comprobante").textContent = formatValue(totalTotalComprobante);
+  }
+
+  function filtrarTabla() {
+      const searchTerm = document.getElementById("search-input").value.toLowerCase();
+      filteredData = allData.filter(registro => {
+          return Object.values(registro).some(value =>
+              String(value).toLowerCase().includes(searchTerm)
+          );
+      });
+      totalRows = filteredData.length;
+      totalPages = Math.ceil(totalRows / rowsPerPage);
+      currentPage = 1;
+      calcularTotales();
+      showPage(currentPage);
+  }
+
+  function showPage(page) {
+      const tbody = document.getElementById("tabla-cuerpo");
+      tbody.innerHTML = "";
+      const start = (page - 1) * rowsPerPage;
+      const end = start + rowsPerPage;
+      const pageData = filteredData.slice(start, end);
+
+      pageData.forEach(registro => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+              <td class="w-correlativo centered">${registro.correlativo}</td>
+              <td class="centered">${registro.fecha_emision}</td>
+              <td class="centered">${registro.tipo_comprobante}</td>
+              <td class="centered">${registro.serie_comprobante}</td>
+              <td class="centered">${registro.numero_comprobante}</td>
+              <td class="centered">${registro.tipo_documento}</td>
+              <td class="centered">${registro.numero_documento}</td>
+              <td>${registro.usuario}</td>
+              <td class="text-end">${formatValue(registro.base_imponible)}</td>
+              <td class="text-end">${formatValue(registro.igv)}</td>
+              <td class="text-end">${formatValue(registro.total_comprobante)}</td>
+          `;
+          tbody.appendChild(row);
+      });
+
+      updatePagination();
+  }
+
+  function updatePagination() {
+      const pagination = document.getElementById("pagination");
+      pagination.innerHTML = "";
+
+      if (totalPages <= 1) {
+          return;
+      }
+
+      // Botón Previous
+      const prevClass = currentPage === 1 ? "disabled" : "";
+      pagination.innerHTML += `
+          <li class="page-item ${prevClass}">
+              <a class="page-link" href="#" aria-label="Previous" id="prev-page">
+                  <span aria-hidden="true">&laquo;</span>
+              </a>
+          </li>
+      `;
+
+      // Páginas
+      const maxPagesToShow = 5;
+      let startPage = Math.max(currentPage - 2, 1);
+      let endPage = Math.min(startPage + maxPagesToShow - 1, totalPages);
+
+      if (endPage - startPage < maxPagesToShow - 1) {
+          startPage = Math.max(endPage - maxPagesToShow + 1, 1);
+      }
+
+      if (startPage > 1) {
+          pagination.innerHTML += `<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>`;
+          if (startPage > 2) {
+              pagination.innerHTML += `<li class="page-item disabled"><a class="page-link" href="#">...</a></li>`;
+          }
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+          const activeClass = i === currentPage ? "active" : "";
+          pagination.innerHTML += `
+              <li class="page-item ${activeClass}">
+                  <a class="page-link" href="#" data-page="${i}">${i}</a>
+              </li>
+          `;
+      }
+
+      if (endPage < totalPages) {
+          if (endPage < totalPages - 1) {
+              pagination.innerHTML += `<li class="page-item disabled"><a class="page-link" href="#">...</a></li>`;
+          }
+          pagination.innerHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`;
+      }
+
+      // Botón Next
+      const nextClass = currentPage === totalPages ? "disabled" : "";
+      pagination.innerHTML += `
+          <li class="page-item ${nextClass}">
+              <a class="page-link" href="#" aria-label="Next" id="next-page">
+                  <span aria-hidden="true">&raquo;</span>
+              </a>
+          </li>
+      `;
+
+      // Eventos para botones
+      document.getElementById("prev-page").addEventListener("click", function(e) {
+          e.preventDefault();
+          if (currentPage > 1) {
+              currentPage--;
+              showPage(currentPage);
+          }
+      });
+
+      document.getElementById("next-page").addEventListener("click", function(e) {
+          e.preventDefault();
+          if (currentPage < totalPages) {
+              currentPage++;
+              showPage(currentPage);
+          }
+      });
+
+      document.querySelectorAll(".page-link[data-page]").forEach(link => {
+          link.addEventListener("click", function(e) {
+              e.preventDefault();
+              const selectedPage = parseInt(this.getAttribute("data-page"));
+              if (selectedPage !== currentPage) {
+                  currentPage = selectedPage;
+                  showPage(currentPage);
+              }
+          });
+      });
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+      const filtroFecha = document.getElementById("filtro-fecha");
+      filtroFecha.max = getTodayMonth();
+
+      const recordsInput = document.getElementById("records-per-page");
+
+      filtroFecha.addEventListener("change", function () {
+          currentPage = 1;
+          cargarDatos(filtroFecha.value);
+      });
+
+      recordsInput.addEventListener("input", function () {
+          const newValue = parseInt(this.value);
+          if (!isNaN(newValue) && newValue > 0) {
+              rowsPerPage = newValue;
+              totalPages = Math.ceil(filteredData.length / rowsPerPage);
+              currentPage = 1;
+              showPage(currentPage);
+          }
+      });
+
+      document.getElementById("search-input").addEventListener("input", function() {
+          currentPage = 1;
+          filtrarTabla();
+      });
+
+      if (filtroFecha.value) {
+          cargarDatos(filtroFecha.value);
+      }
+  });
+
+  function exportarRegistroVentas() {
+      const filtroFecha = document.getElementById("filtro-fecha").value;
+      if (!filtroFecha) {
+          alert("Por favor, seleccione un período antes de exportar.");
+          return;
+      }
+      // Redireccionar a la ruta de exportación con el período como parámetro
+      window.location.href = `/exportar-registro-ventas?periodo=${filtroFecha}`;
+  }
+
+  function abrirNuevaPaginaImprimirVentas() {
+      const periodo = document.getElementById('filtro-fecha').value;
+      if (!periodo) {
+          alert('Por favor, selecciona un periodo antes de continuar.');
+          return;
+      }
+
+      // Redirige a la nueva ruta con el parámetro de periodo
+      const url = `/registro_ventas_imprimir?periodo=${encodeURIComponent(periodo)}`;
+      const nuevaVentana = window.open(url, '_blank');
+      if (!nuevaVentana) {
+          alert('Por favor, permite que el navegador abra ventanas emergentes.');
+      }
+  }
+</script>
+{% endblock %}
