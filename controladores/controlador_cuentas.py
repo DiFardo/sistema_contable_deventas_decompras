@@ -432,44 +432,56 @@ def exportar_todas_cuentas_pdf():
         buffer = BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=A4)
         styles = getSampleStyleSheet()
-        elementos = []
 
-        titulo = Paragraph("Cuentas Contables", styles['Title'])
-        elementos.append(titulo)
-        elementos.append(Spacer(1, 12))
+        # Definir estilos para las cuentas
+        estilo_normal = styles["Normal"]
+        estilo_negrita = ParagraphStyle(
+            name="Negrita",
+            parent=styles["Normal"],
+            fontName="Helvetica-Bold",
+            fontSize=10
+        )
 
+        # Configurar datos de la tabla
         data = [["Código", "Descripción"]]
         for cuenta in cuentas:
             codigo = cuenta[0]
             descripcion = cuenta[1]
-            nivel = cuenta[2] or 0  # Asegurarse de que el nivel no sea None
-            indent = nivel * 15  # Ajusta el valor de indentación según tus necesidades
-            # Crear un estilo de párrafo con indentación
-            estilo_parrafo = ParagraphStyle(
-                name='Indent{}'.format(nivel),
-                parent=styles['Normal'],
-                leftIndent=indent
+            nivel = cuenta[2] or 0
+            indent = nivel * 15  # Ajusta la sangría según el nivel de la cuenta
+
+            # Seleccionar el estilo según el nivel
+            estilo = estilo_negrita if nivel == 1 else estilo_normal
+
+            # Crear un Paragraph con el estilo adecuado
+            descripcion_paragraph = Paragraph(
+                f"<para leftIndent={indent}>{descripcion}</para>",
+                estilo
             )
-            descripcion_para = Paragraph(descripcion, estilo_parrafo)
-            data.append([codigo, descripcion_para])
+            data.append([codigo, descripcion_paragraph])
 
-        tabla = Table(data, colWidths=[100, 400])
+        # Crear tabla con encabezado repetible
+        tabla = Table(data, colWidths=[100, 400], repeatRows=1)
         tabla.setStyle(TableStyle([
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+            ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+            ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ]))
-        elementos.append(tabla)
 
-        doc.build(elementos)
-        buffer.seek(0)
+        # Añadir tabla al flujo de elementos
+        elementos = [tabla]
 
-        return send_file(
-            buffer,
-            as_attachment=True,
-            download_name="Cuentas_Contables.pdf",
-            mimetype="application/pdf"
+        # Generar el PDF con encabezados personalizados
+        doc.build(
+            elementos,
+            onFirstPage=encabezado_primera_pagina,
+            onLaterPages=encabezado_paginas_siguientes
         )
+
+        buffer.seek(0)
+        return send_file(buffer, as_attachment=True, download_name="Cuentas_Contables.pdf", mimetype="application/pdf")
     except Exception as e:
         print(f"Error al generar el PDF de las cuentas: {e}")
         return jsonify({'error': str(e)}), 500
